@@ -8,7 +8,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { COLORS, ANIMALS } from "@/lib/constants";
 
-export default function OnboardingForm() {
+export default function 	OnboardingForm() {
 	const [currentStep, setCurrentStep] = useState(1);
 	const [formData, setFormData] = useState({
 		parentName: "",
@@ -48,11 +48,6 @@ export default function OnboardingForm() {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		
-		if (!formData.favoriteColor || !formData.favoriteAnimal) {
-			toast.error("Please select all preferences");
-			return;
-		}
 
 		try {
 			await createProfile({
