@@ -195,7 +195,7 @@ export function FAQSection() {
 						</p>
 						<div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
 							<a
-								href="https://facebook.com"
+								href="https://www.facebook.com/LalLifafa/"
 								target="_blank"
 								rel="noopener noreferrer"
 								className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-[25px] font-semibold transition-all duration-300 hover:scale-105 shadow-lg"
@@ -203,12 +203,20 @@ export function FAQSection() {
 								Follow on Facebook
 							</a>
 							<a
-								href="https://instagram.com"
+								href="https://www.instagram.com/lallifafa/"
 								target="_blank"
 								rel="noopener noreferrer"
 								className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-[25px] font-semibold transition-all duration-300 hover:scale-105 shadow-lg"
 							>
 								Follow on Instagram
+							</a>
+							<a
+								href="https://www.youtube.com/@LalliFafa"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="inline-flex items-center justify-center px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-[25px] font-semibold transition-all duration-300 hover:scale-105 shadow-lg"
+							>
+								Follow on YouTube
 							</a>
 						</div>
 					</div>

@@ -1,4 +1,4 @@
-import { Facebook, Instagram, Sparkles } from "lucide-react";
+import { Facebook, Instagram, Youtube, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Footer() {
@@ -80,6 +80,21 @@ export default function Footer() {
 								<Instagram className="w-5 h-5 text-pink-600" />
 								<span className="text-sm">Instagram</span>
 							</Button>
+							<a 
+								href="https://www.youtube.com/@LalliFafa" 
+								target="_blank" 
+								rel="noopener noreferrer"
+								className="block"
+							>
+								<Button 
+									variant="ghost" 
+									className="w-full justify-start gap-3 hover:bg-primary/10"
+									data-testid="button-footer-youtube"
+								>
+									<Youtube className="w-5 h-5 text-red-600" />
+									<span className="text-sm">YouTube</span>
+								</Button>
+							</a>
 							<p className="text-xs text-muted-foreground italic mt-4">
 								More social links coming soon!
 							</p>
