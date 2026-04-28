@@ -8,14 +8,12 @@ export const metadata: Metadata = {
   description: "Sign up for Lalli Fafa and get 250 free story credits. Your child becomes the hero today.",
 };
 
-export default async function SignUpPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ plan?: string }>;
-}) {
-  const { plan } = await searchParams;
-  const isMonthly = plan === "monthly";
-  const isYearly = plan === "yearly";
+// Plan pre-selection (isMonthly / isYearly) will be handled client-side once
+// Better Auth is wired up. Defaulting to false keeps this page statically
+// exportable without needing searchParams at build time.
+export default function SignUpPage() {
+  const isMonthly = false;
+  const isYearly = false;
 
   return (
     <div className="min-h-screen flex" style={{ background: "var(--lf-cream)" }}>

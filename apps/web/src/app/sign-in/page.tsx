@@ -8,13 +8,9 @@ export const metadata: Metadata = {
   description: "Sign in to your Lalli Fafa account and continue your child's story adventures.",
 };
 
-export default async function SignInPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ redirect?: string }>;
-}) {
-  await searchParams; // consumed for future redirect logic
-
+// searchParams (for post-login redirect) will be read client-side once
+// Better Auth is wired up. For now this is a pure static page.
+export default function SignInPage() {
   return (
     <div className="min-h-screen flex" style={{ background: "var(--lf-cream)" }}>
       {/* Left panel — branding */}
