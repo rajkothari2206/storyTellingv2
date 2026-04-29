@@ -33,7 +33,9 @@ export function SignUpForm() {
       {
         onSuccess: () => router.push("/onboarding"),
         onError: (ctx) => {
-          console.error("[sign-up] error:", ctx.error);
+          console.error("[sign-up] full error object:", JSON.stringify(ctx.error));
+          console.error("[sign-up] error message:", ctx.error?.message);
+          console.error("[sign-up] error status:", ctx.error?.status);
           toast.error(ctx.error.message || JSON.stringify(ctx.error) || "Sign up failed.");
           setLoading(false);
         },
