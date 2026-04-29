@@ -36,10 +36,10 @@ export function SignInForm() {
   async function handleGoogle() {
     setGoogleLoading(true);
     try {
-      // callbackURL must be absolute — the Convex backend uses it as a redirect
-      // target after Google OAuth completes, and a relative path would resolve
-      // against the Convex site URL, not this Next.js app.
-      const callbackURL = `${window.location.origin}${redirect}`;
+      // callbackURL must be a URL in the Convex backend's trustedOrigins list.
+      // Use the production domain so the callbackURL is always trusted,
+      // regardless of which Vercel preview URL we're running on.
+      const callbackURL = `https://www.lallifafa.com${redirect}`;
       await authClient.signIn.social(
         { provider: "google", callbackURL },
         {

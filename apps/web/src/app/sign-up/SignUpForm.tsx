@@ -46,7 +46,10 @@ export function SignUpForm() {
   async function handleGoogle() {
     setGoogleLoading(true);
     try {
-      const callbackURL = `${window.location.origin}/onboarding`;
+      // Must be a URL in the Convex backend's trustedOrigins list.
+      // Use the production domain so the callbackURL is always trusted,
+      // regardless of which Vercel preview URL we're running on.
+      const callbackURL = "https://www.lallifafa.com/onboarding";
       await authClient.signIn.social(
         { provider: "google", callbackURL },
         {
