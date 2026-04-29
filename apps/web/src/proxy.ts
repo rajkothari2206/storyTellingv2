@@ -1,34 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PROTECTED_ROUTES = [
-  "/dashboard",
-  "/library",
-  "/profile",
-  "/onboarding",
-  "/admin",
-  "/generate",
-];
-
-export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  const isProtected = PROTECTED_ROUTES.some((route) =>
-    pathname.startsWith(route)
-  );
-
-  if (!isProtected) return NextResponse.next();
-
-  const sessionToken =
-    request.cookies.get("better-auth.session_token") ??
-    request.cookies.get("__Secure-better-auth.session_token");
-
-  if (!sessionToken) {
-    const signInUrl = new URL("/sign-in", request.url);
-    signInUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(signInUrl);
-  }
-
+// Route protection is handled client-side by each page via useConvexAuth().
+// A cookie-based check here is unreliable because the Better Auth session
+// cookie is scoped to Path=/api/auth by the Convex backend, so the browser
+// doesn't send it on requests to /dashboard, /onboarding, etc.
+export function proxy(_request: NextRequest) {
   return NextResponse.next();
 }
 
