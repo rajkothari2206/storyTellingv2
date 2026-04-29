@@ -42,15 +42,22 @@ export function SignUpForm() {
 
   async function handleGoogle() {
     setGoogleLoading(true);
-    await authClient.signIn.social(
-      { provider: "google", callbackURL: "/onboarding" },
-      {
-        onError: (ctx) => {
-          toast.error(ctx.error.message ?? "Google sign up failed.");
-          setGoogleLoading(false);
-        },
-      }
-    );
+    try {
+      const callbackURL = `${window.location.origin}/onboarding`;
+      await authClient.signIn.social(
+        { provider: "google", callbackURL },
+        {
+          onError: (ctx) => {
+            toast.error(ctx.error.message ?? "Google sign up failed.");
+            setGoogleLoading(false);
+          },
+        }
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Google sign up failed.";
+      toast.error(msg);
+      setGoogleLoading(false);
+    }
   }
 
   const inputStyle = {

@@ -35,15 +35,25 @@ export function SignInForm() {
 
   async function handleGoogle() {
     setGoogleLoading(true);
-    await authClient.signIn.social(
-      { provider: "google", callbackURL: redirect },
-      {
-        onError: (ctx) => {
-          toast.error(ctx.error.message ?? "Google sign in failed.");
-          setGoogleLoading(false);
-        },
-      }
-    );
+    try {
+      // callbackURL must be absolute — the Convex backend uses it as a redirect
+      // target after Google OAuth completes, and a relative path would resolve
+      // against the Convex site URL, not this Next.js app.
+      const callbackURL = `${window.location.origin}${redirect}`;
+      await authClient.signIn.social(
+        { provider: "google", callbackURL },
+        {
+          onError: (ctx) => {
+            toast.error(ctx.error.message ?? "Google sign in failed.");
+            setGoogleLoading(false);
+          },
+        }
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Google sign in failed.";
+      toast.error(msg);
+      setGoogleLoading(false);
+    }
   }
 
   const inputStyle = {
