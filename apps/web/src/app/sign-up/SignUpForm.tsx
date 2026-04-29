@@ -33,7 +33,8 @@ export function SignUpForm() {
       {
         onSuccess: () => router.push("/onboarding"),
         onError: (ctx) => {
-          toast.error(ctx.error.message ?? "Sign up failed. Please try again.");
+          console.error("[sign-up] error:", ctx.error);
+          toast.error(ctx.error.message || JSON.stringify(ctx.error) || "Sign up failed.");
           setLoading(false);
         },
       }
