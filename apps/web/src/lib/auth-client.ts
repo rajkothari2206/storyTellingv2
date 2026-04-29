@@ -1,11 +1,13 @@
 import { createAuthClient } from "better-auth/react";
-import { convexClient } from "@convex-dev/better-auth/client/plugins";
 import { emailOTPClient } from "better-auth/client/plugins";
 
-// Our Next.js proxy at /api/auth/* forwards all auth requests to Convex
-// server-side, so the browser only ever talks to our own domain.
-// crossDomainClient() is NOT needed — it would redirect through Convex back
-// to the Convex-configured siteUrl (lallifafa.com), breaking the preview flow.
+// baseURL = our own origin so all auth requests go through the Next.js proxy
+// at /api/auth/*, which forwards to Convex server-side with a trusted Origin.
+// convexClient() and crossDomainClient() are intentionally omitted:
+//   - crossDomainClient() caused post-auth page redirects to lallifafa.com
+//     (the Convex backend's configured siteUrl).
+//   - convexClient() is not needed client-side; we fetch /api/auth/convex/token
+//     directly inside ConvexAuthProvider using ConvexProviderWithAuth.
 const baseURL =
   typeof window !== "undefined"
     ? window.location.origin
@@ -13,7 +15,7 @@ const baseURL =
 
 export const authClient = createAuthClient({
   baseURL,
-  plugins: [convexClient(), emailOTPClient()],
+  plugins: [emailOTPClient()],
 });
 
 export type Session = typeof authClient.$Infer.Session;
