@@ -13,8 +13,13 @@ import { type NextRequest, NextResponse } from "next/server";
 
 const CONVEX_SITE_URL = process.env.NEXT_PUBLIC_CONVEX_SITE_URL!;
 
-// Must be in the Convex backend's trustedOrigins list (convex/auth.ts).
-const TRUSTED_ORIGIN = "https://www.lallifafa.com";
+// The production origin shared by:
+//   - TRUSTED_ORIGIN sent in Origin/Referer headers so Better Auth's
+//     trustedOrigins check passes (Convex backend only trusts this domain).
+//   - SITE_URL used to identify redirect Location headers that the crossDomain
+//     server plugin rewrites callbackURLs to; we rewrite those to our own
+//     origin so users on Vercel preview URLs don't land on the v1 prod site.
+const LALLIFAFA_ORIGIN = "https://www.lallifafa.com";
 
 // Headers that shouldn't be forwarded upstream
 const DROP_REQUEST_HEADERS = new Set([
@@ -49,9 +54,9 @@ async function proxyAuth(
     forwarded.set(k, v);
   }
   // Override origin/referer so Better Auth's trustedOrigins check passes
-  forwarded.set("origin", TRUSTED_ORIGIN);
-  forwarded.set("referer", `${TRUSTED_ORIGIN}/`);
-  forwarded.set("x-forwarded-host", new URL(TRUSTED_ORIGIN).host);
+  forwarded.set("origin", LALLIFAFA_ORIGIN);
+  forwarded.set("referer", `${LALLIFAFA_ORIGIN}/`);
+  forwarded.set("x-forwarded-host", new URL(LALLIFAFA_ORIGIN).host);
 
   const body =
     req.method !== "GET" && req.method !== "HEAD"
@@ -93,15 +98,28 @@ async function proxyAuth(
     resHeaders.append("set-cookie", rewritten);
   }
 
-  // For redirect responses, rewrite the Location header to go through us
-  // (only rewrite if Location points to the Convex site)
+  // For redirect responses, rewrite the Location header so the browser stays
+  // on the current origin (Vercel preview URL or production).
+  //
+  // Two cases to handle:
+  // 1. Location points to the raw Convex site URL (e.g. https://x.convex.site/…)
+  //    – simple: replace the Convex site prefix with our origin.
+  // 2. Location points to SITE_URL (https://www.lallifafa.com/…)
+  //    – the crossDomain server plugin rewrites callbackURLs to this origin,
+  //      so OAuth callbacks (e.g. /callback/google) redirect there. We must
+  //      rewrite these to our origin too, otherwise preview-URL users land on
+  //      the v1 production site.
   const location = upstream.headers.get("location");
-  if (location && location.startsWith(CONVEX_SITE_URL)) {
-    const newLocation = location.replace(
-      CONVEX_SITE_URL,
-      req.nextUrl.origin
-    );
-    resHeaders.set("location", newLocation);
+  if (location) {
+    let newLocation = location;
+    if (location.startsWith(CONVEX_SITE_URL)) {
+      newLocation = location.replace(CONVEX_SITE_URL, req.nextUrl.origin);
+    } else if (location.startsWith(LALLIFAFA_ORIGIN)) {
+      newLocation = location.replace(LALLIFAFA_ORIGIN, req.nextUrl.origin);
+    }
+    if (newLocation !== location) {
+      resHeaders.set("location", newLocation);
+    }
   }
 
   return new NextResponse(upstream.body, {
