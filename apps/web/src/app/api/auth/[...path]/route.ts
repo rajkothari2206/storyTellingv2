@@ -77,24 +77,43 @@ async function proxyAuth(
   for (const [k, v] of upstream.headers.entries()) {
     if (DROP_RESPONSE_HEADERS.has(k.toLowerCase())) continue;
     if (k.toLowerCase() === "set-cookie") continue; // handled separately below
+    if (k.toLowerCase() === "set-better-auth-cookie") continue; // converted to set-cookie below
     resHeaders.set(k, v);
   }
 
-  // Rewrite Set-Cookie headers:
-  // Strip Domain= so the browser stores them for *our* Vercel domain,
-  // and ensure SameSite=Lax so they're sent on same-site navigations.
-  const setCookies: string[] =
-    // getSetCookie() is available in Node 18+ / WinterCG
-    typeof (upstream.headers as any).getSetCookie === "function"
-      ? (upstream.headers as any).getSetCookie()
-      : upstream.headers.get("set-cookie")
-          ?.split(/,(?=\s*\w+=)/)
-          .map((c: string) => c.trim()) ?? [];
+  // Collect cookies from both set-cookie AND Set-Better-Auth-Cookie.
+  //
+  // The crossDomain server plugin (active in the Convex backend) intercepts
+  // every response's after hook and moves the set-cookie header to
+  // Set-Better-Auth-Cookie so that the crossDomainClient() plugin can pick
+  // it up and store it client-side. Since we're not using crossDomainClient()
+  // (it caused its own redirect issues), we must rescue those cookies here in
+  // the proxy and forward them as real set-cookie headers instead.
+  function parseCookieHeader(raw: string): string[] {
+    // Split a multi-cookie header on commas that precede a new "name=" pair.
+    return raw.split(/,(?=\s*[^,;=\s]+=[^,;]*)/).map((c) => c.trim()).filter(Boolean);
+  }
 
-  for (const raw of setCookies) {
+  const setCookieRaw: string[] = [];
+
+  // 1. Standard set-cookie (getSetCookie() returns one entry per cookie)
+  if (typeof (upstream.headers as any).getSetCookie === "function") {
+    setCookieRaw.push(...(upstream.headers as any).getSetCookie());
+  } else {
+    const h = upstream.headers.get("set-cookie");
+    if (h) setCookieRaw.push(...parseCookieHeader(h));
+  }
+
+  // 2. crossDomain plugin's Set-Better-Auth-Cookie header
+  const crossDomainCookie = upstream.headers.get("set-better-auth-cookie");
+  if (crossDomainCookie) {
+    setCookieRaw.push(...parseCookieHeader(crossDomainCookie));
+  }
+
+  for (const raw of setCookieRaw) {
     const rewritten = raw
-      .replace(/;\s*Domain=[^;,]*/gi, "")       // strip Domain attribute
-      .replace(/;\s*SameSite=None/gi, "; SameSite=Lax"); // relax SameSite
+      .replace(/;\s*Domain=[^;,]*/gi, "")            // strip Domain= so browser stores for our domain
+      .replace(/;\s*SameSite=None/gi, "; SameSite=Lax"); // relax for same-site preview use
     resHeaders.append("set-cookie", rewritten);
   }
 
