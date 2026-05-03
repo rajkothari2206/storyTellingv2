@@ -99,7 +99,7 @@ export default function StoryPage({ params }: Props) {
                 </div>
 
                 {/* Narration audio */}
-                {narrationUrl && (
+                {(narrationUrl as { url?: string | null } | null)?.url && (
                   <div
                     className="flex items-center gap-4 p-4 rounded-2xl"
                     style={{ background: "#fff", border: "1.5px solid rgba(0,0,0,0.06)" }}
@@ -109,7 +109,7 @@ export default function StoryPage({ params }: Props) {
                       <p style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.85rem", color: "var(--lf-dark)" }}>
                         Listen to the story
                       </p>
-                      <audio controls className="w-full" src={narrationUrl as string} style={{ height: 36 }} />
+                      <audio controls className="w-full" src={(narrationUrl as { url: string }).url} style={{ height: 36 }} />
                     </div>
                   </div>
                 )}
