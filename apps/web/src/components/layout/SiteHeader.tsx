@@ -131,20 +131,11 @@ export function SiteHeader() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={s.label}
-                className="flex items-center justify-center rounded-full transition-all duration-200 hover:scale-110"
+                className="flex items-center justify-center rounded-full transition-all duration-200 hover:scale-110 hover:opacity-80"
                 style={{
                   width: 32,
                   height: 32,
-                  background: "rgba(0,0,0,0.05)",
-                  color: "rgba(14,10,31,0.5)",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).style.color = s.color;
-                  (e.currentTarget as HTMLAnchorElement).style.background = "rgba(0,0,0,0.08)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).style.color = "rgba(14,10,31,0.5)";
-                  (e.currentTarget as HTMLAnchorElement).style.background = "rgba(0,0,0,0.05)";
+                  color: s.color,
                 }}
               >
                 {s.icon}
