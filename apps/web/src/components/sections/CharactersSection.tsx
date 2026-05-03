@@ -1,12 +1,27 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 
+const scenes = [
+  { src: "/lf-scene-bench.jpg",    label: "Best friends always" },
+  { src: "/lf-scene-beach.jpg",    label: "Dreaming of adventures" },
+  { src: "/lf-scene-art.jpg",      label: "Painting together" },
+  { src: "/lf-scene-paint.jpg",    label: "Lalli's the artist!" },
+  { src: "/lf-scene-bed.jpg",      label: "We overslept!" },
+  { src: "/lf-scene-krishna.jpg",  label: "Magic in the meadow" },
+  { src: "/lf-scene-balloons.jpg", label: "Fafa takes flight!" },
+  { src: "/lf-scene-puppy.jpg",    label: "A new furry friend" },
+  { src: "/lf-scene-kite.jpg",     label: "Up, up and away!" },
+];
+
 export function CharactersSection() {
   return (
-    <section id="characters" className="overflow-hidden" style={{ background: "#fff" }}>
-      {/* Section label */}
-      <div className="text-center pt-10 lg:pt-14 pb-6">
+    <section id="characters" style={{ background: "#FFFCF5" }}>
+
+      {/* ── Header ── */}
+      <div className="text-center pt-12 pb-8 px-6">
         <span
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider"
           style={{ background: "rgba(255,193,7,0.15)", color: "#92680a" }}
@@ -17,87 +32,161 @@ export function CharactersSection() {
           className="mt-3"
           style={{
             fontFamily: "'Baloo 2', sans-serif",
-            fontSize: "clamp(1.9rem, 4vw, 2.8rem)",
+            fontSize: "clamp(1.9rem,4vw,2.8rem)",
             fontWeight: 800,
             color: "var(--lf-dark)",
-            lineHeight: 1.15,
+            lineHeight: 1.2,
           }}
         >
           Your child's forever companions
         </h2>
         <p
           className="mt-2 mx-auto"
-          style={{ color: "rgba(14,10,31,0.55)", fontSize: "1rem", maxWidth: 480 }}
+          style={{ color: "rgba(14,10,31,0.5)", fontSize: "1rem", maxWidth: 460 }}
         >
-          Every story, Lalli &amp; Fafa make room for one more hero — yours.
+          Two best friends on endless adventures — and they always save a spot for your child.
         </p>
       </div>
 
-      {/* Bold split panel */}
-      <div className="grid md:grid-cols-2" style={{ minHeight: 480 }}>
+      {/* ── Main: Lalli card | hero image | Fafa card ── */}
+      <div className="mx-auto px-6 pb-10" style={{ maxWidth: 1200 }}>
+        <div className="grid md:grid-cols-[220px_1fr_220px] gap-6 items-stretch">
 
-        {/* LALLI — left panel, sunshine */}
-        <div
-          className="relative flex flex-col justify-end overflow-hidden"
-          style={{
-            background: "linear-gradient(160deg, #FFC107 0%, #FF8F00 100%)",
-            minHeight: 420,
-          }}
-        >
-          {/* Decorative circle */}
+          {/* Lalli card — desktop only */}
           <div
-            className="absolute"
+            className="hidden md:flex rounded-3xl p-7 flex-col gap-5"
             style={{
-              width: 320, height: 320,
-              borderRadius: "50%",
-              background: "rgba(255,255,255,0.08)",
-              top: -60, right: -60,
+              background: "#fff",
+              border: "2px solid rgba(255,193,7,0.3)",
+              boxShadow: "0 8px 40px rgba(255,193,7,0.12)",
             }}
-          />
-
-          {/* Character art */}
-          <div className="absolute bottom-0 right-8 md:right-12" style={{ zIndex: 2 }}>
-            <Image
-              src="/Lalli-new.png"
-              alt="Lalli"
-              width={220}
-              height={300}
-              className="object-contain drop-shadow-2xl"
-              style={{ mixBlendMode: "multiply" }}
-            />
-          </div>
-
-          {/* Info overlay */}
-          <div className="relative z-10 p-8 md:p-10" style={{ maxWidth: 280 }}>
-            <div
-              className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-3"
-              style={{ background: "rgba(0,0,0,0.15)", color: "#fff" }}
-            >
-              Age 6
+          >
+            <div>
+              <span
+                className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-3"
+                style={{ background: "rgba(255,193,7,0.15)", color: "#92680a" }}
+              >
+                Age 6
+              </span>
+              <h3
+                style={{
+                  fontFamily: "'Baloo 2', sans-serif",
+                  fontWeight: 800,
+                  fontSize: "2.4rem",
+                  color: "var(--lf-dark)",
+                  lineHeight: 1,
+                }}
+              >
+                Lalli
+              </h3>
+              <div className="mt-2 h-1 w-14 rounded-full" style={{ background: "var(--lf-sunshine)" }} />
             </div>
-            <h3
+
+            <p
               style={{
-                fontFamily: "'Baloo 2', sans-serif",
-                fontSize: "2.4rem",
-                fontWeight: 800,
-                color: "#fff",
-                lineHeight: 1,
+                fontStyle: "italic",
+                color: "rgba(14,10,31,0.6)",
+                fontSize: "0.9rem",
+                lineHeight: 1.7,
               }}
             >
-              Lalli
-            </h3>
-            <p
-              className="mt-2 mb-4"
-              style={{ color: "rgba(255,255,255,0.85)", fontSize: "0.95rem", lineHeight: 1.5 }}
-            >
-              Brave. Curious. Always first to say yes to adventure.
+              "I believe there's always something new to learn — if you look closely enough. Come along, let's explore!"
             </p>
-            <div className="flex flex-wrap gap-2">
-              {["🌟 Natural leader", "💛 Warm-hearted", "🦁 Fearless explorer"].map((t) => (
+
+            <div className="flex flex-col gap-2 mt-auto">
+              {["🌸 Explorer & leader", "🎨 Crayons & curiosity", "💛 Always there for Fafa"].map((t) => (
                 <span
                   key={t}
-                  className="px-3 py-1 rounded-full text-xs font-bold"
-                  style={{ background: "rgba(255,255,255,0.25)", color: "#fff" }}
+                  className="px-3 py-2 rounded-xl text-sm font-semibold"
+                  style={{ background: "rgba(255,193,7,0.1)", color: "#7a5200" }}
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Hero image */}
+          <div
+            className="relative rounded-3xl overflow-hidden shadow-2xl"
+            style={{ minHeight: 480 }}
+          >
+            <Image
+              src="/lf-scene-orchard.jpg"
+              alt="Lalli and Fafa in the orange orchard"
+              fill
+              className="object-cover"
+              style={{ objectPosition: "center 15%" }}
+              priority
+            />
+            {/* Bottom gradient */}
+            <div
+              className="absolute inset-x-0 bottom-0 h-28"
+              style={{ background: "linear-gradient(to top, rgba(14,10,31,0.5), transparent)" }}
+            />
+            {/* Scene label */}
+            <div className="absolute bottom-5 left-0 right-0 flex justify-center">
+              <span
+                className="px-4 py-1.5 rounded-full text-sm font-bold"
+                style={{
+                  background: "rgba(255,255,255,0.92)",
+                  color: "var(--lf-dark)",
+                  backdropFilter: "blur(8px)",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.15)",
+                }}
+              >
+                🍊 The Orange Orchard Adventure
+              </span>
+            </div>
+          </div>
+
+          {/* Fafa card — desktop only */}
+          <div
+            className="hidden md:flex rounded-3xl p-7 flex-col gap-5"
+            style={{
+              background: "#fff",
+              border: "2px solid rgba(0,201,167,0.3)",
+              boxShadow: "0 8px 40px rgba(0,201,167,0.1)",
+            }}
+          >
+            <div>
+              <span
+                className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-3"
+                style={{ background: "rgba(0,201,167,0.12)", color: "#00695c" }}
+              >
+                Age 3
+              </span>
+              <h3
+                style={{
+                  fontFamily: "'Baloo 2', sans-serif",
+                  fontWeight: 800,
+                  fontSize: "2.4rem",
+                  color: "var(--lf-dark)",
+                  lineHeight: 1,
+                }}
+              >
+                Fafa
+              </h3>
+              <div className="mt-2 h-1 w-14 rounded-full" style={{ background: "var(--lf-teal)" }} />
+            </div>
+
+            <p
+              style={{
+                fontStyle: "italic",
+                color: "rgba(14,10,31,0.6)",
+                fontSize: "0.9rem",
+                lineHeight: 1.7,
+              }}
+            >
+              "When you're Fafa, the world is full of wonder! Every day is an adventure — even the puddles."
+            </p>
+
+            <div className="flex flex-col gap-2 mt-auto">
+              {["🐰 Never without his bunny", "💙 Biggest imagination ever", "✨ Finds magic everywhere"].map((t) => (
+                <span
+                  key={t}
+                  className="px-3 py-2 rounded-xl text-sm font-semibold"
+                  style={{ background: "rgba(0,201,167,0.08)", color: "#005a4f" }}
                 >
                   {t}
                 </span>
@@ -106,68 +195,38 @@ export function CharactersSection() {
           </div>
         </div>
 
-        {/* FAFA — right panel, teal */}
-        <div
-          className="relative flex flex-col justify-end overflow-hidden"
-          style={{
-            background: "linear-gradient(160deg, #00C9A7 0%, #007A65 100%)",
-            minHeight: 420,
-          }}
-        >
-          {/* Decorative circle */}
+        {/* Mobile: compact 2-col character cards */}
+        <div className="grid grid-cols-2 gap-4 mt-5 md:hidden">
           <div
-            className="absolute"
-            style={{
-              width: 280, height: 280,
-              borderRadius: "50%",
-              background: "rgba(255,255,255,0.08)",
-              top: -40, left: -60,
-            }}
-          />
-
-          {/* Character art */}
-          <div className="absolute bottom-0 left-6 md:left-10" style={{ zIndex: 2 }}>
-            <Image
-              src="/Fafa_1.jpg"
-              alt="Fafa"
-              width={190}
-              height={260}
-              className="object-contain drop-shadow-2xl rounded-2xl"
-              style={{ mixBlendMode: "multiply" }}
-            />
-          </div>
-
-          {/* Info overlay */}
-          <div className="relative z-10 p-8 md:p-10 self-end" style={{ maxWidth: 280 }}>
-            <div
-              className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-3"
-              style={{ background: "rgba(0,0,0,0.15)", color: "#fff" }}
-            >
-              Age 3
-            </div>
-            <h3
-              style={{
-                fontFamily: "'Baloo 2', sans-serif",
-                fontSize: "2.4rem",
-                fontWeight: 800,
-                color: "#fff",
-                lineHeight: 1,
-              }}
-            >
-              Fafa
-            </h3>
-            <p
-              className="mt-2 mb-4"
-              style={{ color: "rgba(255,255,255,0.85)", fontSize: "0.95rem", lineHeight: 1.5 }}
-            >
-              Thoughtful. Funny. Carries his lucky bunny everywhere.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {["🐰 Bunny's BFF", "💙 Big ideas, small body", "😄 The comic relief"].map((t) => (
+            className="rounded-2xl p-4"
+            style={{ background: "#fff", border: "2px solid rgba(255,193,7,0.25)" }}
+          >
+            <p className="text-xs font-bold mb-1" style={{ color: "#92680a" }}>Lalli · Age 6</p>
+            <div className="h-0.5 w-8 rounded-full mb-3" style={{ background: "var(--lf-sunshine)" }} />
+            <div className="flex flex-col gap-1.5">
+              {["🌟 Leader", "💛 Loyal", "🦁 Fearless"].map((t) => (
                 <span
                   key={t}
-                  className="px-3 py-1 rounded-full text-xs font-bold"
-                  style={{ background: "rgba(255,255,255,0.25)", color: "#fff" }}
+                  className="text-xs px-2 py-1 rounded-lg font-semibold"
+                  style={{ background: "rgba(255,193,7,0.1)", color: "#7a5200" }}
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div
+            className="rounded-2xl p-4"
+            style={{ background: "#fff", border: "2px solid rgba(0,201,167,0.25)" }}
+          >
+            <p className="text-xs font-bold mb-1" style={{ color: "#00695c" }}>Fafa · Age 3</p>
+            <div className="h-0.5 w-8 rounded-full mb-3" style={{ background: "var(--lf-teal)" }} />
+            <div className="flex flex-col gap-1.5">
+              {["🐰 Bunny BFF", "💙 Big ideas", "😄 Funny"].map((t) => (
+                <span
+                  key={t}
+                  className="text-xs px-2 py-1 rounded-lg font-semibold"
+                  style={{ background: "rgba(0,201,167,0.08)", color: "#005a4f" }}
                 >
                   {t}
                 </span>
@@ -177,7 +236,45 @@ export function CharactersSection() {
         </div>
       </div>
 
-      {/* Bottom strip — "your child joins" */}
+      {/* ── Scene strip — auto-scrolling film reel ── */}
+      <div
+        className="overflow-hidden pb-4"
+        style={{ borderTop: "1px solid rgba(0,0,0,0.06)" }}
+      >
+        <p
+          className="text-center text-xs font-bold uppercase tracking-widest pt-4 pb-3"
+          style={{ color: "rgba(14,10,31,0.3)", letterSpacing: "0.15em" }}
+        >
+          Their adventures so far
+        </p>
+        <div className="flex gap-3 animate-marquee" style={{ width: "max-content" }}>
+          {[...scenes, ...scenes].map((scene, i) => (
+            <div
+              key={i}
+              className="flex-shrink-0 rounded-2xl overflow-hidden relative"
+              style={{ width: 220, height: 148 }}
+            >
+              <Image
+                src={scene.src}
+                alt={scene.label}
+                fill
+                className="object-cover transition-transform duration-500 hover:scale-105"
+              />
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: "linear-gradient(to top, rgba(14,10,31,0.7) 0%, transparent 55%)",
+                }}
+              />
+              <p className="absolute bottom-3 left-3 right-3 text-white text-xs font-semibold leading-tight">
+                {scene.label}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── CTA strip ── */}
       <div
         className="flex flex-col sm:flex-row items-center justify-between gap-4 px-8 py-5"
         style={{ background: "var(--lf-dark)" }}
@@ -198,8 +295,7 @@ export function CharactersSection() {
           className="btn-primary"
           style={{ fontSize: "0.9rem", padding: "0.65rem 1.5rem", flexShrink: 0 }}
         >
-          <Sparkles size={15} />
-          Start a story
+          <Sparkles size={15} /> Start a story
         </Link>
       </div>
     </section>
