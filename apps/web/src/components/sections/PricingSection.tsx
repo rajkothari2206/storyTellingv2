@@ -65,12 +65,12 @@ export function PricingSection() {
   return (
     <section
       id="pricing"
-      className="py-10 lg:py-14"
+      className="py-7 lg:py-10"
       style={{ background: "#fff" }}
     >
       <div className="mx-auto px-6" style={{ maxWidth: 1100 }}>
         {/* Header */}
-        <div className="text-center mb-8 flex flex-col items-center gap-3">
+        <div className="text-center mb-5 flex flex-col items-center gap-2">
           <span
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider"
             style={{ background: "rgba(249,199,0,0.15)", color: "#b8860b" }}
@@ -121,7 +121,7 @@ export function PricingSection() {
                 </div>
               )}
 
-              <div className="p-8 flex flex-col gap-5 flex-1">
+              <div className="p-5 flex flex-col gap-4 flex-1">
                 {/* Name & price */}
                 <div>
                   <p

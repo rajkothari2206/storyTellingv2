@@ -69,10 +69,10 @@ const features = [
 
 export function FeaturesSection() {
   return (
-    <section className="py-10 lg:py-14" style={{ background: "#fff" }}>
+    <section className="py-7 lg:py-10" style={{ background: "#fff" }}>
       <div className="mx-auto px-6" style={{ maxWidth: 1200 }}>
         {/* Header */}
-        <div className="text-center mb-8 flex flex-col items-center gap-3">
+        <div className="text-center mb-5 flex flex-col items-center gap-2">
           <span
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider"
             style={{ background: "rgba(26,191,166,0.12)", color: "var(--lf-teal)" }}
@@ -102,7 +102,7 @@ export function FeaturesSection() {
             return (
               <div
                 key={i}
-                className="group flex flex-col gap-4 p-6 rounded-3xl transition-all duration-200 hover:-translate-y-1"
+                className="group flex flex-col gap-3 p-4 rounded-3xl transition-all duration-200 hover:-translate-y-1"
                 style={{
                   background: "var(--lf-cream)",
                   border: "1.5px solid rgba(0,0,0,0.04)",

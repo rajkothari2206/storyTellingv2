@@ -40,12 +40,12 @@ export function ShopSection() {
   return (
     <section
       id="shop"
-      className="py-20 lg:py-28"
+      className="py-7 lg:py-10"
       style={{ background: "var(--lf-peach)" }}
     >
       <div className="mx-auto px-6" style={{ maxWidth: 1200 }}>
         {/* Header */}
-        <div className="text-center mb-14 flex flex-col items-center gap-3">
+        <div className="text-center mb-5 flex flex-col items-center gap-2">
           <span
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider"
             style={{ background: "rgba(255,107,53,0.15)", color: "var(--lf-mango)" }}
@@ -83,7 +83,7 @@ export function ShopSection() {
               }}
             >
               {/* Image */}
-              <div className="relative overflow-hidden" style={{ height: 220 }}>
+              <div className="relative overflow-hidden" style={{ height: 175 }}>
                 <Image
                   src={p.image}
                   alt={p.title}
@@ -100,7 +100,7 @@ export function ShopSection() {
               </div>
 
               {/* Info */}
-              <div className="p-6 flex flex-col gap-3 flex-1">
+              <div className="p-4 flex flex-col gap-2 flex-1">
                 <h3
                   style={{
                     fontFamily: "'Baloo 2', sans-serif",

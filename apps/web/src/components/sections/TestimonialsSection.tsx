@@ -69,10 +69,10 @@ function Stars({ count }: { count: number }) {
 
 export function TestimonialsSection() {
   return (
-    <section className="py-10 lg:py-14" style={{ background: "var(--lf-mint)" }}>
+    <section className="py-7 lg:py-10" style={{ background: "var(--lf-mint)" }}>
       <div className="mx-auto px-6" style={{ maxWidth: 1200 }}>
         {/* Header */}
-        <div className="text-center mb-8 flex flex-col items-center gap-3">
+        <div className="text-center mb-5 flex flex-col items-center gap-2">
           <span
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider"
             style={{ background: "rgba(249,199,0,0.15)", color: "#b8860b" }}
@@ -97,7 +97,7 @@ export function TestimonialsSection() {
           {testimonials.map((t, i) => (
             <div
               key={i}
-              className="break-inside-avoid rounded-3xl p-6 flex flex-col gap-4"
+              className="break-inside-avoid rounded-3xl p-4 flex flex-col gap-3"
               style={{
                 background: t.bg,
                 border: "1.5px solid rgba(0,0,0,0.05)",

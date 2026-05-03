@@ -67,9 +67,9 @@ function FAQItem({ q, a }: { q: string; a: string }) {
 
 export function FAQSection() {
   return (
-    <section className="py-10 lg:py-14" style={{ background: "var(--lf-peach)" }}>
+    <section className="py-7 lg:py-10" style={{ background: "var(--lf-peach)" }}>
       <div className="mx-auto px-6" style={{ maxWidth: 760 }}>
-        <div className="text-center mb-8 flex flex-col items-center gap-2">
+        <div className="text-center mb-5 flex flex-col items-center gap-2">
           <h2
             style={{
               fontFamily: "'Baloo 2', sans-serif",

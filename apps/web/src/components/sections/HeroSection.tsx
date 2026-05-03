@@ -44,7 +44,7 @@ export function HeroSection() {
         <div className="grid lg:grid-cols-[1fr_480px] items-center gap-0">
 
           {/* ── Left: copy ── */}
-          <div className="flex flex-col gap-5 py-12 lg:py-16 text-center lg:text-left">
+          <div className="flex flex-col gap-4 py-8 lg:py-10 text-center lg:text-left">
 
             {/* Badge */}
             <div className="flex justify-center lg:justify-start">
@@ -158,7 +158,7 @@ export function HeroSection() {
           </div>
 
           {/* ── Right: Lalli & Fafa — desktop ── */}
-          <div className="relative hidden lg:flex items-end justify-center" style={{ height: 540 }}>
+          <div className="relative hidden lg:flex items-end justify-center" style={{ height: 460 }}>
 
             {/* Warm glow that echoes the characters' own aura */}
             <div
@@ -178,8 +178,8 @@ export function HeroSection() {
               <Image
                 src="/lf-hero.png"
                 alt="Lalli and Fafa — your child's forever story companions"
-                width={480}
-                height={540}
+                width={400}
+                height={460}
                 className="object-contain"
                 style={{ objectPosition: "bottom", maxWidth: "100%" }}
                 priority
@@ -202,31 +202,9 @@ export function HeroSection() {
               </span>
             </div>
 
-            {/* Floating info card — top left of image */}
-            <div
-              className="absolute top-10 left-2 z-20 rounded-2xl px-4 py-3 shadow-xl"
-              style={{
-                background: "rgba(255,255,255,0.95)",
-                backdropFilter: "blur(16px)",
-                border: "1px solid rgba(255,255,255,1)",
-                maxWidth: 180,
-              }}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <span style={{ fontSize: 18 }}>✨</span>
-                <span style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 700, fontSize: 12, color: "var(--lf-dark)", lineHeight: 1.3 }}>
-                  Personalised<br />just for your child
-                </span>
-              </div>
-              <div className="flex gap-1 mt-1.5">
-                {["🌟","🌙","🎨","📖"].map(e => (
-                  <span key={e} className="text-sm">{e}</span>
-                ))}
-              </div>
-            </div>
-
-            {/* Floating sparkle — top right */}
-            <span className="animate-float-delay absolute top-14 right-6 text-2xl select-none z-10">✨</span>
+            {/* Floating sparkles */}
+            <span className="animate-float-delay absolute top-10 right-6 text-2xl select-none z-10">✨</span>
+            <span className="animate-float absolute top-24 right-10 text-lg select-none z-10">⭐</span>
           </div>
 
           {/* ── Mobile: characters below copy ── */}

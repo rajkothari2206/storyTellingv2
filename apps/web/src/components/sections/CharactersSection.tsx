@@ -24,7 +24,7 @@ export function CharactersSection() {
     <section id="characters" style={{ background: "#FFFCF5" }}>
 
       {/* ── Header ── */}
-      <div className="text-center pt-12 pb-8 px-6">
+      <div className="text-center pt-7 pb-5 px-6">
         <span
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider"
           style={{ background: "rgba(255,193,7,0.15)", color: "#92680a" }}
@@ -52,12 +52,12 @@ export function CharactersSection() {
       </div>
 
       {/* ── Main: Lalli card | hero image | Fafa card ── */}
-      <div className="mx-auto px-6 pb-10" style={{ maxWidth: 1200 }}>
+      <div className="mx-auto px-6 pb-6" style={{ maxWidth: 1200 }}>
         <div className="grid md:grid-cols-[220px_1fr_220px] gap-6 items-stretch">
 
           {/* Lalli card — desktop only */}
           <div
-            className="hidden md:flex rounded-3xl p-7 flex-col gap-5"
+            className="hidden md:flex rounded-3xl p-5 flex-col gap-4"
             style={{
               background: "#fff",
               border: "2px solid rgba(255,193,7,0.3)",
@@ -112,7 +112,7 @@ export function CharactersSection() {
           {/* Hero image */}
           <div
             className="relative rounded-3xl overflow-hidden shadow-2xl"
-            style={{ minHeight: 480 }}
+            style={{ minHeight: 400 }}
           >
             <Image
               src="/lf-scene-orchard.png"
@@ -145,7 +145,7 @@ export function CharactersSection() {
 
           {/* Fafa card — desktop only */}
           <div
-            className="hidden md:flex rounded-3xl p-7 flex-col gap-5"
+            className="hidden md:flex rounded-3xl p-5 flex-col gap-4"
             style={{
               background: "#fff",
               border: "2px solid rgba(0,201,167,0.3)",
