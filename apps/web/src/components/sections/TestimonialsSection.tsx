@@ -8,7 +8,7 @@ const testimonials = [
       "Bedtime used to be a battle. Now my son asks to go to bed early! Hearing his own name in the stories makes him feel so special. Best ₹199 I've spent this month.",
     rating: 5,
     emoji: "👨",
-    bg: "rgba(249,199,0,0.08)",
+    accent: "#FFC107",
   },
   {
     name: "Priya M.",
@@ -17,7 +17,7 @@ const testimonials = [
       "My 5-year-old refuses English books, but she listens to Lalli Fafa stories in Hindi every single day. Finally something that teaches values in our own language.",
     rating: 5,
     emoji: "👩",
-    bg: "rgba(26,191,166,0.08)",
+    accent: "#00C9A7",
   },
   {
     name: "Rekha K.",
@@ -26,7 +26,7 @@ const testimonials = [
       "The only app that actually teaches them something while keeping them quiet. The personalisation is genius — they think Lalli and Fafa are their real friends!",
     rating: 5,
     emoji: "👩‍👧",
-    bg: "rgba(255,107,53,0.08)",
+    accent: "#FF5722",
   },
   {
     name: "Vikram T.",
@@ -35,7 +35,7 @@ const testimonials = [
       "My mother-in-law (who speaks only Hindi) now listens to stories with the kids. It's become a family ritual every evening. Amazing product.",
     rating: 5,
     emoji: "👨‍👦",
-    bg: "rgba(109,187,242,0.12)",
+    accent: "#2979FF",
   },
   {
     name: "Ananya R.",
@@ -44,7 +44,7 @@ const testimonials = [
       "My 4-year-old now talks about 'courage' and 'kindness' — words he picked up from the stories. The lessons really do stick. Highly recommend.",
     rating: 5,
     emoji: "🧕",
-    bg: "rgba(249,199,0,0.08)",
+    accent: "#7C4DFF",
   },
   {
     name: "Rohan & Meena",
@@ -53,7 +53,7 @@ const testimonials = [
       "We play a story every night at 8pm. It's our daughter's signal that bedtime is coming — and she loves it. Screen time that actually helps.",
     rating: 5,
     emoji: "👨‍👩",
-    bg: "rgba(26,191,166,0.08)",
+    accent: "#00C9A7",
   },
 ];
 
@@ -69,7 +69,7 @@ function Stars({ count }: { count: number }) {
 
 export function TestimonialsSection() {
   return (
-    <section className="py-7 lg:py-10" style={{ background: "var(--lf-mint)" }}>
+    <section className="py-7 lg:py-10" style={{ background: "linear-gradient(160deg, #B8F0E6 0%, #D8F8F2 100%)" }}>
       <div className="mx-auto px-6" style={{ maxWidth: 1200 }}>
         {/* Header */}
         <div className="text-center mb-5 flex flex-col items-center gap-2">
@@ -99,8 +99,12 @@ export function TestimonialsSection() {
               key={i}
               className="break-inside-avoid rounded-3xl p-4 flex flex-col gap-3"
               style={{
-                background: t.bg,
-                border: "1.5px solid rgba(0,0,0,0.05)",
+                background: "#fff",
+                borderTop: "1.5px solid rgba(0,0,0,0.05)",
+                borderRight: "1.5px solid rgba(0,0,0,0.05)",
+                borderBottom: "1.5px solid rgba(0,0,0,0.05)",
+                borderLeft: `4px solid ${t.accent}`,
+                boxShadow: `0 4px 24px ${t.accent}22`,
               }}
             >
               <Stars count={t.rating} />
@@ -117,7 +121,7 @@ export function TestimonialsSection() {
               <div className="flex items-center gap-3 mt-auto pt-2" style={{ borderTop: "1px solid rgba(0,0,0,0.05)" }}>
                 <div
                   className="flex items-center justify-center rounded-full text-xl"
-                  style={{ width: 40, height: 40, background: "rgba(255,255,255,0.8)" }}
+                  style={{ width: 40, height: 40, background: `${t.accent}22` }}
                 >
                   {t.emoji}
                 </div>

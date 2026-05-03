@@ -41,7 +41,7 @@ export function ShopSection() {
     <section
       id="shop"
       className="py-7 lg:py-10"
-      style={{ background: "var(--lf-peach)" }}
+      style={{ background: "linear-gradient(135deg, #FFF8E1 0%, #FFEDB0 100%)" }}
     >
       <div className="mx-auto px-6" style={{ maxWidth: 1200 }}>
         {/* Header */}

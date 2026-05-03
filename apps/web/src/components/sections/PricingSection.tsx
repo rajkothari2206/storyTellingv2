@@ -66,7 +66,7 @@ export function PricingSection() {
     <section
       id="pricing"
       className="py-7 lg:py-10"
-      style={{ background: "#fff" }}
+      style={{ background: "linear-gradient(160deg, #F3EEFF 0%, #EBF2FF 100%)" }}
     >
       <div className="mx-auto px-6" style={{ maxWidth: 1100 }}>
         {/* Header */}

@@ -21,7 +21,7 @@ const scenes = [
 
 export function CharactersSection() {
   return (
-    <section id="characters" style={{ background: "#FFFCF5" }}>
+    <section id="characters" style={{ background: "linear-gradient(160deg, #FFF8E7 0%, #FFE8A8 100%)" }}>
 
       {/* ── Header ── */}
       <div className="text-center pt-7 pb-5 px-6">

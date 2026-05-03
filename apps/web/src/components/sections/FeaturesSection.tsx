@@ -69,7 +69,7 @@ const features = [
 
 export function FeaturesSection() {
   return (
-    <section className="py-7 lg:py-10" style={{ background: "#fff" }}>
+    <section className="py-7 lg:py-10" style={{ background: "linear-gradient(150deg, #E6FAF6 0%, #F0FFFD 100%)" }}>
       <div className="mx-auto px-6" style={{ maxWidth: 1200 }}>
         {/* Header */}
         <div className="text-center mb-5 flex flex-col items-center gap-2">
@@ -104,8 +104,9 @@ export function FeaturesSection() {
                 key={i}
                 className="group flex flex-col gap-3 p-4 rounded-3xl transition-all duration-200 hover:-translate-y-1"
                 style={{
-                  background: "var(--lf-cream)",
-                  border: "1.5px solid rgba(0,0,0,0.04)",
+                  background: "#fff",
+                  border: `1.5px solid ${f.color}22`,
+                  boxShadow: `0 4px 20px ${f.color}18`,
                   cursor: "default",
                 }}
               >

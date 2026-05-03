@@ -67,7 +67,7 @@ function FAQItem({ q, a }: { q: string; a: string }) {
 
 export function FAQSection() {
   return (
-    <section className="py-7 lg:py-10" style={{ background: "var(--lf-peach)" }}>
+    <section className="py-7 lg:py-10" style={{ background: "linear-gradient(160deg, #FFF0E6 0%, #FFE4D4 100%)" }}>
       <div className="mx-auto px-6" style={{ maxWidth: 760 }}>
         <div className="text-center mb-5 flex flex-col items-center gap-2">
           <h2
