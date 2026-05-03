@@ -50,15 +50,22 @@ export function SignUpForm() {
       // Use the production domain so the callbackURL is always trusted,
       // regardless of which Vercel preview URL we're running on.
       const callbackURL = "https://www.lallifafa.com/onboarding";
-      await authClient.signIn.social(
-        { provider: "google", callbackURL },
-        {
-          onError: (ctx) => {
-            toast.error(ctx.error.message ?? "Google sign up failed.");
-            setGoogleLoading(false);
-          },
-        }
-      );
+
+      // Fetch the Google OAuth URL directly — avoids the crossDomainClient popup
+      // which gets blocked by browsers after an async await (user-gesture expiry).
+      // crossDomainClient stays in the plugins array so it can still process the
+      // inbound session token in the URL after Google redirects back.
+      const res = await fetch("/api/auth/sign-in/social", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider: "google", callbackURL }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No redirect URL from auth server");
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Google sign up failed.";
       toast.error(msg);
