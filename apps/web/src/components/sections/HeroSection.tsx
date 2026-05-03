@@ -14,7 +14,7 @@ export function HeroSection() {
   return (
     <section
       className="relative overflow-hidden"
-      style={{ paddingTop: 72, background: "var(--lf-cream)" }}
+      style={{ paddingTop: 76, background: "var(--lf-cream)" }}
     >
       {/* Soft background gradients */}
       <div className="absolute inset-0 -z-10 pointer-events-none">

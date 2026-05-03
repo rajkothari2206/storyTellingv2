@@ -37,16 +37,25 @@ export function SiteHeader() {
     >
       <div
         className="mx-auto flex items-center justify-between px-6"
-        style={{ maxWidth: 1200, height: 72 }}
+        style={{ maxWidth: 1200, height: 76 }}
       >
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-          <div className="relative" style={{ width: 44, height: 44 }}>
+        <Link href="/" className="flex items-center gap-3 flex-shrink-0">
+          <div
+            className="relative flex-shrink-0 overflow-hidden"
+            style={{
+              width: 58,
+              height: 58,
+              borderRadius: 14,
+              background: "#131020",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
+            }}
+          >
             <Image
-              src="/logoNoBg.png"
+              src="/lf-logo.png"
               alt="Lalli Fafa"
               fill
-              className="object-contain"
+              className="object-contain scale-110"
               priority
             />
           </div>
@@ -54,9 +63,10 @@ export function SiteHeader() {
             className="font-bold hidden sm:block"
             style={{
               fontFamily: "'Baloo 2', sans-serif",
-              fontSize: 20,
+              fontSize: 22,
               color: "var(--lf-dark)",
               letterSpacing: "-0.01em",
+              lineHeight: 1,
             }}
           >
             Lalli <span style={{ color: "var(--lf-teal)" }}>Fafa</span>

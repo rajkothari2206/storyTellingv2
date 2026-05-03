@@ -60,21 +60,31 @@ export function SiteFooter() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-10">
           {/* Brand column */}
           <div className="md:col-span-2 flex flex-col gap-5">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="relative rounded-2xl overflow-hidden" style={{ width: 44, height: 44, background: "var(--lf-cream)" }}>
+            <Link href="/" className="flex items-center gap-3">
+              <div
+                className="relative flex-shrink-0 overflow-hidden"
+                style={{
+                  width: 58,
+                  height: 58,
+                  borderRadius: 14,
+                  background: "#131020",
+                  boxShadow: "0 2px 16px rgba(0,0,0,0.4)",
+                }}
+              >
                 <Image
-                  src="/logoNoBg.png"
+                  src="/lf-logo.png"
                   alt="Lalli Fafa"
                   fill
-                  className="object-contain p-1"
+                  className="object-contain scale-110"
                 />
               </div>
               <span
                 style={{
                   fontFamily: "'Baloo 2', sans-serif",
-                  fontSize: 20,
+                  fontSize: 22,
                   fontWeight: 700,
                   color: "#fff",
+                  lineHeight: 1,
                 }}
               >
                 Lalli <span style={{ color: "var(--lf-teal)" }}>Fafa</span>
