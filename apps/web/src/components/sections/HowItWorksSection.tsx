@@ -11,8 +11,8 @@ const steps = [
     colorFull: "var(--lf-sunshine)",
     bg: "rgba(255,193,7,0.12)",
     border: "rgba(255,193,7,0.35)",
-    image: "/lf-scene-planets.png",
-    imgPosition: "center 15%",
+    image: "/lf-scene-krishna.png",
+    imgPosition: "center 20%",
   },
   {
     number: "02",
@@ -24,8 +24,8 @@ const steps = [
     colorFull: "var(--lf-teal)",
     bg: "rgba(0,201,167,0.1)",
     border: "rgba(0,201,167,0.35)",
-    image: "/lf-scene-jungle.png",
-    imgPosition: "center 20%",
+    image: "/lf-scene-kite.png",
+    imgPosition: "center 25%",
   },
   {
     number: "03",
@@ -37,8 +37,8 @@ const steps = [
     colorFull: "var(--lf-mango)",
     bg: "rgba(255,87,34,0.1)",
     border: "rgba(255,87,34,0.35)",
-    image: "/lf-scene-bedtime.png",
-    imgPosition: "center 10%",
+    image: "/lf-scene-boardgame.png",
+    imgPosition: "center 15%",
   },
 ];
 
