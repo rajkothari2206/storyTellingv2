@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X, Sparkles } from "lucide-react";
+import { Menu, X, Sparkles, LayoutDashboard } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 
 const navLinks = [
   { label: "Stories", href: "/stories" },
@@ -50,6 +51,8 @@ const socials = [
 export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const session = authClient.useSession();
+  const isLoggedIn = !!session.data;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -144,26 +147,39 @@ export function SiteHeader() {
           </div>
 
           {/* Auth + CTA */}
-          <Link
-            href="/sign-in"
-            style={{
-              color: "var(--lf-dark)",
-              fontFamily: "'Nunito', sans-serif",
-              fontWeight: 600,
-              fontSize: 14,
-              textDecoration: "none",
-            }}
-          >
-            Sign in
-          </Link>
-          <Link
-            href="/sign-up"
-            className="btn-primary"
-            style={{ fontSize: 14, padding: "0.5rem 1.25rem" }}
-          >
-            <Sparkles size={14} />
-            Start Free
-          </Link>
+          {isLoggedIn ? (
+            <Link
+              href="/dashboard"
+              className="btn-primary"
+              style={{ fontSize: 14, padding: "0.5rem 1.25rem" }}
+            >
+              <LayoutDashboard size={14} />
+              Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/sign-in"
+                style={{
+                  color: "var(--lf-dark)",
+                  fontFamily: "'Nunito', sans-serif",
+                  fontWeight: 600,
+                  fontSize: 14,
+                  textDecoration: "none",
+                }}
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/sign-up"
+                className="btn-primary"
+                style={{ fontSize: 14, padding: "0.5rem 1.25rem" }}
+              >
+                <Sparkles size={14} />
+                Start Free
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile hamburger */}
@@ -200,21 +216,34 @@ export function SiteHeader() {
               </Link>
             ))}
             <div className="flex flex-col gap-2 mt-4">
-              <Link
-                href="/sign-in"
-                onClick={() => setMenuOpen(false)}
-                className="btn-ghost w-full text-center"
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/sign-up"
-                onClick={() => setMenuOpen(false)}
-                className="btn-primary w-full text-center"
-              >
-                <Sparkles size={16} />
-                Start Free
-              </Link>
+              {isLoggedIn ? (
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMenuOpen(false)}
+                  className="btn-primary w-full text-center"
+                >
+                  <LayoutDashboard size={16} />
+                  Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/sign-in"
+                    onClick={() => setMenuOpen(false)}
+                    className="btn-ghost w-full text-center"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/sign-up"
+                    onClick={() => setMenuOpen(false)}
+                    className="btn-primary w-full text-center"
+                  >
+                    <Sparkles size={16} />
+                    Start Free
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Social icons — mobile */}
