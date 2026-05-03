@@ -132,11 +132,11 @@ export default function StoryPage({ params }: Props) {
                   <div className="flex flex-col gap-10">
                     {((story as { sceneMetadata: Array<{ sceneNumber: number; text: string; imagePrompt?: string }> }).sceneMetadata).map((scene, i) => (
                       <div key={i} className="flex flex-col gap-4">
-                        {/* Scene image */}
-                        {imageUrls && (imageUrls as string[])[i] && (
+                        {/* Scene image — imageUrls is an array of {url, sceneNumber, ...} objects */}
+                        {imageUrls && (imageUrls as Array<{ url?: string | null }>)[i]?.url && (
                           <div className="relative w-full rounded-2xl overflow-hidden" style={{ aspectRatio: "16/9" }}>
                             <Image
-                              src={(imageUrls as string[])[i]}
+                              src={(imageUrls as Array<{ url: string }>)[i].url}
                               alt={`Scene ${i + 1}`}
                               fill
                               className="object-cover"
