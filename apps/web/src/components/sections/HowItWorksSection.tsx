@@ -110,13 +110,12 @@ export function HowItWorksSection() {
               }}
             >
               {/* Scene image */}
-              <div className="relative flex-shrink-0" style={{ height: 170 }}>
+              <div className="relative flex-shrink-0" style={{ height: 200, background: step.bg }}>
                 <Image
                   src={step.image}
                   alt={step.title}
                   fill
-                  className="object-cover"
-                  style={{ objectPosition: step.imgPosition }}
+                  className="object-contain"
                 />
                 {/* Label badge over image */}
                 <div className="absolute top-3 left-3">
