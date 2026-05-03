@@ -108,21 +108,25 @@ export function CharactersSection() {
 
           {/* Hero image */}
           <div
-            className="relative rounded-3xl overflow-hidden shadow-2xl"
-            style={{ minHeight: 480 }}
+            className="relative rounded-3xl overflow-hidden shadow-2xl flex items-end justify-center"
+            style={{
+              minHeight: 480,
+              background: "linear-gradient(160deg, rgba(255,193,7,0.18) 0%, rgba(0,201,167,0.15) 100%)",
+            }}
           >
             <Image
-              src="/lf-scene-orchard.jpg"
-              alt="Lalli and Fafa in the orange orchard"
-              fill
-              className="object-cover"
-              style={{ objectPosition: "center 15%" }}
+              src="/LalliFafa.png"
+              alt="Lalli and Fafa — best friends on every adventure"
+              width={420}
+              height={480}
+              className="object-contain"
+              style={{ mixBlendMode: "multiply", width: "100%", height: "100%", objectFit: "contain", objectPosition: "bottom" }}
               priority
             />
             {/* Bottom gradient */}
             <div
-              className="absolute inset-x-0 bottom-0 h-28"
-              style={{ background: "linear-gradient(to top, rgba(14,10,31,0.5), transparent)" }}
+              className="absolute inset-x-0 bottom-0 h-20"
+              style={{ background: "linear-gradient(to top, rgba(255,193,7,0.12), transparent)" }}
             />
             {/* Scene label */}
             <div className="absolute bottom-5 left-0 right-0 flex justify-center">
@@ -135,7 +139,7 @@ export function CharactersSection() {
                   boxShadow: "0 2px 12px rgba(0,0,0,0.15)",
                 }}
               >
-                🍊 The Orange Orchard Adventure
+                ✨ Your child's forever companions
               </span>
             </div>
           </div>
