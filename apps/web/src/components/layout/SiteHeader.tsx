@@ -79,9 +79,6 @@ export function SiteHeader() {
             style={{
               width: 58,
               height: 58,
-              borderRadius: 14,
-              background: "#131020",
-              boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
             }}
           >
             <Image

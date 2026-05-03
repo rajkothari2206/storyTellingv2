@@ -66,9 +66,6 @@ export function SiteFooter() {
                 style={{
                   width: 58,
                   height: 58,
-                  borderRadius: 14,
-                  background: "#131020",
-                  boxShadow: "0 2px 16px rgba(0,0,0,0.4)",
                 }}
               >
                 <Image
