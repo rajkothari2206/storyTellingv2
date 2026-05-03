@@ -1,33 +1,44 @@
+import Image from "next/image";
+
 const steps = [
   {
     number: "01",
     emoji: "👶",
+    label: "Personalise",
     title: "Tell us about your child",
-    description:
-      "Enter your child's name, age, favourite colour, and animal. Takes 2 minutes — and that's what makes every story feel like magic.",
-    color: "var(--lf-sunshine)",
-    bg: "rgba(249,199,0,0.15)",
-    border: "rgba(249,199,0,0.3)",
+    description: "Name, age, favourite colour & animal. Takes 2 minutes — and turns every story into magic.",
+    color: "#b8860b",
+    colorFull: "var(--lf-sunshine)",
+    bg: "rgba(255,193,7,0.12)",
+    border: "rgba(255,193,7,0.35)",
+    image: "/lf-scene-planets.png",
+    imgPosition: "center 15%",
   },
   {
     number: "02",
     emoji: "✨",
+    label: "Create",
     title: "Pick a theme & lesson",
-    description:
-      "Choose from adventures, friendship, courage, kindness and more. Our AI weaves your child into the story as the hero alongside Lalli & Fafa.",
-    color: "var(--lf-teal)",
-    bg: "rgba(0,201,167,0.15)",
-    border: "rgba(0,201,167,0.3)",
+    description: "Adventures, friendship, courage, kindness and more. Your child becomes the hero alongside Lalli & Fafa.",
+    color: "#00695c",
+    colorFull: "var(--lf-teal)",
+    bg: "rgba(0,201,167,0.1)",
+    border: "rgba(0,201,167,0.35)",
+    image: "/lf-scene-jungle.png",
+    imgPosition: "center 20%",
   },
   {
     number: "03",
     emoji: "🎧",
+    label: "Enjoy",
     title: "Watch, listen & grow",
-    description:
-      "In under 2 minutes, a fully narrated story with illustrations is ready — in English or Hindi. Hit play and let the magic begin.",
-    color: "var(--lf-mango)",
-    bg: "rgba(255,87,34,0.15)",
-    border: "rgba(255,87,34,0.3)",
+    description: "Ready in under 2 minutes — fully narrated with illustrations in English or Hindi. Hit play!",
+    color: "#bf360c",
+    colorFull: "var(--lf-mango)",
+    bg: "rgba(255,87,34,0.1)",
+    border: "rgba(255,87,34,0.35)",
+    image: "/lf-scene-bedtime.png",
+    imgPosition: "center 10%",
   },
 ];
 
@@ -36,96 +47,144 @@ export function HowItWorksSection() {
     <section
       id="how-it-works"
       className="py-7 lg:py-10"
-      style={{ background: "linear-gradient(135deg, #0E0A1F 0%, #1a1040 100%)" }}
+      style={{ background: "linear-gradient(160deg, #FFFDE8 0%, #F2FFF9 100%)" }}
     >
-      <div className="mx-auto px-6" style={{ maxWidth: 1200 }}>
+      <div className="mx-auto px-6" style={{ maxWidth: 1100 }}>
+
         {/* Header */}
-        <div className="text-center mb-6 flex flex-col items-center gap-2">
+        <div className="text-center mb-7 flex flex-col items-center gap-2">
           <span
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider"
-            style={{ background: "rgba(255,87,34,0.2)", color: "#ff8c69" }}
+            style={{ background: "rgba(255,87,34,0.12)", color: "#bf360c" }}
           >
             How it works
           </span>
           <h2
             style={{
               fontFamily: "'Baloo 2', sans-serif",
-              fontSize: "clamp(2rem, 4vw, 3rem)",
+              fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)",
               fontWeight: 800,
-              color: "#fff",
+              color: "var(--lf-dark)",
+              lineHeight: 1.15,
             }}
           >
-            A personalised story in{" "}
+            Your child's story in{" "}
             <span className="text-gradient-sunshine">3 simple steps</span>
           </h2>
-          <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "1.05rem", maxWidth: 500 }}>
-            No complicated setup. Just pure storytelling in minutes.
-          </p>
         </div>
 
-        {/* Steps */}
-        <div className="grid md:grid-cols-3 gap-6 lg:gap-8 relative">
-          {/* Connector line — desktop only */}
-          <div
-            className="hidden md:block absolute top-12 left-1/6 right-1/6 h-0.5 -z-0"
-            style={{ background: "linear-gradient(90deg, var(--lf-sunshine), var(--lf-teal), var(--lf-mango))", opacity: 0.4 }}
-          />
+        {/* Steps — image cards with connecting arrows */}
+        <div className="grid md:grid-cols-3 gap-5 lg:gap-6 relative">
+
+          {/* Connecting arrows — desktop only */}
+          <div className="hidden md:flex absolute inset-0 items-center justify-around pointer-events-none" style={{ zIndex: 10 }}>
+            {[0, 1].map((i) => (
+              <div
+                key={i}
+                className="flex items-center justify-center rounded-full"
+                style={{
+                  width: 32,
+                  height: 32,
+                  background: "#fff",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
+                  marginLeft: i === 0 ? "calc(33.33% - 16px)" : "calc(33.33% - 16px)",
+                  position: "absolute",
+                  left: i === 0 ? "calc(33.33% - 16px)" : "calc(66.66% - 16px)",
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M3 7h8M8 4l3 3-3 3" stroke="var(--lf-teal)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+            ))}
+          </div>
 
           {steps.map((step, i) => (
             <div
               key={i}
-              className="relative flex flex-col gap-3 rounded-3xl p-5"
+              className="flex flex-col rounded-3xl overflow-hidden transition-all duration-200 hover:-translate-y-1"
               style={{
-                background: "rgba(255,255,255,0.06)",
-                border: `1px solid ${step.border}`,
-                boxShadow: "0 4px 32px rgba(0,0,0,0.25)",
-                backdropFilter: "blur(8px)",
+                background: "#fff",
+                border: `1.5px solid ${step.border}`,
+                boxShadow: `0 6px 28px ${step.border}66`,
               }}
             >
-              {/* Step number badge */}
-              <div className="flex items-center gap-3">
-                <div
-                  className="flex items-center justify-center rounded-full text-2xl"
-                  style={{ width: 56, height: 56, background: step.bg, flexShrink: 0 }}
-                >
-                  {step.emoji}
+              {/* Scene image */}
+              <div className="relative flex-shrink-0" style={{ height: 170 }}>
+                <Image
+                  src={step.image}
+                  alt={step.title}
+                  fill
+                  className="object-cover"
+                  style={{ objectPosition: step.imgPosition }}
+                />
+                {/* Label badge over image */}
+                <div className="absolute top-3 left-3">
+                  <span
+                    className="px-3 py-1 rounded-full text-xs font-bold"
+                    style={{ background: step.colorFull, color: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}
+                  >
+                    Step {step.number} · {step.label}
+                  </span>
                 </div>
-                <span
-                  style={{
-                    fontFamily: "'Baloo 2', sans-serif",
-                    fontSize: "2rem",
-                    fontWeight: 800,
-                    color: step.color,
-                    opacity: 0.4,
-                    lineHeight: 1,
-                  }}
-                >
-                  {step.number}
-                </span>
               </div>
 
-              <h3
-                style={{
-                  fontFamily: "'Baloo 2', sans-serif",
-                  fontSize: "1.3rem",
-                  fontWeight: 700,
-                  color: "#fff",
-                }}
-              >
-                {step.title}
-              </h3>
-              <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.95rem", lineHeight: 1.7 }}>
-                {step.description}
-              </p>
-
-              {/* Bottom accent */}
+              {/* Content */}
               <div
-                className="absolute bottom-0 left-8 right-8 h-1 rounded-full"
-                style={{ background: step.color, opacity: 0.7 }}
-              />
+                className="flex flex-col gap-2 p-5 flex-1"
+                style={{ background: step.bg }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{step.emoji}</span>
+                  <h3
+                    style={{
+                      fontFamily: "'Baloo 2', sans-serif",
+                      fontSize: "1.1rem",
+                      fontWeight: 700,
+                      color: "var(--lf-dark)",
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    {step.title}
+                  </h3>
+                </div>
+                <p style={{ color: "rgba(14,10,31,0.6)", fontSize: "0.88rem", lineHeight: 1.65 }}>
+                  {step.description}
+                </p>
+              </div>
             </div>
           ))}
         </div>
+
+        {/* Bottom strip — Lalli & Fafa + CTA */}
+        <div
+          className="mt-6 rounded-2xl flex flex-col sm:flex-row items-center gap-4 px-6 py-4"
+          style={{ background: "rgba(255,193,7,0.12)", border: "1.5px solid rgba(255,193,7,0.3)" }}
+        >
+          <div className="relative flex-shrink-0" style={{ width: 72, height: 72 }}>
+            <Image src="/lf-hero.png" alt="Lalli and Fafa" fill className="object-contain" style={{ mixBlendMode: "multiply" }} />
+          </div>
+          <p
+            style={{
+              fontFamily: "'Baloo 2', sans-serif",
+              fontWeight: 700,
+              fontSize: "1rem",
+              color: "var(--lf-dark)",
+              flex: 1,
+            }}
+          >
+            Lalli &amp; Fafa are waiting — your child's first story is{" "}
+            <span style={{ color: "#b8860b" }}>just 3 minutes away.</span>
+          </p>
+          <a
+            href="/sign-up"
+            className="btn-primary flex-shrink-0"
+            style={{ fontSize: "0.9rem", padding: "0.6rem 1.4rem" }}
+          >
+            ✨ Try it free
+          </a>
+        </div>
+
       </div>
     </section>
   );
