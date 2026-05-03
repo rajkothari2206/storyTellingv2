@@ -11,8 +11,8 @@ const steps = [
     colorFull: "var(--lf-sunshine)",
     bg: "rgba(255,193,7,0.12)",
     border: "rgba(255,193,7,0.35)",
-    image: "/lf-scene-krishna.png",
-    imgPosition: "center 20%",
+    image: "/land1.png",
+    imgPosition: "center 30%",
   },
   {
     number: "02",
@@ -24,8 +24,8 @@ const steps = [
     colorFull: "var(--lf-teal)",
     bg: "rgba(0,201,167,0.1)",
     border: "rgba(0,201,167,0.35)",
-    image: "/lf-scene-kite.png",
-    imgPosition: "center 25%",
+    image: "/land2.png",
+    imgPosition: "center 35%",
   },
   {
     number: "03",
@@ -37,8 +37,8 @@ const steps = [
     colorFull: "var(--lf-mango)",
     bg: "rgba(255,87,34,0.1)",
     border: "rgba(255,87,34,0.35)",
-    image: "/lf-scene-boardgame.png",
-    imgPosition: "center 15%",
+    image: "/land3.png",
+    imgPosition: "center 40%",
   },
 ];
 
@@ -110,12 +110,13 @@ export function HowItWorksSection() {
               }}
             >
               {/* Scene image */}
-              <div className="relative flex-shrink-0" style={{ height: 200, background: step.bg }}>
+              <div className="relative flex-shrink-0" style={{ height: 200 }}>
                 <Image
                   src={step.image}
                   alt={step.title}
                   fill
-                  className="object-contain"
+                  className="object-cover"
+                  style={{ objectPosition: step.imgPosition }}
                 />
                 {/* Label badge over image */}
                 <div className="absolute top-3 left-3">
