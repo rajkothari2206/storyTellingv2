@@ -16,9 +16,9 @@ export default function HomePage() {
       <SiteHeader />
       <main>
         <HeroSection />
+        <CharactersSection />
         <HowItWorksSection />
         <FeaturesSection />
-        <CharactersSection />
         <PricingSection />
         <ShopSection />
         <TestimonialsSection />
