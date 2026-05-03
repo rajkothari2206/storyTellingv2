@@ -30,11 +30,11 @@ import {
 import { toast } from "sonner";
 
 const LANGUAGES = ["English", "Hindi"] as const;
-const LENGTHS = [
+const LENGTHS: { value: "short" | "medium" | "long"; label: string; desc: string; credits: number; premium?: boolean }[] = [
   { value: "short", label: "Short", desc: "~3 min read", credits: 60 },
   { value: "medium", label: "Medium", desc: "~6 min read", credits: 80 },
   { value: "long", label: "Long", desc: "~10 min read", credits: 0, premium: true },
-] as const;
+];
 
 export default function GeneratePage() {
   const { isAuthenticated } = useConvexAuth();
