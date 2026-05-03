@@ -1,102 +1,109 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Check, Sparkles, Star, Zap, Shield, HelpCircle } from "lucide-react";
+import Image from "next/image";
+import { Check, Sparkles, Star, Zap, Shield, HelpCircle, X } from "lucide-react";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { PricingFAQ } from "./PricingFAQ";
 
 export const metadata: Metadata = {
-  title: "Pricing",
+  title: "Pricing — Lalli Fafa",
   description:
     "Start free with 250 credits. Upgrade to Magic Pass for ₹199/month — unlimited stories, voice narration, and AI illustrations for your child.",
 };
 
+/* ── Plan definitions ── */
 const plans = [
   {
     id: "free",
-    name: "Free",
+    name: "Starter",
+    emoji: "🌱",
     price: "₹0",
-    period: "Forever free",
+    period: "forever",
     tagline: "Try before you love it",
+    accentColor: "#00c9a7",
+    accentBg: "rgba(0,201,167,0.08)",
+    accentBorder: "rgba(0,201,167,0.25)",
     features: [
-      "250 welcome credits",
-      "Text-only stories",
-      "2-min & 3-min story lengths",
-      "English & Hindi text",
-      "1 child profile",
+      { text: "250 welcome credits", note: "~4 stories" },
+      { text: "English & Hindi text" },
+      { text: "Short & medium story lengths" },
+      { text: "1 child profile" },
     ],
-    locked: ["5-min stories", "Voice narration", "AI illustrations", "Priority generation"],
-    cta: "Start free",
+    locked: ["Voice narration", "AI illustrations", "Long stories", "Priority generation"],
+    cta: "Start free — no card needed",
     href: "/sign-up",
-    style: "ghost" as const,
+    highlight: false,
   },
   {
     id: "monthly",
     name: "Magic Pass",
+    emoji: "✨",
     price: "₹199",
     period: "/ month",
     badge: "Most popular",
+    badgeColor: "#f9c700",
+    badgeText: "#131020",
     tagline: "The full magical experience",
+    accentColor: "#f9c700",
+    accentBg: "rgba(249,199,0,0.06)",
     features: [
-      "1,000 credits instantly",
-      "All story lengths unlocked",
-      "Voice narration (EN + HI)",
-      "AI scene illustrations",
-      "Priority generation",
-      "Unlimited retries",
-      "7-day free trial",
-      "Cancel anytime",
+      { text: "1,000 credits / month", note: "~16 stories" },
+      { text: "All story lengths" },
+      { text: "Voice narration", note: "EN + HI" },
+      { text: "AI scene illustrations" },
+      { text: "Priority generation" },
+      { text: "Unlimited retries" },
+      { text: "7-day free trial" },
+      { text: "Cancel anytime" },
     ],
-    cta: "Start Magic Pass",
+    cta: "Start 7-day free trial",
     href: "/sign-up?plan=monthly",
-    style: "primary" as const,
     highlight: true,
   },
   {
     id: "yearly",
     name: "Magic Pass Yearly",
+    emoji: "👑",
     price: "₹1,999",
     period: "/ year",
-    badge: "Save 20%",
+    priceNote: "≈ ₹167/mo — save 20%",
+    badge: "Best value",
+    badgeColor: "#00c9a7",
+    badgeText: "#fff",
     tagline: "Best value for growing families",
+    accentColor: "#a855f7",
+    accentBg: "rgba(168,85,247,0.06)",
+    accentBorder: "rgba(168,85,247,0.2)",
     features: [
-      "2,000 credits + 100/day top-up",
-      "Everything in Monthly",
-      "Early access to new features",
-      "Multiple child profiles",
-      "Highest credit value",
-      "Annual billing flexibility",
+      { text: "2,000 credits + 100/day", note: "top-up" },
+      { text: "Everything in Monthly" },
+      { text: "Multiple child profiles" },
+      { text: "Early feature access" },
+      { text: "Highest credit value" },
     ],
-    cta: "Go yearly",
+    cta: "Go yearly & save 20%",
     href: "/sign-up?plan=yearly",
-    style: "secondary" as const,
+    highlight: false,
   },
 ];
 
-const faqItems = [
-  {
-    q: "What are credits?",
-    a: "Credits are the currency for generating stories. A 2-minute story costs roughly 10 credits, a 3-minute story around 20, and a 5-minute story around 35. Credits also cover voice narration and AI illustration generation.",
-  },
-  {
-    q: "Can I cancel anytime?",
-    a: "Yes. Cancel anytime from your dashboard — you keep all features until the end of your current billing period. No hidden fees, no long-term commitment.",
-  },
-  {
-    q: "Is there really a free plan?",
-    a: "Absolutely. You get 250 credits on signup — that's around 15–20 stories with text output. No credit card needed. Upgrade when you're ready.",
-  },
-  {
-    q: "What happens when credits run out?",
-    a: "On the free plan, you can purchase additional credits. On Magic Pass, you get 1,000 credits per month automatically — most families never run out.",
-  },
-  {
-    q: "Are payments secure?",
-    a: "Yes. All payments are processed by Razorpay, India's most trusted payment gateway. We never store your card details.",
-  },
-  {
-    q: "Can I switch plans?",
-    a: "You can upgrade or downgrade at any time. Upgrading is instant. Downgrading takes effect at the next billing cycle.",
-  },
+/* ── Credit comparison table ── */
+const creditRows = [
+  { action: "Short story (text + illustrations)", free: "60", magic: "60" },
+  { action: "Medium story", free: "80", magic: "80" },
+  { action: "Long story", free: "🔒", magic: "Available" },
+  { action: "Monthly credit allowance", free: "250 (once)", magic: "1,000" },
+  { action: "Voice narration (EN)", free: "🔒", magic: "Included" },
+  { action: "Voice narration (HI)", free: "🔒", magic: "Included" },
+];
+
+/* ── Trust badges ── */
+const trustItems = [
+  { icon: <Shield size={20} />, label: "Secure payments", sub: "via Razorpay", color: "#00c9a7" },
+  { icon: <Zap size={20} />, label: "Instant access", sub: "stories in 2 min", color: "#f9c700" },
+  { icon: <Check size={20} />, label: "Cancel anytime", sub: "no questions asked", color: "#a855f7" },
+  { icon: <Star size={20} fill="currentColor" />, label: "7-day free trial", sub: "on paid plans", color: "#ff6b35" },
 ];
 
 export default function PricingPage() {
@@ -104,254 +111,451 @@ export default function PricingPage() {
     <>
       <SiteHeader />
       <main>
-        {/* Hero */}
+
+        {/* ══════════════════════════════════════════
+            HERO
+        ══════════════════════════════════════════ */}
         <section
-          className="pt-32 pb-16"
-          style={{ background: "linear-gradient(160deg, var(--lf-cream) 0%, var(--lf-mint) 100%)" }}
+          className="relative overflow-hidden pt-32 pb-16"
+          style={{ background: "linear-gradient(160deg,#FFF8E7 0%,#E6FAF6 60%,#F3EEFF 100%)" }}
         >
-          <div className="mx-auto px-6 text-center" style={{ maxWidth: 700 }}>
+          {/* Decorative glow blobs */}
+          <div className="absolute pointer-events-none" style={{ top: 40, right: "10%", width: 380, height: 380, background: "radial-gradient(circle,rgba(0,201,167,0.15) 0%,transparent 70%)" }} />
+          <div className="absolute pointer-events-none" style={{ bottom: -60, left: "5%", width: 300, height: 300, background: "radial-gradient(circle,rgba(249,199,0,0.18) 0%,transparent 70%)" }} />
+
+          <div className="mx-auto px-6 text-center relative" style={{ maxWidth: 720 }}>
             <span
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider mb-5"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-5"
               style={{ background: "rgba(249,199,0,0.18)", color: "#b8860b" }}
             >
-              <Star size={13} fill="currentColor" /> Simple Pricing
+              <Star size={12} fill="currentColor" /> Simple Pricing
             </span>
+
             <h1
               style={{
                 fontFamily: "'Baloo 2', sans-serif",
-                fontSize: "clamp(2.2rem, 5vw, 3.5rem)",
+                fontSize: "clamp(2.2rem,5vw,3.6rem)",
                 fontWeight: 800,
                 color: "var(--lf-dark)",
                 lineHeight: 1.1,
               }}
             >
               One price.{" "}
-              <span className="text-gradient-sunshine">Infinite stories.</span>
+              <span style={{ color: "var(--lf-teal)" }}>Infinite</span>{" "}
+              <span style={{ color: "var(--lf-sunshine)" }}>stories.</span>
             </h1>
-            <p
-              className="mt-5"
-              style={{ color: "rgba(45,45,45,0.65)", fontSize: "1.1rem", lineHeight: 1.7 }}
-            >
-              Start free — no credit card required. Upgrade to Magic Pass when
-              you see your child&apos;s eyes light up.
+
+            <p className="mt-5" style={{ color: "rgba(45,45,45,0.6)", fontSize: "1.05rem", lineHeight: 1.75 }}>
+              Start free — no credit card required. Upgrade to Magic Pass when you see your child&apos;s face light up. ✨
             </p>
+
+            {/* Character image */}
+            <div className="mt-8 relative inline-block" style={{ width: 120, height: 120 }}>
+              <Image
+                src="/lf-hero.png"
+                alt="Lalli and Fafa"
+                fill
+                className="object-contain"
+                style={{ filter: "drop-shadow(0 8px 28px rgba(0,201,167,0.3))" }}
+              />
+            </div>
           </div>
         </section>
 
-        {/* Pricing cards */}
-        <section className="py-20" style={{ background: "#fff" }}>
-          <div className="mx-auto px-6" style={{ maxWidth: 1100 }}>
-            <div className="grid md:grid-cols-3 gap-6 items-start">
+        {/* ══════════════════════════════════════════
+            PRICING CARDS
+        ══════════════════════════════════════════ */}
+        <section
+          className="py-16"
+          style={{ background: "linear-gradient(180deg,#F2FFF9 0%,#fff 100%)" }}
+        >
+          <div className="mx-auto px-5" style={{ maxWidth: 1120 }}>
+            <div className="grid md:grid-cols-3 gap-6 items-stretch">
+
               {plans.map((plan) => (
                 <div
                   key={plan.id}
-                  className="relative flex flex-col rounded-3xl overflow-hidden transition-all duration-200 hover:-translate-y-1"
-                  style={{
-                    background: plan.highlight ? "var(--lf-dark)" : "var(--lf-cream)",
-                    border: plan.highlight
-                      ? "2px solid var(--lf-sunshine)"
-                      : "1.5px solid rgba(0,0,0,0.07)",
-                    boxShadow: plan.highlight
-                      ? "0 20px 60px rgba(249,199,0,0.2)"
-                      : "0 4px 20px rgba(0,0,0,0.05)",
-                    transform: plan.highlight ? "scale(1.03)" : undefined,
-                  }}
+                  className="relative flex flex-col rounded-3xl overflow-hidden transition-all duration-300 hover:-translate-y-2"
+                  style={
+                    plan.highlight
+                      ? {
+                          background: "linear-gradient(160deg,#131020 0%,#1a1740 100%)",
+                          border: "2px solid rgba(249,199,0,0.6)",
+                          boxShadow: "0 24px 80px rgba(249,199,0,0.25), 0 8px 32px rgba(0,0,0,0.3)",
+                          transform: "scale(1.03)",
+                        }
+                      : {
+                          background: "#fff",
+                          border: `1.5px solid ${plan.accentBorder ?? plan.accentColor + "33"}`,
+                          boxShadow: `0 6px 32px ${plan.accentColor}18`,
+                        }
+                  }
                 >
+                  {/* Badge */}
                   {plan.badge && (
                     <div
-                      className="absolute top-5 right-5 px-3 py-1 rounded-full text-xs font-bold"
-                      style={{
-                        background: plan.id === "yearly" ? "var(--lf-teal)" : "var(--lf-sunshine)",
-                        color: plan.id === "yearly" ? "#fff" : "var(--lf-dark)",
-                      }}
+                      className="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold"
+                      style={{ background: plan.badgeColor, color: plan.badgeText }}
                     >
                       {plan.badge}
                     </div>
                   )}
 
-                  <div className="p-8 flex flex-col gap-5 flex-1">
-                    <div>
-                      <p
-                        style={{
+                  {/* Top accent bar */}
+                  <div style={{ height: 4, background: plan.highlight ? "linear-gradient(90deg,#f9c700,#ffdc60)" : plan.accentColor }} />
+
+                  <div className="p-7 flex flex-col gap-6 flex-1">
+
+                    {/* Plan identity */}
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span style={{ fontSize: "1.4rem" }}>{plan.emoji}</span>
+                        <p style={{
                           fontFamily: "'Baloo 2', sans-serif",
-                          fontWeight: 700,
-                          fontSize: "0.9rem",
-                          color: plan.highlight ? "rgba(255,255,255,0.55)" : "rgba(45,45,45,0.5)",
+                          fontWeight: 800,
+                          fontSize: "0.85rem",
+                          color: plan.highlight ? "rgba(255,255,255,0.5)" : "rgba(45,45,45,0.45)",
                           textTransform: "uppercase",
-                          letterSpacing: "0.07em",
-                        }}
-                      >
-                        {plan.name}
-                      </p>
-                      <div className="flex items-baseline gap-2 mt-1">
-                        <span
-                          style={{
-                            fontFamily: "'Baloo 2', sans-serif",
-                            fontSize: "2.8rem",
-                            fontWeight: 800,
-                            color: plan.highlight ? "var(--lf-sunshine)" : "var(--lf-dark)",
-                            lineHeight: 1,
-                          }}
-                        >
+                          letterSpacing: "0.1em",
+                        }}>
+                          {plan.name}
+                        </p>
+                      </div>
+                      <div className="flex items-baseline gap-1.5 mt-1">
+                        <span style={{
+                          fontFamily: "'Baloo 2', sans-serif",
+                          fontSize: "3rem",
+                          fontWeight: 800,
+                          color: plan.highlight ? "#f9c700" : "var(--lf-dark)",
+                          lineHeight: 1,
+                        }}>
                           {plan.price}
                         </span>
-                        <span
-                          style={{
-                            color: plan.highlight ? "rgba(255,255,255,0.45)" : "rgba(45,45,45,0.45)",
-                            fontSize: "0.95rem",
-                          }}
-                        >
+                        <span style={{ color: plan.highlight ? "rgba(255,255,255,0.4)" : "rgba(45,45,45,0.45)", fontSize: "0.9rem" }}>
                           {plan.period}
                         </span>
                       </div>
-                      <p
-                        className="mt-2"
-                        style={{
-                          fontSize: "0.88rem",
-                          color: plan.highlight ? "rgba(255,255,255,0.5)" : "rgba(45,45,45,0.5)",
-                        }}
-                      >
+                      {plan.priceNote && (
+                        <p style={{ fontSize: "0.8rem", color: plan.highlight ? "rgba(255,255,255,0.5)" : "#a855f7", fontWeight: 600 }}>
+                          {plan.priceNote}
+                        </p>
+                      )}
+                      <p style={{ fontSize: "0.85rem", color: plan.highlight ? "rgba(255,255,255,0.45)" : "rgba(45,45,45,0.5)", marginTop: 2 }}>
                         {plan.tagline}
                       </p>
                     </div>
 
+                    {/* Divider */}
                     <div style={{ height: 1, background: plan.highlight ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" }} />
 
-                    <ul className="flex flex-col gap-2.5">
+                    {/* Features */}
+                    <ul className="flex flex-col gap-2.5 flex-1">
                       {plan.features.map((f) => (
-                        <li key={f} className="flex items-start gap-2.5">
-                          <Check size={16} className="flex-shrink-0 mt-0.5" style={{ color: "var(--lf-teal)" }} />
-                          <span
-                            style={{
-                              fontSize: "0.88rem",
-                              color: plan.highlight ? "rgba(255,255,255,0.82)" : "rgba(45,45,45,0.78)",
-                              fontWeight: 500,
-                            }}
+                        <li key={f.text} className="flex items-start gap-2.5">
+                          <div
+                            className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5"
+                            style={{ background: plan.highlight ? "rgba(249,199,0,0.2)" : `${plan.accentColor}20` }}
                           >
-                            {f}
+                            <Check size={12} style={{ color: plan.highlight ? "#f9c700" : plan.accentColor }} />
+                          </div>
+                          <span style={{ fontSize: "0.88rem", color: plan.highlight ? "rgba(255,255,255,0.85)" : "rgba(45,45,45,0.78)", fontWeight: 500 }}>
+                            {f.text}
+                            {f.note && (
+                              <span style={{ marginLeft: 4, fontSize: "0.78rem", opacity: 0.6 }}>({f.note})</span>
+                            )}
                           </span>
                         </li>
                       ))}
                       {plan.locked?.map((f) => (
-                        <li key={f} className="flex items-start gap-2 opacity-30">
-                          <span style={{ fontSize: "0.85rem", color: plan.highlight ? "#fff" : "var(--lf-dark)", fontWeight: 500 }}>
-                            🔒 {f}
-                          </span>
+                        <li key={f} className="flex items-start gap-2.5 opacity-30">
+                          <div className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5" style={{ background: "rgba(0,0,0,0.08)" }}>
+                            <X size={10} style={{ color: "rgba(45,45,45,0.6)" }} />
+                          </div>
+                          <span style={{ fontSize: "0.85rem", color: plan.highlight ? "#fff" : "var(--lf-dark)", fontWeight: 500 }}>{f}</span>
                         </li>
                       ))}
                     </ul>
 
-                    <div className="mt-auto pt-2">
-                      <Link
-                        href={plan.href}
-                        className={plan.style === "primary" ? "btn-primary" : plan.style === "secondary" ? "btn-secondary" : "btn-ghost"}
-                        style={{ display: "flex", width: "100%", justifyContent: "center" }}
-                      >
-                        {plan.id !== "free" && <Sparkles size={15} />}
-                        {plan.cta}
-                      </Link>
-                    </div>
+                    {/* CTA button */}
+                    <Link
+                      href={plan.href}
+                      className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl font-bold transition-all hover:scale-105 active:scale-95"
+                      style={
+                        plan.highlight
+                          ? {
+                              background: "linear-gradient(135deg,#f9c700,#e6ac00)",
+                              color: "#131020",
+                              fontFamily: "'Baloo 2', sans-serif",
+                              fontSize: "0.95rem",
+                              boxShadow: "0 6px 24px rgba(249,199,0,0.45)",
+                            }
+                          : plan.id === "yearly"
+                          ? {
+                              background: "linear-gradient(135deg,#a855f7,#8b2cf5)",
+                              color: "#fff",
+                              fontFamily: "'Baloo 2', sans-serif",
+                              fontSize: "0.92rem",
+                              boxShadow: "0 4px 16px rgba(168,85,247,0.35)",
+                            }
+                          : {
+                              background: "linear-gradient(135deg,var(--lf-teal),#00a38d)",
+                              color: "#fff",
+                              fontFamily: "'Baloo 2', sans-serif",
+                              fontSize: "0.92rem",
+                              boxShadow: "0 4px 16px rgba(0,201,167,0.35)",
+                            }
+                      }
+                    >
+                      {plan.id !== "free" && <Sparkles size={15} />}
+                      {plan.cta}
+                    </Link>
                   </div>
                 </div>
               ))}
             </div>
 
-            <p className="text-center mt-10" style={{ color: "rgba(45,45,45,0.45)", fontSize: "0.85rem" }}>
-              All plans include a 7-day free trial · Secure payments via Razorpay · Cancel anytime
+            <p className="text-center mt-8" style={{ color: "rgba(45,45,45,0.4)", fontSize: "0.82rem", fontFamily: "'Nunito', sans-serif" }}>
+              7-day free trial on paid plans · Secure payments via Razorpay · Cancel anytime
             </p>
           </div>
         </section>
 
-        {/* Trust row */}
-        <section className="py-14" style={{ background: "var(--lf-cream)" }}>
-          <div className="mx-auto px-6" style={{ maxWidth: 900 }}>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {[
-                { icon: <Shield size={22} />, label: "Secure payments", sub: "via Razorpay" },
-                { icon: <Zap size={22} />, label: "Instant access", sub: "on signup" },
-                { icon: <Check size={22} />, label: "Cancel anytime", sub: "no questions asked" },
-                { icon: <Star size={22} fill="currentColor" />, label: "7-day free trial", sub: "on paid plans" },
-              ].map((item) => (
-                <div key={item.label} className="flex flex-col items-center text-center gap-2 p-5 rounded-2xl" style={{ background: "#fff" }}>
-                  <div style={{ color: "var(--lf-teal)" }}>{item.icon}</div>
-                  <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 700, fontSize: "0.9rem", color: "var(--lf-dark)" }}>{item.label}</p>
-                  <p style={{ fontSize: "0.78rem", color: "rgba(45,45,45,0.5)" }}>{item.sub}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* FAQ */}
-        <section className="py-20" style={{ background: "#fff" }}>
-          <div className="mx-auto px-6" style={{ maxWidth: 720 }}>
-            <div className="text-center mb-12">
+        {/* ══════════════════════════════════════════
+            CREDIT COMPARISON TABLE
+        ══════════════════════════════════════════ */}
+        <section className="py-14" style={{ background: "linear-gradient(160deg,#FFF8E7 0%,#FFFDE8 100%)" }}>
+          <div className="mx-auto px-5" style={{ maxWidth: 820 }}>
+            <div className="text-center mb-8">
               <span
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider mb-4"
-                style={{ background: "var(--lf-mint)", color: "var(--lf-teal)" }}
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-3"
+                style={{ background: "rgba(249,199,0,0.18)", color: "#b8860b" }}
               >
-                <HelpCircle size={13} /> FAQs
+                <Zap size={12} /> What do credits get you?
               </span>
-              <h2
-                style={{
-                  fontFamily: "'Baloo 2', sans-serif",
-                  fontSize: "clamp(1.8rem, 3.5vw, 2.5rem)",
-                  fontWeight: 800,
-                  color: "var(--lf-dark)",
-                }}
-              >
-                Pricing questions answered
+              <h2 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "clamp(1.5rem,3vw,2rem)", color: "var(--lf-dark)" }}>
+                Credits, explained simply
               </h2>
             </div>
-            <div className="flex flex-col gap-4">
-              {faqItems.map((item) => (
+
+            <div className="rounded-3xl overflow-hidden" style={{ border: "1.5px solid rgba(0,0,0,0.08)", boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
+              {/* Table header */}
+              <div
+                className="grid grid-cols-3 px-6 py-3"
+                style={{ background: "var(--lf-dark)", gridTemplateColumns: "1fr auto auto" }}
+              >
+                <span style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 700, fontSize: "0.82rem", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Action</span>
+                <span style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 700, fontSize: "0.82rem", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "center", minWidth: 90 }}>Free</span>
+                <span style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 700, fontSize: "0.82rem", color: "#f9c700", textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "center", minWidth: 110 }}>Magic Pass ✨</span>
+              </div>
+
+              {/* Rows */}
+              {creditRows.map((row, i) => (
                 <div
-                  key={item.q}
-                  className="rounded-2xl p-6"
-                  style={{ background: "var(--lf-cream)", border: "1.5px solid rgba(0,0,0,0.06)" }}
+                  key={row.action}
+                  className="grid grid-cols-3 px-6 py-4 items-center"
+                  style={{
+                    gridTemplateColumns: "1fr auto auto",
+                    background: i % 2 === 0 ? "#fff" : "rgba(0,0,0,0.015)",
+                    borderTop: "1px solid rgba(0,0,0,0.05)",
+                  }}
                 >
-                  <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 700, color: "var(--lf-dark)", fontSize: "1rem", marginBottom: "0.5rem" }}>
-                    {item.q}
-                  </p>
-                  <p style={{ color: "rgba(45,45,45,0.7)", fontSize: "0.9rem", lineHeight: 1.7 }}>{item.a}</p>
+                  <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.88rem", color: "var(--lf-dark)", fontWeight: 600 }}>{row.action}</span>
+                  <span
+                    style={{
+                      fontFamily: "'Nunito', sans-serif",
+                      fontSize: "0.88rem",
+                      fontWeight: 700,
+                      color: row.free === "🔒" ? "rgba(45,45,45,0.3)" : "rgba(45,45,45,0.7)",
+                      textAlign: "center",
+                      minWidth: 90,
+                    }}
+                  >
+                    {row.free}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "'Nunito', sans-serif",
+                      fontSize: "0.88rem",
+                      fontWeight: 700,
+                      color: row.magic === "Included" || row.magic === "Available" ? "#00c9a7" : "var(--lf-dark)",
+                      textAlign: "center",
+                      minWidth: 110,
+                    }}
+                  >
+                    {row.magic}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* CTA */}
+        {/* ══════════════════════════════════════════
+            TRUST BADGES
+        ══════════════════════════════════════════ */}
+        <section className="py-12" style={{ background: "#fff" }}>
+          <div className="mx-auto px-5" style={{ maxWidth: 960 }}>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {trustItems.map((item) => (
+                <div
+                  key={item.label}
+                  className="flex flex-col items-center text-center gap-2.5 p-5 rounded-2xl transition-all hover:-translate-y-0.5"
+                  style={{
+                    background: `${item.color}0d`,
+                    border: `1.5px solid ${item.color}28`,
+                  }}
+                >
+                  <div
+                    className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                    style={{ background: `${item.color}18`, color: item.color }}
+                  >
+                    {item.icon}
+                  </div>
+                  <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 700, fontSize: "0.9rem", color: "var(--lf-dark)" }}>{item.label}</p>
+                  <p style={{ fontSize: "0.78rem", color: "rgba(45,45,45,0.5)", fontFamily: "'Nunito', sans-serif" }}>{item.sub}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════
+            SCENES STRIP — social proof
+        ══════════════════════════════════════════ */}
         <section
-          className="py-20"
-          style={{ background: "linear-gradient(135deg, var(--lf-dark) 0%, #1a3a2e 100%)" }}
+          className="py-12"
+          style={{ background: "linear-gradient(135deg,#E6FAF6 0%,#F3EEFF 100%)" }}
         >
-          <div className="mx-auto px-6 text-center" style={{ maxWidth: 640 }}>
-            <p style={{ fontSize: "2.5rem" }} className="mb-4">✨</p>
+          <div className="mx-auto px-5" style={{ maxWidth: 960 }}>
+            <div className="flex flex-col md:flex-row items-center gap-8">
+              {/* Story world thumbnails */}
+              <div className="flex items-center gap-3 flex-wrap justify-center md:justify-start">
+                {[
+                  "/lf-scene-jungle.png",
+                  "/lf-scene-planets.png",
+                  "/lf-scene-kite.png",
+                  "/lf-scene-krishna.png",
+                  "/lf-scene-balloons.png",
+                ].map((src, i) => (
+                  <div
+                    key={i}
+                    className="relative rounded-2xl overflow-hidden flex-shrink-0"
+                    style={{
+                      width: 64,
+                      height: 64,
+                      border: "2px solid rgba(255,255,255,0.8)",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                    }}
+                  >
+                    <Image src={src} alt="" fill className="object-cover" style={{ objectPosition: "center 30%" }} />
+                  </div>
+                ))}
+              </div>
+              <div className="flex-1 text-center md:text-left">
+                <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1.15rem", color: "var(--lf-dark)" }}>
+                  12 magical story worlds, fully illustrated
+                </p>
+                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.88rem", color: "rgba(45,45,45,0.55)", marginTop: 6 }}>
+                  Adventures, mythology, space, nature &amp; more — with narration in English and Hindi.
+                </p>
+              </div>
+              <Link
+                href="/sign-up"
+                className="flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold flex-shrink-0 transition-all hover:scale-105"
+                style={{
+                  background: "linear-gradient(135deg,var(--lf-teal),#00a38d)",
+                  color: "#fff",
+                  fontFamily: "'Baloo 2', sans-serif",
+                  fontSize: "0.95rem",
+                  boxShadow: "0 4px 20px rgba(0,201,167,0.35)",
+                }}
+              >
+                <Sparkles size={16} /> Try free
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════
+            FAQ
+        ══════════════════════════════════════════ */}
+        <section
+          className="py-16"
+          style={{ background: "linear-gradient(160deg,#FFF0E6 0%,#FFE4D4 100%)" }}
+        >
+          <div className="mx-auto px-5" style={{ maxWidth: 760 }}>
+            <div className="text-center mb-8">
+              <span
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-3"
+                style={{ background: "rgba(255,87,34,0.12)", color: "#bf360c" }}
+              >
+                <HelpCircle size={12} /> Questions answered
+              </span>
+              <h2 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "clamp(1.8rem,3.5vw,2.4rem)", color: "var(--lf-dark)" }}>
+                Pricing FAQs
+              </h2>
+            </div>
+            <PricingFAQ />
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════
+            BOTTOM CTA
+        ══════════════════════════════════════════ */}
+        <section
+          className="py-20 relative overflow-hidden"
+          style={{ background: "linear-gradient(135deg,#131020 0%,#1a1740 60%,#0d2d26 100%)" }}
+        >
+          {/* Glow orbs */}
+          <div className="absolute pointer-events-none" style={{ top: -80, right: "10%", width: 400, height: 400, background: "radial-gradient(circle,rgba(0,201,167,0.2) 0%,transparent 70%)" }} />
+          <div className="absolute pointer-events-none" style={{ bottom: -60, left: "5%", width: 300, height: 300, background: "radial-gradient(circle,rgba(249,199,0,0.18) 0%,transparent 70%)" }} />
+
+          <div className="mx-auto px-6 text-center relative" style={{ maxWidth: 680 }}>
+            {/* Character image */}
+            <div className="relative inline-block mb-6" style={{ width: 100, height: 100 }}>
+              <Image src="/lf-hero.png" alt="Lalli and Fafa" fill className="object-contain" style={{ filter: "drop-shadow(0 8px 28px rgba(0,201,167,0.4))" }} />
+            </div>
+
             <h2
               style={{
                 fontFamily: "'Baloo 2', sans-serif",
-                fontSize: "clamp(1.8rem, 4vw, 2.8rem)",
+                fontSize: "clamp(1.9rem,4vw,3rem)",
                 fontWeight: 800,
                 color: "#fff",
                 lineHeight: 1.15,
               }}
             >
               Start with{" "}
-              <span className="text-gradient-sunshine">250 free credits</span>
+              <span style={{ color: "#f9c700" }}>250 free credits</span>
             </h2>
-            <p className="mt-4 mb-8" style={{ color: "rgba(255,255,255,0.6)", fontSize: "1rem", lineHeight: 1.7 }}>
-              No credit card. No commitment. Just your child&apos;s first magical story.
+
+            <p className="mt-4 mb-8" style={{ color: "rgba(255,255,255,0.55)", fontSize: "1rem", lineHeight: 1.75 }}>
+              No credit card. No commitment. Just your child&apos;s first magical Lalli &amp; Fafa story, ready in 2 minutes.
             </p>
+
             <div className="flex flex-wrap gap-3 justify-center">
-              <Link href="/sign-up" className="btn-primary" style={{ fontSize: "1rem", padding: "0.8rem 2rem" }}>
+              <Link
+                href="/sign-up"
+                className="flex items-center gap-2 px-8 py-4 rounded-2xl font-bold transition-all hover:scale-105"
+                style={{ background: "linear-gradient(135deg,#f9c700,#e6ac00)", color: "#131020", fontFamily: "'Baloo 2', sans-serif", fontSize: "1.05rem", boxShadow: "0 6px 28px rgba(249,199,0,0.4)" }}
+              >
                 <Sparkles size={18} /> Start free today
               </Link>
-              <Link href="/stories" className="btn-ghost" style={{ fontSize: "1rem", padding: "0.8rem 2rem", borderColor: "rgba(255,255,255,0.25)", color: "#fff" }}>
+              <Link
+                href="/stories"
+                className="flex items-center gap-2 px-8 py-4 rounded-2xl font-bold transition-all hover:bg-white/10"
+                style={{ border: "1.5px solid rgba(255,255,255,0.2)", color: "#fff", fontFamily: "'Baloo 2', sans-serif", fontSize: "1.05rem" }}
+              >
                 See sample stories
               </Link>
             </div>
+
+            <p className="mt-6" style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.3)", fontFamily: "'Nunito', sans-serif" }}>
+              Trusted by families across India · Stories in English &amp; Hindi
+            </p>
           </div>
         </section>
+
       </main>
       <SiteFooter />
     </>
