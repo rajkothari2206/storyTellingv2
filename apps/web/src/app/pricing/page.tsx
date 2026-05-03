@@ -113,51 +113,65 @@ export default function PricingPage() {
       <main>
 
         {/* ══════════════════════════════════════════
-            HERO
+            HERO — compact bar
         ══════════════════════════════════════════ */}
         <section
-          className="relative overflow-hidden pt-32 pb-16"
-          style={{ background: "linear-gradient(160deg,#FFF8E7 0%,#E6FAF6 60%,#F3EEFF 100%)" }}
+          className="relative overflow-hidden"
+          style={{
+            background: "linear-gradient(160deg,#FFF8E7 0%,#E6FAF6 60%,#F3EEFF 100%)",
+            paddingTop: 88,   /* clears sticky header (72px) + 16px breathing room */
+            paddingBottom: 20,
+          }}
         >
-          {/* Decorative glow blobs */}
-          <div className="absolute pointer-events-none" style={{ top: 40, right: "10%", width: 380, height: 380, background: "radial-gradient(circle,rgba(0,201,167,0.15) 0%,transparent 70%)" }} />
-          <div className="absolute pointer-events-none" style={{ bottom: -60, left: "5%", width: 300, height: 300, background: "radial-gradient(circle,rgba(249,199,0,0.18) 0%,transparent 70%)" }} />
+          <div className="mx-auto px-6 relative" style={{ maxWidth: 1120 }}>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
 
-          <div className="mx-auto px-6 text-center relative" style={{ maxWidth: 720 }}>
-            <span
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-5"
-              style={{ background: "rgba(249,199,0,0.18)", color: "#b8860b" }}
-            >
-              <Star size={12} fill="currentColor" /> Simple Pricing
-            </span>
+              {/* Left: badge + headline + sub */}
+              <div className="flex flex-col gap-1.5">
+                <span
+                  className="inline-flex items-center gap-1.5 self-start px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+                  style={{ background: "rgba(249,199,0,0.18)", color: "#b8860b" }}
+                >
+                  <Star size={11} fill="currentColor" /> Simple Pricing
+                </span>
+                <h1
+                  style={{
+                    fontFamily: "'Baloo 2', sans-serif",
+                    fontSize: "clamp(1.6rem,3vw,2.2rem)",
+                    fontWeight: 800,
+                    color: "var(--lf-dark)",
+                    lineHeight: 1.15,
+                  }}
+                >
+                  One price.{" "}
+                  <span style={{ color: "var(--lf-teal)" }}>Infinite</span>{" "}
+                  <span style={{ color: "var(--lf-sunshine)" }}>stories.</span>
+                </h1>
+                <p style={{ color: "rgba(45,45,45,0.55)", fontSize: "0.88rem", lineHeight: 1.6 }}>
+                  Start free — no card needed. Upgrade when your child&apos;s eyes light up. ✨
+                </p>
+              </div>
 
-            <h1
-              style={{
-                fontFamily: "'Baloo 2', sans-serif",
-                fontSize: "clamp(2.2rem,5vw,3.6rem)",
-                fontWeight: 800,
-                color: "var(--lf-dark)",
-                lineHeight: 1.1,
-              }}
-            >
-              One price.{" "}
-              <span style={{ color: "var(--lf-teal)" }}>Infinite</span>{" "}
-              <span style={{ color: "var(--lf-sunshine)" }}>stories.</span>
-            </h1>
+              {/* Right: character + trust pills */}
+              <div className="flex items-center gap-4 flex-shrink-0">
+                <div className="hidden sm:flex flex-col gap-1.5">
+                  {["No credit card", "7-day free trial", "Cancel anytime"].map((t) => (
+                    <span key={t} className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: "rgba(45,45,45,0.55)", fontFamily: "'Nunito', sans-serif" }}>
+                      <Check size={13} style={{ color: "var(--lf-teal)" }} /> {t}
+                    </span>
+                  ))}
+                </div>
+                <div className="relative flex-shrink-0" style={{ width: 72, height: 72 }}>
+                  <Image
+                    src="/lf-hero.png"
+                    alt="Lalli and Fafa"
+                    fill
+                    className="object-contain"
+                    style={{ filter: "drop-shadow(0 4px 14px rgba(0,201,167,0.3))" }}
+                  />
+                </div>
+              </div>
 
-            <p className="mt-5" style={{ color: "rgba(45,45,45,0.6)", fontSize: "1.05rem", lineHeight: 1.75 }}>
-              Start free — no credit card required. Upgrade to Magic Pass when you see your child&apos;s face light up. ✨
-            </p>
-
-            {/* Character image */}
-            <div className="mt-8 relative inline-block" style={{ width: 120, height: 120 }}>
-              <Image
-                src="/lf-hero.png"
-                alt="Lalli and Fafa"
-                fill
-                className="object-contain"
-                style={{ filter: "drop-shadow(0 8px 28px rgba(0,201,167,0.3))" }}
-              />
             </div>
           </div>
         </section>
@@ -166,7 +180,7 @@ export default function PricingPage() {
             PRICING CARDS
         ══════════════════════════════════════════ */}
         <section
-          className="py-16"
+          className="py-8"
           style={{ background: "linear-gradient(180deg,#F2FFF9 0%,#fff 100%)" }}
         >
           <div className="mx-auto px-5" style={{ maxWidth: 1120 }}>
