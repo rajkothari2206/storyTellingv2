@@ -192,7 +192,7 @@ export function HeroSection() {
             {/* Characters image */}
             <div className="animate-float-slow relative z-10 w-full flex justify-center">
               <Image
-                src="/LalliFafa.png"
+                src="/lf-scene-planets.png"
                 alt="Lalli and Fafa — your child's story companions"
                 width={420}
                 height={460}
@@ -228,7 +228,7 @@ export function HeroSection() {
               }}
             />
             <Image
-              src="/LalliFafa.png"
+              src="/lf-scene-planets.png"
               alt="Lalli and Fafa"
               width={280}
               height={300}

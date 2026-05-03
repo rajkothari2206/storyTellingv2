@@ -5,15 +5,18 @@ import Link from "next/link";
 import { Sparkles } from "lucide-react";
 
 const scenes = [
-  { src: "/lf-scene-bench.jpg",    label: "Best friends always" },
-  { src: "/lf-scene-beach.jpg",    label: "Dreaming of adventures" },
-  { src: "/lf-scene-art.jpg",      label: "Painting together" },
-  { src: "/lf-scene-paint.jpg",    label: "Lalli's the artist!" },
-  { src: "/lf-scene-bed.jpg",      label: "We overslept!" },
-  { src: "/lf-scene-krishna.jpg",  label: "Magic in the meadow" },
-  { src: "/lf-scene-balloons.jpg", label: "Fafa takes flight!" },
-  { src: "/lf-scene-puppy.jpg",    label: "A new furry friend" },
-  { src: "/lf-scene-kite.jpg",     label: "Up, up and away!" },
+  { src: "/lf-scene-orchard.png",   label: "🍊 The Orange Orchard" },
+  { src: "/lf-scene-planets.png",   label: "🪐 Solar system lesson" },
+  { src: "/lf-scene-puppy.png",     label: "🐶 A new furry friend" },
+  { src: "/lf-scene-kite.png",      label: "🪁 Up, up and away!" },
+  { src: "/lf-scene-jungle.png",    label: "🌿 Jungle explorers" },
+  { src: "/lf-scene-bedtime.png",   label: "📖 Bedtime stories" },
+  { src: "/lf-scene-balloons.png",  label: "🎈 Fafa takes flight!" },
+  { src: "/lf-scene-boardgame.png", label: "🎲 Game night!" },
+  { src: "/lf-scene-krishna.png",   label: "✨ Magic in the meadow" },
+  { src: "/lf-scene-redfort.png",   label: "🇮🇳 At the Red Fort" },
+  { src: "/lf-scene-ganesha.png",   label: "🙏 Blessed beginnings" },
+  { src: "/lf-scene-street.png",    label: "🔦 Mystery on the street" },
 ];
 
 export function CharactersSection() {
@@ -108,25 +111,21 @@ export function CharactersSection() {
 
           {/* Hero image */}
           <div
-            className="relative rounded-3xl overflow-hidden shadow-2xl flex items-end justify-center"
-            style={{
-              minHeight: 480,
-              background: "linear-gradient(160deg, rgba(255,193,7,0.18) 0%, rgba(0,201,167,0.15) 100%)",
-            }}
+            className="relative rounded-3xl overflow-hidden shadow-2xl"
+            style={{ minHeight: 480 }}
           >
             <Image
-              src="/LalliFafa.png"
-              alt="Lalli and Fafa — best friends on every adventure"
-              width={420}
-              height={480}
-              className="object-contain"
-              style={{ mixBlendMode: "multiply", width: "100%", height: "100%", objectFit: "contain", objectPosition: "bottom" }}
+              src="/lf-scene-orchard.png"
+              alt="Lalli and Fafa in the orange orchard"
+              fill
+              className="object-cover"
+              style={{ objectPosition: "center 30%" }}
               priority
             />
             {/* Bottom gradient */}
             <div
-              className="absolute inset-x-0 bottom-0 h-20"
-              style={{ background: "linear-gradient(to top, rgba(255,193,7,0.12), transparent)" }}
+              className="absolute inset-x-0 bottom-0 h-28"
+              style={{ background: "linear-gradient(to top, rgba(14,10,31,0.55), transparent)" }}
             />
             {/* Scene label */}
             <div className="absolute bottom-5 left-0 right-0 flex justify-center">
@@ -139,7 +138,7 @@ export function CharactersSection() {
                   boxShadow: "0 2px 12px rgba(0,0,0,0.15)",
                 }}
               >
-                ✨ Your child's forever companions
+                🍊 The Orange Orchard Adventure
               </span>
             </div>
           </div>
