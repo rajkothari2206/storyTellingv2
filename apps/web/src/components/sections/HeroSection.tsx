@@ -7,58 +7,58 @@ import { Sparkles, Play, Star } from "lucide-react";
 const stats = [
   { value: "10,000+", label: "Happy families" },
   { value: "English & Hindi", label: "Languages" },
-  { value: "100%", label: "Safe content" },
+  { value: "100%", label: "Safe & ad-free" },
 ];
 
 export function HeroSection() {
   return (
     <section
-      className="relative min-h-[70vh] flex items-center overflow-hidden"
-      style={{ paddingTop: 72 }}
+      className="relative overflow-hidden"
+      style={{ paddingTop: 72, background: "var(--lf-cream)" }}
     >
-      {/* Background blobs */}
-      <div className="absolute inset-0 -z-10 overflow-hidden">
+      {/* Soft background gradients */}
+      <div className="absolute inset-0 -z-10 pointer-events-none">
         <div
-          className="absolute rounded-full blur-3xl opacity-40"
+          className="absolute rounded-full blur-3xl"
           style={{
-            width: 520, height: 520,
-            background: "radial-gradient(circle, #F9C700 0%, transparent 70%)",
-            top: "-15%", right: "-5%",
+            width: 600, height: 600,
+            background: "radial-gradient(circle, rgba(255,193,7,0.18) 0%, transparent 70%)",
+            top: "-20%", right: "-8%",
           }}
         />
         <div
-          className="absolute rounded-full blur-3xl opacity-25"
+          className="absolute rounded-full blur-3xl"
           style={{
-            width: 380, height: 380,
-            background: "radial-gradient(circle, #1ABFA6 0%, transparent 70%)",
-            bottom: "-10%", left: "-5%",
+            width: 400, height: 400,
+            background: "radial-gradient(circle, rgba(0,201,167,0.12) 0%, transparent 70%)",
+            bottom: "0%", left: "-5%",
           }}
         />
       </div>
 
-      {/* Floating decorations */}
-      <span className="animate-float absolute top-28 left-[5%] text-3xl hidden lg:block select-none">⭐</span>
-      <span className="animate-float-slow absolute bottom-24 left-[8%] text-xl hidden lg:block select-none">🌙</span>
+      {/* Floating decorations — desktop only */}
+      <span className="animate-float absolute top-28 left-[4%] text-3xl hidden xl:block select-none" style={{ opacity: 0.7 }}>⭐</span>
+      <span className="animate-float-slow absolute bottom-16 left-[6%] text-2xl hidden xl:block select-none" style={{ opacity: 0.6 }}>🌙</span>
 
-      <div className="mx-auto w-full px-6 py-8 lg:py-10" style={{ maxWidth: 1160 }}>
-        <div className="grid lg:grid-cols-[1fr_440px] gap-8 items-center">
+      <div className="mx-auto w-full px-6" style={{ maxWidth: 1180 }}>
+        <div className="grid lg:grid-cols-[1fr_480px] items-center gap-0">
 
-          {/* Left — copy */}
-          <div className="flex flex-col gap-5 text-center lg:text-left">
+          {/* ── Left: copy ── */}
+          <div className="flex flex-col gap-5 py-12 lg:py-16 text-center lg:text-left">
 
             {/* Badge */}
             <div className="flex justify-center lg:justify-start">
               <div
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold"
                 style={{
-                  background: "rgba(249,199,0,0.15)",
-                  color: "#b8860b",
-                  border: "1px solid rgba(249,199,0,0.4)",
+                  background: "rgba(255,193,7,0.14)",
+                  color: "#9a6e00",
+                  border: "1px solid rgba(255,193,7,0.35)",
                 }}
               >
-                <Star size={13} fill="currentColor" />
+                <Star size={12} fill="currentColor" />
                 Loved by 10,000+ families
-                <Star size={13} fill="currentColor" />
+                <Star size={12} fill="currentColor" />
               </div>
             </div>
 
@@ -66,7 +66,7 @@ export function HeroSection() {
             <h1
               style={{
                 fontFamily: "'Baloo 2', sans-serif",
-                fontSize: "clamp(2.4rem, 5.5vw, 3.8rem)",
+                fontSize: "clamp(2.5rem, 5.2vw, 3.9rem)",
                 fontWeight: 800,
                 lineHeight: 1.1,
                 color: "var(--lf-dark)",
@@ -81,7 +81,7 @@ export function HeroSection() {
                 <svg
                   viewBox="0 0 120 12"
                   className="absolute -bottom-1 left-0 w-full"
-                  style={{ fill: "none", stroke: "var(--lf-sunshine)", strokeWidth: 3, strokeLinecap: "round" }}
+                  style={{ fill: "none", stroke: "var(--lf-sunshine)", strokeWidth: 3.5, strokeLinecap: "round" }}
                 >
                   <path d="M4 8 Q30 2 60 8 Q90 14 116 6" />
                 </svg>
@@ -92,47 +92,56 @@ export function HeroSection() {
             {/* Sub */}
             <p
               style={{
-                fontSize: "clamp(1rem, 2vw, 1.12rem)",
-                color: "rgba(45,45,45,0.65)",
-                maxWidth: 500,
-                lineHeight: 1.7,
+                fontSize: "clamp(1rem, 1.8vw, 1.1rem)",
+                color: "rgba(14,10,31,0.58)",
+                maxWidth: 480,
+                lineHeight: 1.75,
               }}
               className="mx-auto lg:mx-0"
             >
               AI-powered personalised stories featuring{" "}
-              <strong style={{ color: "var(--lf-dark)" }}>Lalli &amp; Fafa</strong> — with
-              beautiful narration in <strong>English &amp; Hindi</strong>.
+              <strong style={{ color: "var(--lf-dark)", fontWeight: 700 }}>Lalli &amp; Fafa</strong> — with
+              beautiful narration in <strong style={{ color: "var(--lf-dark)" }}>English &amp; Hindi</strong>.
               Perfect for bedtime, screen time that matters, and growing little hearts.
             </p>
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-1">
-              <Link href="/sign-up" className="btn-primary" style={{ fontSize: "1.05rem", padding: "0.875rem 2.25rem" }}>
-                <Sparkles size={18} />
+              <Link
+                href="/sign-up"
+                className="btn-primary"
+                style={{ fontSize: "1.05rem", padding: "0.9rem 2.25rem" }}
+              >
+                <Sparkles size={17} />
                 Start Free — No credit card
               </Link>
-              <Link href="/stories" className="btn-ghost" style={{ fontSize: "1.05rem", padding: "0.875rem 2.25rem" }}>
-                <Play size={16} fill="currentColor" />
+              <Link
+                href="/stories"
+                className="btn-ghost"
+                style={{ fontSize: "1.05rem", padding: "0.9rem 2.25rem" }}
+              >
+                <Play size={15} fill="currentColor" />
                 See a story
               </Link>
             </div>
 
-            {/* Stats */}
-            <div className="flex flex-wrap justify-center lg:justify-start gap-3 pt-1">
+            {/* Stats row */}
+            <div className="flex flex-wrap justify-center lg:justify-start gap-3 pt-2">
               {stats.map((s) => (
                 <div
                   key={s.label}
                   className="flex flex-col items-center lg:items-start px-5 py-3 rounded-2xl"
                   style={{
-                    background: "rgba(255,255,255,0.75)",
+                    background: "rgba(255,255,255,0.8)",
                     backdropFilter: "blur(8px)",
-                    border: "1px solid rgba(255,255,255,0.9)",
+                    border: "1px solid rgba(0,0,0,0.06)",
+                    boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
                   }}
                 >
                   <span
                     style={{
                       fontFamily: "'Baloo 2', sans-serif",
-                      fontSize: "1.05rem",
+                      fontSize: "1rem",
                       fontWeight: 800,
                       color: "var(--lf-teal)",
                       lineHeight: 1.2,
@@ -140,100 +149,101 @@ export function HeroSection() {
                   >
                     {s.value}
                   </span>
-                  <span style={{ fontSize: 12, color: "rgba(45,45,45,0.55)", fontWeight: 600 }}>{s.label}</span>
+                  <span style={{ fontSize: 11, color: "rgba(14,10,31,0.45)", fontWeight: 600 }}>
+                    {s.label}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Right — Lalli & Fafa showcase */}
-          <div className="relative flex items-end justify-center hidden lg:flex" style={{ minHeight: 420 }}>
+          {/* ── Right: Lalli & Fafa — desktop ── */}
+          <div className="relative hidden lg:flex items-end justify-center" style={{ height: 540 }}>
 
-            {/* Big soft glow behind characters */}
+            {/* Warm glow that echoes the characters' own aura */}
             <div
-              className="absolute inset-0 rounded-full"
+              className="absolute"
               style={{
-                background: "radial-gradient(ellipse at 50% 80%, rgba(255,193,7,0.28) 0%, rgba(0,201,167,0.18) 50%, transparent 75%)",
-                transform: "scale(1.1)",
+                width: 420, height: 420,
+                borderRadius: "50%",
+                background: "radial-gradient(circle, rgba(255,193,7,0.22) 0%, rgba(255,140,0,0.08) 50%, transparent 75%)",
+                bottom: "4%", left: "50%",
+                transform: "translateX(-50%)",
+                filter: "blur(24px)",
               }}
             />
 
-            {/* Floating story card — top left */}
-            <div
-              className="absolute top-6 left-0 rounded-2xl p-3.5 shadow-xl z-10"
-              style={{
-                background: "rgba(255,255,255,0.95)",
-                backdropFilter: "blur(12px)",
-                border: "1px solid rgba(255,255,255,0.9)",
-                maxWidth: 175,
-              }}
-            >
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-base">📖</span>
-                <span style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 700, fontSize: 12, color: "var(--lf-dark)" }}>
-                  New story ready!
-                </span>
-              </div>
-              <p style={{ fontSize: 11, color: "rgba(45,45,45,0.6)", lineHeight: 1.5 }}>
-                "Arjun &amp; the Magic Forest" — 3 min, Hindi
-              </p>
-              <div
-                className="mt-2 text-center py-1 rounded-full text-xs font-bold"
-                style={{ background: "var(--lf-mint)", color: "var(--lf-teal)" }}
-              >
-                ▶ Play story
-              </div>
-            </div>
-
-            {/* Sparkle top-right */}
-            <span className="animate-float-delay absolute top-10 right-4 text-2xl select-none z-10">✨</span>
-            <span className="animate-float absolute top-36 right-2 text-xl select-none z-10">🌟</span>
-
-            {/* Characters image */}
+            {/* Characters — no blend mode needed, PNG has transparent bg */}
             <div className="animate-float-slow relative z-10 w-full flex justify-center">
               <Image
-                src="/lf-scene-planets.png"
-                alt="Lalli and Fafa — your child's story companions"
-                width={420}
-                height={460}
-                className="object-contain drop-shadow-2xl"
-                style={{ mixBlendMode: "multiply", maxWidth: "100%" }}
+                src="/lf-hero.png"
+                alt="Lalli and Fafa — your child's forever story companions"
+                width={480}
+                height={540}
+                className="object-contain"
+                style={{ objectPosition: "bottom", maxWidth: "100%" }}
                 priority
               />
             </div>
 
-            {/* Name badges at the bottom */}
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-3 z-10">
+            {/* Name badges pinned at the bottom */}
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-3 z-20">
               <span
-                className="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shadow-md"
+                className="px-3.5 py-1.5 rounded-full text-xs font-bold shadow-md whitespace-nowrap"
                 style={{ background: "var(--lf-sunshine)", color: "var(--lf-dark)" }}
               >
-                ⭐ Lalli, age 6
+                ⭐ Lalli · age 6
               </span>
               <span
-                className="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shadow-md"
+                className="px-3.5 py-1.5 rounded-full text-xs font-bold shadow-md whitespace-nowrap"
                 style={{ background: "var(--lf-teal)", color: "#fff" }}
               >
-                💙 Fafa, age 3
+                💙 Fafa · age 3
               </span>
             </div>
+
+            {/* Floating info card — top left of image */}
+            <div
+              className="absolute top-10 left-2 z-20 rounded-2xl px-4 py-3 shadow-xl"
+              style={{
+                background: "rgba(255,255,255,0.95)",
+                backdropFilter: "blur(16px)",
+                border: "1px solid rgba(255,255,255,1)",
+                maxWidth: 180,
+              }}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <span style={{ fontSize: 18 }}>✨</span>
+                <span style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 700, fontSize: 12, color: "var(--lf-dark)", lineHeight: 1.3 }}>
+                  Personalised<br />just for your child
+                </span>
+              </div>
+              <div className="flex gap-1 mt-1.5">
+                {["🌟","🌙","🎨","📖"].map(e => (
+                  <span key={e} className="text-sm">{e}</span>
+                ))}
+              </div>
+            </div>
+
+            {/* Floating sparkle — top right */}
+            <span className="animate-float-delay absolute top-14 right-6 text-2xl select-none z-10">✨</span>
           </div>
 
-          {/* Mobile — characters image (shows below text) */}
-          <div className="flex lg:hidden justify-center relative" style={{ minHeight: 260 }}>
+          {/* ── Mobile: characters below copy ── */}
+          <div className="flex lg:hidden justify-center relative pb-4" style={{ minHeight: 300 }}>
             <div
-              className="absolute inset-0 rounded-full"
+              className="absolute inset-0"
               style={{
-                background: "radial-gradient(ellipse, rgba(255,193,7,0.2) 0%, transparent 70%)",
+                background: "radial-gradient(ellipse, rgba(255,193,7,0.18) 0%, transparent 70%)",
               }}
             />
             <Image
-              src="/lf-scene-planets.png"
+              src="/lf-hero.png"
               alt="Lalli and Fafa"
-              width={280}
-              height={300}
-              className="object-contain drop-shadow-xl relative z-10"
-              style={{ mixBlendMode: "multiply" }}
+              width={300}
+              height={340}
+              className="object-contain relative z-10"
+              priority
             />
           </div>
 
