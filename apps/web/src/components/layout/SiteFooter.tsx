@@ -38,7 +38,7 @@ const footerLinks = {
   ],
   Learn: [
     { label: "Blog", href: "/blog" },
-    { label: "FAQ", href: "/faq" },
+    { label: "Learn / FAQ", href: "/learn" },
     { label: "About Us", href: "/about" },
     { label: "Characters", href: "/#characters" },
   ],

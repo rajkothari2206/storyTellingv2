@@ -13,7 +13,7 @@ const stats = [
 export function HeroSection() {
   return (
     <section
-      className="relative min-h-screen flex items-center overflow-hidden"
+      className="relative min-h-[88vh] flex items-center overflow-hidden"
       style={{ paddingTop: 72 }}
     >
       {/* Background blobs */}
@@ -51,7 +51,7 @@ export function HeroSection() {
       <span className="animate-float absolute bottom-40 right-[8%] text-xl hidden lg:block select-none">🌟</span>
 
       <div className="mx-auto w-full px-6" style={{ maxWidth: 1200 }}>
-        <div className="grid lg:grid-cols-2 gap-12 items-center py-16 lg:py-24">
+        <div className="grid lg:grid-cols-2 gap-10 items-center py-10 lg:py-14">
 
           {/* Left — copy */}
           <div className="flex flex-col gap-6 text-center lg:text-left">
@@ -67,7 +67,7 @@ export function HeroSection() {
                 }}
               >
                 <Star size={14} fill="currentColor" />
-                Loved by 10,000+ Indian families
+                Loved by 10,000+ families
                 <Star size={14} fill="currentColor" />
               </div>
             </div>

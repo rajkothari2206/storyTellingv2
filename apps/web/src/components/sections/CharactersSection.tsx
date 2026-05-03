@@ -1,141 +1,206 @@
 import Image from "next/image";
-
-const characters = [
-  {
-    name: "Lalli",
-    age: "6 years old",
-    image: "/Lalli-new.png",
-    blendMode: "multiply" as const,
-    tagline: "Brave. Curious. Always first to say yes to adventure.",
-    traits: ["🌟 Natural leader", "💛 Warm-hearted", "🦁 Fearless explorer"],
-    color: "var(--lf-sunshine)",
-    bg: "linear-gradient(135deg, rgba(249,199,0,0.15) 0%, rgba(255,232,214,0.4) 100%)",
-    accentBg: "rgba(249,199,0,0.12)",
-    tagBg: "var(--lf-sunshine)",
-    tagColor: "var(--lf-dark)",
-    align: "left" as const,
-  },
-  {
-    name: "Fafa",
-    age: "3 years old",
-    image: "/Fafa_1.jpg",
-    blendMode: "multiply" as const,
-    tagline: "Thoughtful. Funny. Carries his lucky bunny everywhere.",
-    traits: ["🐰 Bunny's best friend", "💙 Big ideas, small body", "😄 The comic relief"],
-    color: "var(--lf-teal)",
-    bg: "linear-gradient(135deg, rgba(26,191,166,0.15) 0%, rgba(224,247,243,0.4) 100%)",
-    accentBg: "rgba(26,191,166,0.12)",
-    tagBg: "var(--lf-teal)",
-    tagColor: "#fff",
-    align: "right" as const,
-  },
-];
+import Link from "next/link";
+import { Sparkles } from "lucide-react";
 
 export function CharactersSection() {
   return (
-    <section
-      id="characters"
-      className="py-20 lg:py-28"
-      style={{ background: "var(--lf-mint)" }}
-    >
-      <div className="mx-auto px-6" style={{ maxWidth: 1200 }}>
-        {/* Header */}
-        <div className="text-center mb-14 flex flex-col items-center gap-3">
-          <span
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider"
-            style={{ background: "rgba(249,199,0,0.2)", color: "#b8860b" }}
-          >
-            Meet the characters
-          </span>
-          <h2
-            style={{
-              fontFamily: "'Baloo 2', sans-serif",
-              fontSize: "clamp(2rem, 4vw, 3rem)",
-              fontWeight: 800,
-              color: "var(--lf-dark)",
-            }}
-          >
-            Lalli &amp; Fafa —{" "}
-            <span className="text-gradient-sunshine">your child's forever friends</span>
-          </h2>
-          <p style={{ color: "rgba(45,45,45,0.65)", fontSize: "1.05rem", maxWidth: 520 }}>
-            Two characters designed to feel like family. In every story, they make room for
-            one more hero — yours.
-          </p>
-        </div>
-
-        {/* Character cards */}
-        <div className="grid md:grid-cols-2 gap-8">
-          {characters.map((c) => (
-            <div
-              key={c.name}
-              className="rounded-3xl overflow-hidden flex flex-col"
-              style={{ background: c.bg, border: "1.5px solid rgba(0,0,0,0.05)" }}
-            >
-              {/* Image area */}
-              <div
-                className="relative flex items-end justify-center pt-8"
-                style={{ minHeight: 280, background: c.accentBg }}
-              >
-                {/* Name badge */}
-                <div
-                  className="absolute top-5 left-5 px-3 py-1 rounded-full text-sm font-bold"
-                  style={{ background: c.tagBg, color: c.tagColor }}
-                >
-                  {c.name}, {c.age}
-                </div>
-
-                <Image
-                  src={c.image}
-                  alt={c.name}
-                  width={200}
-                  height={260}
-                  className="object-contain drop-shadow-xl"
-                  style={{ mixBlendMode: c.blendMode, maxHeight: 260 }}
-                />
-              </div>
-
-              {/* Info area */}
-              <div className="p-8 flex flex-col gap-4">
-                <p
-                  style={{
-                    fontFamily: "'Baloo 2', sans-serif",
-                    fontSize: "1.2rem",
-                    fontWeight: 700,
-                    color: "var(--lf-dark)",
-                    fontStyle: "italic",
-                  }}
-                >
-                  "{c.tagline}"
-                </p>
-                <ul className="flex flex-col gap-2">
-                  {c.traits.map((trait) => (
-                    <li
-                      key={trait}
-                      className="flex items-center gap-2 rounded-2xl px-4 py-2.5"
-                      style={{
-                        background: "rgba(255,255,255,0.7)",
-                        fontSize: "0.95rem",
-                        fontWeight: 600,
-                        color: "var(--lf-dark)",
-                      }}
-                    >
-                      {trait}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Bottom note */}
-        <p
-          className="text-center mt-10"
-          style={{ color: "rgba(45,45,45,0.5)", fontSize: "0.9rem", fontStyle: "italic" }}
+    <section id="characters" className="overflow-hidden" style={{ background: "#fff" }}>
+      {/* Section label */}
+      <div className="text-center pt-10 lg:pt-14 pb-6">
+        <span
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider"
+          style={{ background: "rgba(255,193,7,0.15)", color: "#92680a" }}
         >
-          In every story, your child's name, favourite animal, and personality are woven right alongside them 🌟
+          Meet the characters
+        </span>
+        <h2
+          className="mt-3"
+          style={{
+            fontFamily: "'Baloo 2', sans-serif",
+            fontSize: "clamp(1.9rem, 4vw, 2.8rem)",
+            fontWeight: 800,
+            color: "var(--lf-dark)",
+            lineHeight: 1.15,
+          }}
+        >
+          Your child's forever companions
+        </h2>
+        <p
+          className="mt-2 mx-auto"
+          style={{ color: "rgba(14,10,31,0.55)", fontSize: "1rem", maxWidth: 480 }}
+        >
+          Every story, Lalli &amp; Fafa make room for one more hero — yours.
         </p>
+      </div>
+
+      {/* Bold split panel */}
+      <div className="grid md:grid-cols-2" style={{ minHeight: 480 }}>
+
+        {/* LALLI — left panel, sunshine */}
+        <div
+          className="relative flex flex-col justify-end overflow-hidden"
+          style={{
+            background: "linear-gradient(160deg, #FFC107 0%, #FF8F00 100%)",
+            minHeight: 420,
+          }}
+        >
+          {/* Decorative circle */}
+          <div
+            className="absolute"
+            style={{
+              width: 320, height: 320,
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.08)",
+              top: -60, right: -60,
+            }}
+          />
+
+          {/* Character art */}
+          <div className="absolute bottom-0 right-8 md:right-12" style={{ zIndex: 2 }}>
+            <Image
+              src="/Lalli-new.png"
+              alt="Lalli"
+              width={220}
+              height={300}
+              className="object-contain drop-shadow-2xl"
+              style={{ mixBlendMode: "multiply" }}
+            />
+          </div>
+
+          {/* Info overlay */}
+          <div className="relative z-10 p-8 md:p-10" style={{ maxWidth: 280 }}>
+            <div
+              className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-3"
+              style={{ background: "rgba(0,0,0,0.15)", color: "#fff" }}
+            >
+              Age 6
+            </div>
+            <h3
+              style={{
+                fontFamily: "'Baloo 2', sans-serif",
+                fontSize: "2.4rem",
+                fontWeight: 800,
+                color: "#fff",
+                lineHeight: 1,
+              }}
+            >
+              Lalli
+            </h3>
+            <p
+              className="mt-2 mb-4"
+              style={{ color: "rgba(255,255,255,0.85)", fontSize: "0.95rem", lineHeight: 1.5 }}
+            >
+              Brave. Curious. Always first to say yes to adventure.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {["🌟 Natural leader", "💛 Warm-hearted", "🦁 Fearless explorer"].map((t) => (
+                <span
+                  key={t}
+                  className="px-3 py-1 rounded-full text-xs font-bold"
+                  style={{ background: "rgba(255,255,255,0.25)", color: "#fff" }}
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* FAFA — right panel, teal */}
+        <div
+          className="relative flex flex-col justify-end overflow-hidden"
+          style={{
+            background: "linear-gradient(160deg, #00C9A7 0%, #007A65 100%)",
+            minHeight: 420,
+          }}
+        >
+          {/* Decorative circle */}
+          <div
+            className="absolute"
+            style={{
+              width: 280, height: 280,
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.08)",
+              top: -40, left: -60,
+            }}
+          />
+
+          {/* Character art */}
+          <div className="absolute bottom-0 left-6 md:left-10" style={{ zIndex: 2 }}>
+            <Image
+              src="/Fafa_1.jpg"
+              alt="Fafa"
+              width={190}
+              height={260}
+              className="object-contain drop-shadow-2xl rounded-2xl"
+              style={{ mixBlendMode: "multiply" }}
+            />
+          </div>
+
+          {/* Info overlay */}
+          <div className="relative z-10 p-8 md:p-10 self-end" style={{ maxWidth: 280 }}>
+            <div
+              className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-3"
+              style={{ background: "rgba(0,0,0,0.15)", color: "#fff" }}
+            >
+              Age 3
+            </div>
+            <h3
+              style={{
+                fontFamily: "'Baloo 2', sans-serif",
+                fontSize: "2.4rem",
+                fontWeight: 800,
+                color: "#fff",
+                lineHeight: 1,
+              }}
+            >
+              Fafa
+            </h3>
+            <p
+              className="mt-2 mb-4"
+              style={{ color: "rgba(255,255,255,0.85)", fontSize: "0.95rem", lineHeight: 1.5 }}
+            >
+              Thoughtful. Funny. Carries his lucky bunny everywhere.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {["🐰 Bunny's BFF", "💙 Big ideas, small body", "😄 The comic relief"].map((t) => (
+                <span
+                  key={t}
+                  className="px-3 py-1 rounded-full text-xs font-bold"
+                  style={{ background: "rgba(255,255,255,0.25)", color: "#fff" }}
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom strip — "your child joins" */}
+      <div
+        className="flex flex-col sm:flex-row items-center justify-between gap-4 px-8 py-5"
+        style={{ background: "var(--lf-dark)" }}
+      >
+        <p
+          style={{
+            fontFamily: "'Baloo 2', sans-serif",
+            fontWeight: 700,
+            fontSize: "1.05rem",
+            color: "#fff",
+          }}
+        >
+          ✨ In every story, your child is the{" "}
+          <span style={{ color: "var(--lf-sunshine)" }}>third hero</span> alongside them.
+        </p>
+        <Link
+          href="/sign-up"
+          className="btn-primary"
+          style={{ fontSize: "0.9rem", padding: "0.65rem 1.5rem", flexShrink: 0 }}
+        >
+          <Sparkles size={15} />
+          Start a story
+        </Link>
       </div>
     </section>
   );

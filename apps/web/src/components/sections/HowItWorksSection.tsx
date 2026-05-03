@@ -32,12 +32,12 @@ export function HowItWorksSection() {
   return (
     <section
       id="how-it-works"
-      className="py-20 lg:py-28"
+      className="py-10 lg:py-14"
       style={{ background: "var(--lf-peach)" }}
     >
       <div className="mx-auto px-6" style={{ maxWidth: 1200 }}>
         {/* Header */}
-        <div className="text-center mb-16 flex flex-col items-center gap-3">
+        <div className="text-center mb-10 flex flex-col items-center gap-3">
           <span
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider"
             style={{ background: "rgba(255,107,53,0.15)", color: "var(--lf-mango)" }}

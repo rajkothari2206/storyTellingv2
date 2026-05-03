@@ -3,7 +3,7 @@ import { Sparkles, ArrowRight } from "lucide-react";
 
 export function CTASection() {
   return (
-    <section className="py-20 lg:py-28" style={{ background: "#fff" }}>
+    <section className="py-10 lg:py-14" style={{ background: "#fff" }}>
       <div className="mx-auto px-6" style={{ maxWidth: 900 }}>
         <div
           className="relative rounded-3xl overflow-hidden p-12 lg:p-16 text-center flex flex-col items-center gap-6"
@@ -47,7 +47,7 @@ export function CTASection() {
                 lineHeight: 1.7,
               }}
             >
-              Start free. No credit card. Join 10,000+ Indian families already
+              Start free. No credit card. Join 10,000+ families already
               turning bedtime into the best part of the day.
             </p>
 
