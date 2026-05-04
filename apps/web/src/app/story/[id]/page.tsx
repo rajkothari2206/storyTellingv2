@@ -39,7 +39,8 @@ function formatTime(s: number) {
 }
 
 /* Split a scene's text into individual sentences */
-function splitSentences(text: string): string[] {
+function splitSentences(text: string | null | undefined): string[] {
+  if (!text || typeof text !== "string") return [];
   const raw = text.match(/[^.!?…]+[.!?…]+(?:\s|$)|[^.!?…]+$/g) ?? [text];
   return raw.map((s) => s.trim()).filter(Boolean);
 }
@@ -83,7 +84,7 @@ function getCurrentSubtitle(
 ──────────────────────────────────────────────────────────────── */
 interface SceneMeta {
   sceneNumber: number;
-  text: string;
+  text?: string | null;
   imagePrompt?: string;
 }
 interface StoryShape {
@@ -233,12 +234,12 @@ function StoryViewer({
   const sceneProgress = numScenes > 1 ? currentScene / (numScenes - 1) : 0;
 
   /* Subtitle: split scene text into sentences, pick current one by audio time */
-  const sceneSentences = scene ? splitSentences(scene.text) : [];
+  const sceneSentences = scene?.text ? splitSentences(scene.text) : [];
   const subtitleText = getCurrentSubtitle(currentTime, duration, numScenes, currentScene, sceneSentences);
   const speaker = subtitleText ? detectSpeaker(subtitleText) : null;
 
   /* Strip "Lalli said" / "Fafa replied" framing so subtitle shows clean dialogue */
-  const cleanSubtitle = subtitleText
+  const cleanSubtitle = (subtitleText || "")
     .replace(/^(Lalli|Fafa)\s+(said|replied|whispered|shouted|asked|cried|laughed|smiled and said)[,:]?\s*/i, "")
     .replace(/,?\s*(said|replied|whispered|shouted|asked|cried|laughed)\s+(Lalli|Fafa)\s*\.?$/i, "")
     .trim();
