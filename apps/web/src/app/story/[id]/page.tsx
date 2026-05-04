@@ -38,6 +38,46 @@ function formatTime(s: number) {
   return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
+/* Split a scene's text into individual sentences */
+function splitSentences(text: string): string[] {
+  const raw = text.match(/[^.!?…]+[.!?…]+(?:\s|$)|[^.!?…]+$/g) ?? [text];
+  return raw.map((s) => s.trim()).filter(Boolean);
+}
+
+/* Detect a character name to show as the subtitle speaker */
+const CHARACTERS: { name: string; color: string }[] = [
+  { name: "Lalli", color: "#f9c700" },
+  { name: "Fafa",  color: "#00c9a7" },
+];
+
+function detectSpeaker(sentence: string): { name: string; color: string } | null {
+  // Match patterns like: Lalli said, "…" / "…" said Lalli / Lalli: / Lalli smiled and said
+  for (const char of CHARACTERS) {
+    const pattern = new RegExp(`\\b${char.name}\\b`, "i");
+    if (pattern.test(sentence)) return char;
+  }
+  return null;
+}
+
+/* Given currentTime, duration, scene index, and scene sentences — return current subtitle */
+function getCurrentSubtitle(
+  currentTime: number,
+  duration: number,
+  numScenes: number,
+  sceneIndex: number,
+  sentences: string[]
+): string {
+  if (!duration || sentences.length === 0) return "";
+  const sceneDuration = duration / numScenes;
+  const sceneStart = sceneIndex * sceneDuration;
+  const timeInScene = Math.max(0, currentTime - sceneStart);
+  const idx = Math.min(
+    sentences.length - 1,
+    Math.floor((timeInScene / sceneDuration) * sentences.length)
+  );
+  return sentences[idx] ?? "";
+}
+
 /* ────────────────────────────────────────────────────────────────
    Types
 ──────────────────────────────────────────────────────────────── */
@@ -90,11 +130,16 @@ export default function StoryPage({ params }: { params: Promise<{ id: string }> 
           66%  { transform: translateX(-8px) translateY(-14px) rotate(-10deg); }
           100% { transform: translateX(0) translateY(0) rotate(0deg); }
         }
+        @keyframes subtitle-in {
+          from { opacity: 0; transform: translateY(6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
         .scene-img { animation: img-fade 0.4s ease; }
         .scene-text-card { animation: fade-slide 0.35s ease; }
         .float-star { animation: float-star ease-in-out infinite; }
         .twinkle { animation: twinkle ease-in-out infinite; }
         .drift { animation: drift ease-in-out infinite; }
+        .subtitle-line { animation: subtitle-in 0.25s ease; }
       `}</style>
 
       <AuthLoading>
@@ -221,6 +266,17 @@ function StoryViewer({
   const scene = scenes[currentScene];
   const sceneImageUrl = imageUrls?.[currentScene]?.url ?? null;
   const sceneProgress = numScenes > 1 ? currentScene / (numScenes - 1) : 0;
+
+  /* Subtitle: split scene text into sentences, pick current one by audio time */
+  const sceneSentences = scene ? splitSentences(scene.text) : [];
+  const subtitleText = getCurrentSubtitle(currentTime, duration, numScenes, currentScene, sceneSentences);
+  const speaker = subtitleText ? detectSpeaker(subtitleText) : null;
+
+  /* Strip "Lalli said" / "Fafa replied" framing so subtitle shows clean dialogue */
+  const cleanSubtitle = subtitleText
+    .replace(/^(Lalli|Fafa)\s+(said|replied|whispered|shouted|asked|cried|laughed|smiled and said)[,:]?\s*/i, "")
+    .replace(/,?\s*(said|replied|whispered|shouted|asked|cried|laughed)\s+(Lalli|Fafa)\s*\.?$/i, "")
+    .trim();
 
   /* ── Loading / error states ── */
   if (story === undefined) return <LoadingScreen />;
@@ -419,6 +475,55 @@ function StoryViewer({
                 >
                   <ChevronRight size={22} />
                 </button>
+              )}
+
+              {/* ── Subtitle overlay ── */}
+              {cleanSubtitle && (
+                <div
+                  className="absolute left-0 right-0 flex flex-col items-center gap-1 px-4"
+                  style={{ bottom: 14 }}
+                >
+                  {/* Speaker name badge */}
+                  {speaker && (
+                    <span
+                      key={speaker.name + subtitleText.slice(0, 8)}
+                      className="subtitle-line px-2.5 py-0.5 rounded-full text-xs font-black tracking-wide"
+                      style={{
+                        background: speaker.color,
+                        color: speaker.name === "Lalli" ? "#131020" : "#fff",
+                        boxShadow: `0 2px 10px ${speaker.color}99`,
+                      }}
+                    >
+                      {speaker.name}
+                    </span>
+                  )}
+
+                  {/* Subtitle text */}
+                  <div
+                    key={subtitleText}
+                    className="subtitle-line px-4 py-2 rounded-xl text-center max-w-lg"
+                    style={{
+                      background: "rgba(0,0,0,0.72)",
+                      backdropFilter: "blur(8px)",
+                      border: speaker
+                        ? `1.5px solid ${speaker.color}55`
+                        : "1.5px solid rgba(255,255,255,0.15)",
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontFamily: "'Nunito', sans-serif",
+                        fontWeight: 700,
+                        fontSize: "0.88rem",
+                        lineHeight: 1.5,
+                        color: "#fff",
+                        textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+                      }}
+                    >
+                      {cleanSubtitle}
+                    </p>
+                  </div>
+                </div>
               )}
 
               {/* Progress bar at bottom of image */}
