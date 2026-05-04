@@ -107,41 +107,6 @@ export default function StoryPage({ params }: { params: Promise<{ id: string }> 
 
   return (
     <>
-      <style>{`
-        @keyframes fade-slide {
-          from { opacity: 0; transform: translateY(8px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes img-fade {
-          from { opacity: 0; }
-          to   { opacity: 1; }
-        }
-        @keyframes float-star {
-          0%,100% { transform: translateY(0px) rotate(0deg); opacity: 0.55; }
-          50%      { transform: translateY(-14px) rotate(20deg); opacity: 0.9; }
-        }
-        @keyframes twinkle {
-          0%,100% { opacity: 0.2; transform: scale(0.8); }
-          50%      { opacity: 0.9; transform: scale(1.2); }
-        }
-        @keyframes drift {
-          0%   { transform: translateX(0) translateY(0) rotate(0deg); }
-          33%  { transform: translateX(12px) translateY(-8px) rotate(15deg); }
-          66%  { transform: translateX(-8px) translateY(-14px) rotate(-10deg); }
-          100% { transform: translateX(0) translateY(0) rotate(0deg); }
-        }
-        @keyframes subtitle-in {
-          from { opacity: 0; transform: translateY(6px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .scene-img { animation: img-fade 0.4s ease; }
-        .scene-text-card { animation: fade-slide 0.35s ease; }
-        .float-star { animation: float-star ease-in-out infinite; }
-        .twinkle { animation: twinkle ease-in-out infinite; }
-        .drift { animation: drift ease-in-out infinite; }
-        .subtitle-line { animation: subtitle-in 0.25s ease; }
-      `}</style>
-
       <AuthLoading>
         <LoadingScreen />
       </AuthLoading>
