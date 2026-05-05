@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Menu, X, Sparkles, LayoutDashboard } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { UserPill } from "@/components/layout/UserPill";
 
 const navLinks = [
   { label: "Stories", href: "/stories" },
@@ -148,14 +149,7 @@ export function SiteHeader() {
 
           {/* Auth + CTA */}
           {isLoggedIn ? (
-            <Link
-              href="/dashboard"
-              className="btn-primary"
-              style={{ fontSize: 14, padding: "0.5rem 1.25rem" }}
-            >
-              <LayoutDashboard size={14} />
-              Dashboard
-            </Link>
+            <UserPill variant="light" />
           ) : (
             <>
               <Link
@@ -217,14 +211,9 @@ export function SiteHeader() {
             ))}
             <div className="flex flex-col gap-2 mt-4">
               {isLoggedIn ? (
-                <Link
-                  href="/dashboard"
-                  onClick={() => setMenuOpen(false)}
-                  className="btn-primary w-full text-center"
-                >
-                  <LayoutDashboard size={16} />
-                  Dashboard
-                </Link>
+                <div className="flex justify-center">
+                  <UserPill variant="light" />
+                </div>
               ) : (
                 <>
                   <Link

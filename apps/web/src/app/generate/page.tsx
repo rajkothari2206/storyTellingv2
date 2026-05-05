@@ -28,6 +28,7 @@ import {
   Check,
 } from "lucide-react";
 import { toast } from "sonner";
+import { UserPill } from "@/components/layout/UserPill";
 
 const LANGUAGES = ["English", "Hindi"] as const;
 const LENGTHS: { value: "short" | "medium" | "long"; label: string; desc: string; credits: number; premium?: boolean }[] = [
@@ -127,16 +128,11 @@ function GenerateForm({ isAuthenticated }: { isAuthenticated: boolean }) {
             Lalli <span style={{ color: "var(--lf-teal)" }}>Fafa</span>
           </span>
         </Link>
-        <nav className="flex items-center gap-1">
+        <nav className="flex items-center gap-2">
           <Link href="/dashboard" className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all hover:bg-white/10" style={{ color: "rgba(255,255,255,0.6)", fontFamily: "'Nunito', sans-serif" }}>
             <ChevronLeft size={15} /> Dashboard
           </Link>
-          <Link href="/library" className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all hover:bg-white/10" style={{ color: "rgba(255,255,255,0.6)", fontFamily: "'Nunito', sans-serif" }}>
-            <Library size={15} /> Library
-          </Link>
-          <Link href="/profile" className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all hover:bg-white/10" style={{ color: "rgba(255,255,255,0.6)", fontFamily: "'Nunito', sans-serif" }}>
-            <User size={15} /> Profile
-          </Link>
+          <UserPill variant="dark" />
         </nav>
       </header>
 

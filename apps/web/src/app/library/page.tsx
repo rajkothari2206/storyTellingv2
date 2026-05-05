@@ -13,6 +13,7 @@ import {
 } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { authClient } from "@/lib/auth-client";
+import { UserPill } from "@/components/layout/UserPill";
 import {
   BookOpen,
   Search,
@@ -220,10 +221,7 @@ export default function LibraryPage() {
               >
                 <Sparkles size={14} /> New Story
               </Link>
-              <button onClick={handleSignOut} className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold transition-all hover:bg-black/5" style={{ color: "rgba(45,45,45,0.45)", fontFamily: "'Nunito', sans-serif" }}>
-                <LogOut size={15} />
-                <span className="hidden sm:inline">Sign out</span>
-              </button>
+              <UserPill variant="light" />
             </div>
           </header>
 

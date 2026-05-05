@@ -35,6 +35,7 @@ import {
   Plus,
   ChevronRight,
 } from "lucide-react";
+import { UserPill } from "@/components/layout/UserPill";
 
 /* ──────────────────── helpers ───────────────────────── */
 
@@ -371,16 +372,14 @@ export default function ProfilePage() {
                 Lalli <span style={{ color: "var(--lf-teal)" }}>Fafa</span>
               </span>
             </Link>
-            <nav className="flex items-center gap-1">
+            <nav className="flex items-center gap-2">
               <Link href="/dashboard" className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold hover:bg-white/10 transition-all" style={{ color: "rgba(255,255,255,0.6)", fontFamily: "'Nunito', sans-serif" }}>
                 <LayoutDashboard size={15} /> Dashboard
               </Link>
               <Link href="/library" className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold hover:bg-white/10 transition-all" style={{ color: "rgba(255,255,255,0.6)", fontFamily: "'Nunito', sans-serif" }}>
                 <Library size={15} /> Library
               </Link>
-              <button onClick={handleSignOut} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold hover:bg-white/10 transition-all" style={{ color: "rgba(255,255,255,0.4)", fontFamily: "'Nunito', sans-serif" }}>
-                <LogOut size={15} /> Sign out
-              </button>
+              <UserPill variant="dark" />
             </nav>
           </header>
 
