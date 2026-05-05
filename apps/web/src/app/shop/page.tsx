@@ -1,14 +1,12 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
-import { Bell, Star, Package, Truck, ShieldCheck } from "lucide-react";
+import Image from "next/image";
+import { Bell, Star, Package, Truck, ShieldCheck, CheckCircle2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
-
-export const metadata: Metadata = {
-  title: "Shop",
-  description:
-    "Bring the Lalli Fafa magic home. Physical story kits, monthly adventure boxes, and STEM toys — all inspired by your child's favourite characters.",
-};
 
 const products = [
   {
@@ -19,6 +17,9 @@ const products = [
     price: "₹499",
     badge: null,
     category: "Activity Kit",
+    image: "/LalliKit.jpg",
+    accent: "rgba(249,199,0,0.12)",
+    accentColor: "#b8860b",
     includes: ["48-page coloring book", "Character sticker sheets", "Story activity cards", "Mini poster of Lalli & Fafa"],
   },
   {
@@ -29,6 +30,9 @@ const products = [
     price: "₹999 / month",
     badge: "⭐ Featured",
     category: "Subscription",
+    image: "/subscriptionBox.jpg",
+    accent: "var(--lf-mint)",
+    accentColor: "var(--lf-teal)",
     includes: ["Monthly story theme booklet", "Hands-on activity pack", "Character collectible", "Parent activity guide"],
   },
   {
@@ -39,6 +43,9 @@ const products = [
     price: "₹599",
     badge: null,
     category: "STEM Kit",
+    image: "/FafaKit.jpg",
+    accent: "rgba(255,107,53,0.08)",
+    accentColor: "var(--lf-mango)",
     includes: ["Building block challenge cards", "Logic puzzle booklet", "Mini engineer toolkit", "Fafa figurine"],
   },
 ];
@@ -65,6 +72,130 @@ const whyPhysical = [
     desc: "All materials are child-safe, age-appropriate, and designed with care. No sharp edges, no small parts for toddlers.",
   },
 ];
+
+function NotifyButton({ productName }: { productName: string }) {
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setLoading(true);
+    // Simulate submission — replace with a real API call / Convex mutation when ready
+    await new Promise((r) => setTimeout(r, 900));
+    setLoading(false);
+    setDone(true);
+    toast.success(`We'll notify you when ${productName} launches! 🎉`);
+  }
+
+  if (done) {
+    return (
+      <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold"
+        style={{ background: "rgba(0,201,167,0.1)", color: "var(--lf-teal)", fontFamily: "'Nunito', sans-serif" }}>
+        <CheckCircle2 size={16} /> You&apos;re on the list!
+      </div>
+    );
+  }
+
+  if (open) {
+    return (
+      <form onSubmit={handleSubmit} className="flex gap-2 flex-wrap">
+        <input
+          type="email"
+          placeholder="your@email.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          autoFocus
+          className="flex-1 px-4 py-2.5 rounded-2xl outline-none text-sm"
+          style={{
+            background: "#fff",
+            border: "1.5px solid rgba(0,0,0,0.12)",
+            color: "var(--lf-dark)",
+            fontFamily: "'Nunito', sans-serif",
+            minWidth: 180,
+          }}
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className="btn-primary flex-shrink-0"
+          style={{ fontSize: "0.88rem", padding: "0.55rem 1.1rem" }}
+        >
+          {loading ? <Loader2 size={14} className="animate-spin" /> : <Bell size={14} />}
+          {loading ? "…" : "Notify me"}
+        </button>
+      </form>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => setOpen(true)}
+      className="btn-primary"
+      style={{ fontSize: "0.95rem" }}
+    >
+      <Bell size={16} /> Notify me
+    </button>
+  );
+}
+
+function BottomNotifyForm() {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setLoading(true);
+    await new Promise((r) => setTimeout(r, 900));
+    setLoading(false);
+    setDone(true);
+    toast.success("You're on the list! We'll let you know when the shop launches. 🎉");
+    setEmail("");
+  }
+
+  if (done) {
+    return (
+      <div className="flex items-center justify-center gap-2 px-6 py-3 rounded-2xl text-sm font-semibold"
+        style={{ background: "rgba(0,201,167,0.15)", color: "var(--lf-teal)", fontFamily: "'Nunito', sans-serif" }}>
+        <CheckCircle2 size={18} /> You&apos;re on the list — we&apos;ll be in touch!
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
+      <input
+        type="email"
+        placeholder="your@email.com"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+        className="flex-1 px-4 py-3 rounded-2xl outline-none"
+        style={{
+          background: "rgba(255,255,255,0.1)",
+          border: "1.5px solid rgba(255,255,255,0.2)",
+          color: "#fff",
+          fontSize: "0.95rem",
+          fontFamily: "'Nunito', sans-serif",
+        }}
+      />
+      <button
+        type="submit"
+        disabled={loading}
+        className="btn-primary flex-shrink-0"
+        style={{ fontSize: "0.95rem" }}
+      >
+        {loading ? <Loader2 size={16} className="animate-spin" /> : <Bell size={16} />}
+        {loading ? "Sending…" : "Notify me"}
+      </button>
+    </form>
+  );
+}
 
 export default function ShopPage() {
   return (
@@ -126,42 +257,44 @@ export default function ShopPage() {
                   key={product.id}
                   className={`flex flex-col ${i % 2 === 1 ? "md:flex-row-reverse" : "md:flex-row"} gap-8 md:gap-14 items-center`}
                 >
-                  {/* Image placeholder */}
+                  {/* Product image */}
                   <div
-                    className="w-full md:w-2/5 flex-shrink-0 rounded-3xl flex flex-col items-center justify-center gap-3"
-                    style={{
-                      aspectRatio: "4/3",
-                      background: i === 0 ? "rgba(249,199,0,0.12)" : i === 1 ? "var(--lf-mint)" : "rgba(255,107,53,0.08)",
-                      position: "relative",
-                    }}
+                    className="w-full md:w-2/5 flex-shrink-0 rounded-3xl overflow-hidden relative"
+                    style={{ aspectRatio: "4/3" }}
                   >
-                    {product.badge && (
-                      <div
-                        className="absolute top-4 left-4 px-3 py-1.5 rounded-full text-sm font-bold"
-                        style={{ background: "var(--lf-sunshine)", color: "var(--lf-dark)" }}
-                      >
-                        {product.badge}
-                      </div>
-                    )}
-                    <span style={{ fontSize: "4rem" }}>
-                      {i === 0 ? "🎨" : i === 1 ? "📦" : "🔧"}
-                    </span>
-                    <span
-                      className="px-4 py-1.5 rounded-full font-bold text-sm"
-                      style={{ background: "#fff", color: "var(--lf-dark)" }}
+                    <Image
+                      src={product.image}
+                      alt={product.name}
+                      fill
+                      className="object-cover"
+                    />
+                    {/* Overlay for "Coming Soon" */}
+                    <div
+                      className="absolute inset-0 flex flex-col items-end justify-start p-4 gap-2"
+                      style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, transparent 40%)" }}
                     >
-                      Coming Soon
-                    </span>
+                      {product.badge && (
+                        <div
+                          className="px-3 py-1.5 rounded-full text-sm font-bold"
+                          style={{ background: "var(--lf-sunshine)", color: "var(--lf-dark)" }}
+                        >
+                          {product.badge}
+                        </div>
+                      )}
+                      <div
+                        className="px-3 py-1.5 rounded-full text-xs font-bold"
+                        style={{ background: "rgba(255,255,255,0.92)", color: "var(--lf-dark)", backdropFilter: "blur(4px)" }}
+                      >
+                        Coming Soon
+                      </div>
+                    </div>
                   </div>
 
                   {/* Content */}
                   <div className="flex-1">
                     <span
                       className="inline-flex px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4"
-                      style={{
-                        background: i === 0 ? "rgba(249,199,0,0.15)" : i === 1 ? "var(--lf-mint)" : "rgba(255,107,53,0.1)",
-                        color: i === 0 ? "#b8860b" : i === 1 ? "var(--lf-teal)" : "var(--lf-mango)",
-                      }}
+                      style={{ background: product.accent, color: product.accentColor }}
                     >
                       {product.category}
                     </span>
@@ -207,7 +340,7 @@ export default function ShopPage() {
                       </ul>
                     </div>
 
-                    <div className="mt-8 flex items-center gap-4">
+                    <div className="mt-8 flex items-center gap-4 flex-wrap">
                       <span
                         style={{
                           fontFamily: "'Baloo 2', sans-serif",
@@ -218,12 +351,7 @@ export default function ShopPage() {
                       >
                         {product.price}
                       </span>
-                      <button
-                        className="btn-primary"
-                        style={{ fontSize: "0.95rem" }}
-                      >
-                        <Bell size={16} /> Notify me
-                      </button>
+                      <NotifyButton productName={product.name} />
                     </div>
                   </div>
                 </div>
@@ -300,23 +428,7 @@ export default function ShopPage() {
             <p className="mt-4 mb-8" style={{ color: "rgba(255,255,255,0.6)", fontSize: "1rem", lineHeight: 1.7 }}>
               Early subscribers get exclusive launch discounts and first pick of kits.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="your@email.com"
-                className="flex-1 px-4 py-3 rounded-2xl outline-none"
-                style={{
-                  background: "rgba(255,255,255,0.1)",
-                  border: "1.5px solid rgba(255,255,255,0.2)",
-                  color: "#fff",
-                  fontSize: "0.95rem",
-                  fontFamily: "'Nunito', sans-serif",
-                }}
-              />
-              <button className="btn-primary" style={{ fontSize: "0.95rem", flexShrink: 0 }}>
-                <Bell size={16} /> Notify me
-              </button>
-            </div>
+            <BottomNotifyForm />
             <p className="mt-5" style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.8rem" }}>
               No spam. Unsubscribe anytime.{" "}
               <Link href="/sign-up" style={{ color: "var(--lf-teal)" }}>

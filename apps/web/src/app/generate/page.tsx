@@ -113,46 +113,51 @@ function GenerateForm({ isAuthenticated }: { isAuthenticated: boolean }) {
   const isLoading = profile === undefined || themes === undefined || lessons === undefined || credits === undefined;
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--lf-cream)" }}>
+    <div className="min-h-screen" style={{ background: "linear-gradient(160deg,#FFF8E7 0%,#E6FAF6 60%,#F3EEFF 100%)" }}>
       {/* Header */}
       <header
-        className="sticky top-0 z-40 flex items-center justify-between px-6 py-4"
-        style={{ background: "rgba(255,252,245,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}
+        className="sticky top-0 z-40 flex items-center justify-between px-6 py-3"
+        style={{ background: "rgba(14,12,26,0.97)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.07)", height: 62 }}
       >
-        <Link href="/" className="flex items-center gap-2">
-          <div className="relative" style={{ width: 32, height: 32 }}>
-            <Image src="/logoNoBg.png" alt="Lalli Fafa" fill className="object-contain" />
+        <Link href="/" className="flex items-center gap-2.5">
+          <div className="relative" style={{ width: 44, height: 44 }}>
+            <Image src="/lf-logo.png" alt="Lalli Fafa" fill className="object-contain" />
           </div>
-          <span style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "var(--lf-dark)" }}>
+          <span style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "#fff" }}>
             Lalli <span style={{ color: "var(--lf-teal)" }}>Fafa</span>
           </span>
         </Link>
-        <nav className="flex items-center gap-2">
-          <Link href="/dashboard" className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all hover:bg-black/5" style={{ color: "var(--lf-dark)", fontFamily: "'Nunito', sans-serif" }}>
-            <ChevronLeft size={16} /> Dashboard
+        <nav className="flex items-center gap-1">
+          <Link href="/dashboard" className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all hover:bg-white/10" style={{ color: "rgba(255,255,255,0.6)", fontFamily: "'Nunito', sans-serif" }}>
+            <ChevronLeft size={15} /> Dashboard
           </Link>
-          <Link href="/library" className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all hover:bg-black/5" style={{ color: "var(--lf-dark)", fontFamily: "'Nunito', sans-serif" }}>
-            <Library size={16} /> Library
+          <Link href="/library" className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all hover:bg-white/10" style={{ color: "rgba(255,255,255,0.6)", fontFamily: "'Nunito', sans-serif" }}>
+            <Library size={15} /> Library
           </Link>
-          <Link href="/profile" className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all hover:bg-black/5" style={{ color: "var(--lf-dark)", fontFamily: "'Nunito', sans-serif" }}>
-            <User size={16} /> Profile
+          <Link href="/profile" className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all hover:bg-white/10" style={{ color: "rgba(255,255,255,0.6)", fontFamily: "'Nunito', sans-serif" }}>
+            <User size={15} /> Profile
           </Link>
         </nav>
       </header>
 
       <main className="max-w-2xl mx-auto px-6 py-10 flex flex-col gap-8">
         {/* Page title */}
-        <div className="flex flex-col gap-1">
-          <h1 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "clamp(1.8rem,4vw,2.4rem)", color: "var(--lf-dark)" }}>
-            Create a new story ✨
-          </h1>
-          <p style={{ color: "rgba(45,45,45,0.55)", fontFamily: "'Nunito', sans-serif", fontSize: "1rem" }}>
-            Pick your options below — your personalised story is ready in seconds.
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <h1 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "clamp(1.8rem,4vw,2.4rem)", color: "var(--lf-dark)" }}>
+              Create a new story ✨
+            </h1>
+            <p style={{ color: "rgba(45,45,45,0.55)", fontFamily: "'Nunito', sans-serif", fontSize: "1rem" }}>
+              Pick your options below — your personalised story is ready in seconds.
+            </p>
+          </div>
+          <div className="relative flex-shrink-0 hidden sm:block" style={{ width: 64, height: 64 }}>
+            <Image src="/lf-hero.png" alt="Lalli Fafa" fill className="object-contain" style={{ filter: "drop-shadow(0 4px 12px rgba(0,201,167,0.3))" }} />
+          </div>
         </div>
 
         {/* Credits */}
-        <div className="flex items-center justify-between px-5 py-3 rounded-2xl" style={{ background: "#fff", border: "1.5px solid rgba(0,0,0,0.06)" }}>
+        <div className="flex items-center justify-between px-5 py-3 rounded-2xl" style={{ background: "#fff", border: "1.5px solid rgba(0,0,0,0.06)", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
           <div className="flex items-center gap-2">
             <Zap size={18} style={{ color: "#a855f7" }} />
             <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 600, color: "var(--lf-dark)", fontSize: "0.9rem" }}>
@@ -380,7 +385,7 @@ function GenerateForm({ isAuthenticated }: { isAuthenticated: boolean }) {
 
 function Section({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-3 p-5 rounded-2xl" style={{ background: "#fff", border: "1.5px solid rgba(0,0,0,0.06)" }}>
+    <div className="flex flex-col gap-3 p-5 rounded-2xl" style={{ background: "#fff", border: "1.5px solid rgba(0,0,0,0.06)", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
       <div className="flex items-center gap-2" style={{ color: "var(--lf-dark)" }}>
         <span style={{ color: "var(--lf-teal)" }}>{icon}</span>
         <span style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 700, fontSize: "0.95rem" }}>{title}</span>
@@ -446,7 +451,7 @@ function Checkbox({
 
 function FullPageSpinner() {
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--lf-cream)" }}>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(160deg,#FFF8E7 0%,#E6FAF6 60%,#F3EEFF 100%)" }}>
       <div className="flex flex-col items-center gap-4">
         <div className="w-12 h-12 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: "var(--lf-teal)", borderTopColor: "transparent" }} />
         <p style={{ color: "var(--lf-dark)", fontFamily: "'Nunito', sans-serif", opacity: 0.6 }}>Loading…</p>

@@ -55,29 +55,29 @@ export default function ProfilePage() {
         </div>
       </Unauthenticated>
       <Authenticated>
-        <div className="min-h-screen" style={{ background: "var(--lf-cream)" }}>
+        <div className="min-h-screen" style={{ background: "linear-gradient(160deg,#FFF8E7 0%,#E6FAF6 60%,#F3EEFF 100%)" }}>
           {/* Nav */}
           <header
-            className="sticky top-0 z-40 flex items-center justify-between px-6 py-4"
-            style={{ background: "rgba(255,252,245,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}
+            className="sticky top-0 z-40 flex items-center justify-between px-6 py-3"
+            style={{ background: "rgba(14,12,26,0.97)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.07)", height: 62 }}
           >
-            <Link href="/" className="flex items-center gap-2">
-              <div className="relative" style={{ width: 32, height: 32 }}>
-                <Image src="/logoNoBg.png" alt="Lalli Fafa" fill className="object-contain" />
+            <Link href="/" className="flex items-center gap-2.5">
+              <div className="relative" style={{ width: 44, height: 44 }}>
+                <Image src="/lf-logo.png" alt="Lalli Fafa" fill className="object-contain" />
               </div>
-              <span style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "var(--lf-dark)" }}>
+              <span style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "#fff" }}>
                 Lalli <span style={{ color: "var(--lf-teal)" }}>Fafa</span>
               </span>
             </Link>
-            <nav className="flex items-center gap-2">
-              <Link href="/dashboard" className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-black/5 transition-all" style={{ color: "var(--lf-dark)", fontFamily: "'Nunito', sans-serif" }}>
-                <LayoutDashboard size={16} /> Dashboard
+            <nav className="flex items-center gap-1">
+              <Link href="/dashboard" className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold hover:bg-white/10 transition-all" style={{ color: "rgba(255,255,255,0.6)", fontFamily: "'Nunito', sans-serif" }}>
+                <LayoutDashboard size={15} /> Dashboard
               </Link>
-              <Link href="/library" className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-black/5 transition-all" style={{ color: "var(--lf-dark)", fontFamily: "'Nunito', sans-serif" }}>
-                <Library size={16} /> Library
+              <Link href="/library" className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold hover:bg-white/10 transition-all" style={{ color: "rgba(255,255,255,0.6)", fontFamily: "'Nunito', sans-serif" }}>
+                <Library size={15} /> Library
               </Link>
-              <button onClick={handleSignOut} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-black/5 transition-all" style={{ color: "rgba(45,45,45,0.5)", fontFamily: "'Nunito', sans-serif" }}>
-                <LogOut size={16} /> Sign out
+              <button onClick={handleSignOut} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold hover:bg-white/10 transition-all" style={{ color: "rgba(255,255,255,0.4)", fontFamily: "'Nunito', sans-serif" }}>
+                <LogOut size={15} /> Sign out
               </button>
             </nav>
           </header>

@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/dashboard", "/generate", "/library", "/admin", "/api/"],
+        disallow: ["/dashboard", "/generate", "/library", "/admin", "/api/", "/onboarding", "/profile", "/story/"],
       },
     ],
     sitemap: "https://www.lallifafa.com/sitemap.xml",

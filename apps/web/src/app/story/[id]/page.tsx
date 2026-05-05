@@ -189,6 +189,28 @@ function StoryViewer({
     }
   }, [currentTime, duration, numScenes, currentScene]);
 
+  /* Keyboard shortcuts: Space = play/pause, ← = prev scene, → = next scene */
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      // Don't intercept when user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.code === "Space") {
+        e.preventDefault();
+        if (!audioRef.current) return;
+        if (isPlaying) { audioRef.current.pause(); setIsPlaying(false); }
+        else { audioRef.current.play(); setIsPlaying(true); }
+      } else if (e.code === "ArrowRight") {
+        e.preventDefault();
+        setCurrentScene(currentScene + 1);
+      } else if (e.code === "ArrowLeft") {
+        e.preventDefault();
+        setCurrentScene(currentScene - 1);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isPlaying, currentScene, setCurrentScene]);
+
   /* Audio event handlers */
   const onTimeUpdate = () => {
     if (audioRef.current && !seeking) setCurrentTime(audioRef.current.currentTime);
