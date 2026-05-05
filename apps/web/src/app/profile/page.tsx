@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   useQuery,
+  useMutation,
   useConvexAuth,
   Authenticated,
   AuthLoading,
@@ -27,59 +28,292 @@ import {
   Calendar,
   Users,
   Lock,
+  Pencil,
+  Camera,
+  X,
+  Save,
+  Plus,
+  ChevronRight,
 } from "lucide-react";
 
-/* ── helpers ─────────────────────────────────────────── */
+/* ──────────────────── helpers ───────────────────────── */
 
-function avatarGradient(color?: string) {
-  const map: Record<string, string> = {
-    pink:   "linear-gradient(135deg,#FF6B9D 0%,#C850C0 100%)",
-    red:    "linear-gradient(135deg,#FF6B6B 0%,#EE5A24 100%)",
-    blue:   "linear-gradient(135deg,#74b9ff 0%,#0984e3 100%)",
-    green:  "linear-gradient(135deg,#55efc4 0%,#00b894 100%)",
-    purple: "linear-gradient(135deg,#a29bfe 0%,#6c5ce7 100%)",
-    yellow: "linear-gradient(135deg,#ffeaa7 0%,#fdcb6e 100%)",
-    orange: "linear-gradient(135deg,#ffa07a 0%,#FF6348 100%)",
-    teal:   "linear-gradient(135deg,#81ecec 0%,#00cec9 100%)",
-    white:  "linear-gradient(135deg,#dfe6e9 0%,#b2bec3 100%)",
-    black:  "linear-gradient(135deg,#636e72 0%,#2d3436 100%)",
-  };
-  return map[(color ?? "").toLowerCase()] ?? "linear-gradient(135deg,var(--lf-teal) 0%,#00a38d 100%)";
-}
-
-function bannerBg(color?: string) {
-  const map: Record<string, string> = {
-    pink:   "linear-gradient(135deg,#3d1a2e 0%,#1e0d1a 100%)",
-    red:    "linear-gradient(135deg,#3d1a1a 0%,#1e0d0d 100%)",
-    blue:   "linear-gradient(135deg,#1a2a3d 0%,#0d1520 100%)",
-    green:  "linear-gradient(135deg,#1a3d30 0%,#0d1e18 100%)",
-    purple: "linear-gradient(135deg,#2a1a3d 0%,#150d20 100%)",
-    yellow: "linear-gradient(135deg,#3d340d 0%,#1e1a06 100%)",
-    orange: "linear-gradient(135deg,#3d2010 0%,#1e1008 100%)",
-    teal:   "linear-gradient(135deg,#0d2a2a 0%,#081515 100%)",
-  };
-  return map[(color ?? "").toLowerCase()] ?? "linear-gradient(135deg,#131020 0%,#1c1640 100%)";
-}
-
-const ACHIEVEMENT_META: Record<string, { icon: string; description: string }> = {
-  "First Story":    { icon: "📖", description: "Created your very first personalised story" },
-  "7 Days in a Row":{ icon: "🔥", description: "Read stories 7 days in a row — on fire!" },
-  "10 Stories":     { icon: "🌟", description: "Generated 10 magical stories" },
-  "Night Owl":      { icon: "🦉", description: "Read a story after 9 pm" },
-  "Early Bird":     { icon: "🐦", description: "Read a story before 7 am" },
-  "Story Master":   { icon: "👑", description: "Generated 25 stories" },
+const AVATAR_GRADIENTS: Record<string, string> = {
+  pink:   "linear-gradient(135deg,#FF6B9D 0%,#C850C0 100%)",
+  red:    "linear-gradient(135deg,#FF6B6B 0%,#EE5A24 100%)",
+  blue:   "linear-gradient(135deg,#74b9ff 0%,#0984e3 100%)",
+  green:  "linear-gradient(135deg,#55efc4 0%,#00b894 100%)",
+  purple: "linear-gradient(135deg,#a29bfe 0%,#6c5ce7 100%)",
+  yellow: "linear-gradient(135deg,#ffd93d 0%,#fdcb6e 100%)",
+  orange: "linear-gradient(135deg,#ffa07a 0%,#FF6348 100%)",
+  teal:   "linear-gradient(135deg,#81ecec 0%,#00cec9 100%)",
+  white:  "linear-gradient(135deg,#dfe6e9 0%,#b2bec3 100%)",
 };
 
-/* ── component ──────────────────────────────────────── */
+const CARD_BG: Record<string, string> = {
+  pink:   "linear-gradient(135deg,#FFF0F7 0%,#FFE0EF 100%)",
+  red:    "linear-gradient(135deg,#FFF0F0 0%,#FFE0E0 100%)",
+  blue:   "linear-gradient(135deg,#F0F5FF 0%,#E0ECFF 100%)",
+  green:  "linear-gradient(135deg,#F0FFF8 0%,#E0FFF0 100%)",
+  purple: "linear-gradient(135deg,#F7F0FF 0%,#EFE0FF 100%)",
+  yellow: "linear-gradient(135deg,#FFFBF0 0%,#FFF5D6 100%)",
+  orange: "linear-gradient(135deg,#FFF5F0 0%,#FFE8D6 100%)",
+  teal:   "linear-gradient(135deg,#F0FFFD 0%,#D6FFFA 100%)",
+};
+
+const CARD_BORDER: Record<string, string> = {
+  pink: "#FFB3D4", red: "#FFB3B3", blue: "#B3CCFF", green: "#B3F5D4",
+  purple: "#CFB3FF", yellow: "#FFE57A", orange: "#FFCFAD", teal: "#B3EEE8",
+};
+
+const ANIMAL_EMOJI: Record<string, string> = {
+  rabbit: "🐇", dog: "🐶", cat: "🐱", elephant: "🐘", lion: "🦁",
+  tiger: "🐯", bear: "🐻", panda: "🐼", unicorn: "🦄", dragon: "🐲",
+  butterfly: "🦋", penguin: "🐧", owl: "🦉", fox: "🦊", deer: "🦌",
+};
+
+const ACHIEVEMENT_META: Record<string, { icon: string; description: string }> = {
+  "First Story":     { icon: "📖", description: "Created your very first personalised story" },
+  "7 Days in a Row": { icon: "🔥", description: "Read stories 7 days in a row — on fire!" },
+  "10 Stories":      { icon: "🌟", description: "Generated 10 magical stories" },
+  "Night Owl":       { icon: "🦉", description: "Read a story after 9 pm" },
+  "Early Bird":      { icon: "🐦", description: "Read a story before 7 am" },
+  "Story Master":    { icon: "👑", description: "Generated 25 stories" },
+};
+
+const COLORS = ["Pink","Red","Blue","Green","Purple","Yellow","Orange","Teal","White"];
+const ANIMALS = ["Rabbit","Dog","Cat","Elephant","Lion","Tiger","Bear","Panda","Unicorn","Dragon","Butterfly","Penguin","Owl","Fox","Deer"];
+
+function avatarGrad(color?: string) {
+  return AVATAR_GRADIENTS[(color ?? "").toLowerCase()] ?? "linear-gradient(135deg,var(--lf-teal) 0%,#00a38d 100%)";
+}
+function cardBg(color?: string) {
+  return CARD_BG[(color ?? "").toLowerCase()] ?? "linear-gradient(135deg,#FFF8E7 0%,#E6FAF6 100%)";
+}
+function cardBorder(color?: string) {
+  return CARD_BORDER[(color ?? "").toLowerCase()] ?? "rgba(0,184,166,0.3)";
+}
+function animalEmoji(animal?: string) {
+  return ANIMAL_EMOJI[(animal ?? "").toLowerCase()] ?? "🐾";
+}
+
+/* ──────────────────── Edit modal ───────────────────── */
+
+type ProfileFields = {
+  parentName: string; childName: string; childNickName: string;
+  childAge: string; childGender: string; favoriteColor: string; favoriteAnimal: string;
+};
+
+function EditModal({
+  initial,
+  onSave,
+  onClose,
+}: {
+  initial: ProfileFields;
+  onSave: (f: ProfileFields) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [form, setForm] = useState<ProfileFields>(initial);
+  const [saving, setSaving] = useState(false);
+
+  function set(k: keyof ProfileFields, v: string) {
+    setForm((f) => ({ ...f, [k]: v }));
+  }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.childName.trim()) { toast.error("Child name is required"); return; }
+    setSaving(true);
+    try { await onSave(form); onClose(); }
+    finally { setSaving(false); }
+  }
+
+  const labelStyle = {
+    fontFamily: "'Nunito', sans-serif", fontSize: "0.75rem", fontWeight: 700,
+    color: "rgba(255,255,255,0.5)", textTransform: "uppercase" as const, letterSpacing: "0.05em",
+  };
+  const inputStyle = {
+    width: "100%", padding: "0.7rem 0.9rem", borderRadius: "0.8rem",
+    background: "rgba(255,255,255,0.08)", border: "1.5px solid rgba(255,255,255,0.15)",
+    color: "#fff", fontFamily: "'Nunito', sans-serif", fontSize: "0.95rem", fontWeight: 600,
+    outline: "none",
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl p-6 flex flex-col gap-5"
+        style={{ background: "#1a1630" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h2 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1.3rem", color: "#fff" }}>
+            Edit Profile
+          </h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-all" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSave} className="flex flex-col gap-4">
+          {/* Parent name */}
+          <div className="flex flex-col gap-1.5">
+            <label style={labelStyle}>Your name (parent)</label>
+            <input style={inputStyle} value={form.parentName} onChange={(e) => set("parentName", e.target.value)} placeholder="e.g. Raj" />
+          </div>
+
+          <div className="h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
+
+          {/* Child name + nickname */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label style={labelStyle}>Child's name</label>
+              <input style={inputStyle} value={form.childName} onChange={(e) => set("childName", e.target.value)} placeholder="e.g. Vanya" required />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label style={labelStyle}>Nickname</label>
+              <input style={inputStyle} value={form.childNickName} onChange={(e) => set("childNickName", e.target.value)} placeholder="e.g. Vany" />
+            </div>
+          </div>
+
+          {/* Age + gender */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label style={labelStyle}>Age</label>
+              <input style={inputStyle} type="number" min={1} max={12} value={form.childAge} onChange={(e) => set("childAge", e.target.value)} placeholder="e.g. 6" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label style={labelStyle}>Gender</label>
+              <select
+                style={{ ...inputStyle, appearance: "none" }}
+                value={form.childGender}
+                onChange={(e) => set("childGender", e.target.value)}
+              >
+                <option value="male">Boy</option>
+                <option value="female">Girl</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Fav colour */}
+          <div className="flex flex-col gap-2">
+            <label style={labelStyle}>Favourite colour</label>
+            <div className="flex flex-wrap gap-2">
+              {COLORS.map((c) => (
+                <button
+                  key={c} type="button"
+                  onClick={() => set("favoriteColor", c)}
+                  className="px-3 py-1.5 rounded-xl text-sm font-bold transition-all"
+                  style={{
+                    fontFamily: "'Nunito', sans-serif",
+                    background: form.favoriteColor.toLowerCase() === c.toLowerCase() ? avatarGrad(c) : "rgba(255,255,255,0.08)",
+                    color: form.favoriteColor.toLowerCase() === c.toLowerCase() ? "#fff" : "rgba(255,255,255,0.5)",
+                    border: `1.5px solid ${form.favoriteColor.toLowerCase() === c.toLowerCase() ? "transparent" : "rgba(255,255,255,0.1)"}`,
+                  }}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Fav animal */}
+          <div className="flex flex-col gap-2">
+            <label style={labelStyle}>Favourite animal</label>
+            <div className="flex flex-wrap gap-2">
+              {ANIMALS.map((a) => (
+                <button
+                  key={a} type="button"
+                  onClick={() => set("favoriteAnimal", a)}
+                  className="px-3 py-1.5 rounded-xl text-sm font-bold transition-all"
+                  style={{
+                    fontFamily: "'Nunito', sans-serif",
+                    background: form.favoriteAnimal.toLowerCase() === a.toLowerCase() ? "rgba(0,184,166,0.3)" : "rgba(255,255,255,0.08)",
+                    color: form.favoriteAnimal.toLowerCase() === a.toLowerCase() ? "var(--lf-teal)" : "rgba(255,255,255,0.5)",
+                    border: `1.5px solid ${form.favoriteAnimal.toLowerCase() === a.toLowerCase() ? "rgba(0,184,166,0.4)" : "rgba(255,255,255,0.1)"}`,
+                  }}
+                >
+                  {animalEmoji(a)} {a}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-bold transition-all"
+            style={{
+              background: "linear-gradient(135deg,var(--lf-teal),#00a38d)",
+              color: "#fff",
+              fontFamily: "'Nunito', sans-serif",
+              fontSize: "1rem",
+              opacity: saving ? 0.7 : 1,
+            }}
+          >
+            {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+            {saving ? "Saving…" : "Save changes"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────────── main page ─────────────────────── */
 
 export default function ProfilePage() {
   const router = useRouter();
   const { isAuthenticated } = useConvexAuth();
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  const profile       = useQuery(api.userProfiles.getProfile,    isAuthenticated ? {} : "skip");
-  const credits       = useQuery(api.credit.list,                isAuthenticated ? {} : "skip");
-  const stories       = useQuery(api.stories.list,               isAuthenticated ? {} : "skip");
+  const profile          = useQuery(api.userProfiles.getProfile,    isAuthenticated ? {} : "skip");
+  const credits          = useQuery(api.credit.list,                isAuthenticated ? {} : "skip");
+  const stories          = useQuery(api.stories.list,               isAuthenticated ? {} : "skip");
   const achievementsData = useQuery(api.userProfiles.getAchievements, isAuthenticated ? {} : "skip");
+  const createProfile    = useMutation(api.userProfiles.createProfile);
+
+  const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
+  const [editOpen, setEditOpen]   = useState(false);
+
+  // Load avatar from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem("lf_avatar");
+    if (stored) setAvatarSrc(stored);
+  }, []);
+
+  function handleAvatarFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { toast.error("Image must be under 2 MB"); return; }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const b64 = ev.target?.result as string;
+      setAvatarSrc(b64);
+      localStorage.setItem("lf_avatar", b64);
+      toast.success("Profile picture updated!");
+    };
+    reader.readAsDataURL(file);
+  }
+
+  const handleSaveProfile = useCallback(async (form: ProfileFields) => {
+    await createProfile({
+      parentName: form.parentName,
+      childName: form.childName,
+      childAge: parseInt(form.childAge) || 0,
+      childGender: form.childGender,
+      childNickName: form.childNickName,
+      favoriteColor: form.favoriteColor,
+      favoriteAnimal: form.favoriteAnimal,
+    });
+    toast.success("Profile updated! ✨");
+  }, [createProfile]);
 
   async function handleSignOut() {
     await authClient.signOut();
@@ -102,6 +336,26 @@ export default function ProfilePage() {
       </Unauthenticated>
 
       <Authenticated>
+        {/* Edit modal */}
+        {editOpen && profile && (() => {
+          const p = profile as ProfileFields & { childAge?: number };
+          return (
+            <EditModal
+              initial={{
+                parentName:    (p as { parentName?: string }).parentName    ?? "",
+                childName:     (p as { childName?: string }).childName      ?? "",
+                childNickName: (p as { childNickName?: string }).childNickName ?? "",
+                childAge:      String((p as { childAge?: number }).childAge ?? ""),
+                childGender:   (p as { childGender?: string }).childGender  ?? "female",
+                favoriteColor: (p as { favoriteColor?: string }).favoriteColor ?? "",
+                favoriteAnimal:(p as { favoriteAnimal?: string }).favoriteAnimal ?? "",
+              }}
+              onSave={handleSaveProfile}
+              onClose={() => setEditOpen(false)}
+            />
+          );
+        })()}
+
         <div className="min-h-screen" style={{ background: "linear-gradient(160deg,#FFF8E7 0%,#E6FAF6 60%,#F3EEFF 100%)" }}>
 
           {/* ── Nav ── */}
@@ -150,100 +404,175 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* ── Profile content ── */}
+          {/* ── Full profile ── */}
           {profile && (() => {
             const p = profile as {
               parentName?: string; childName?: string; childNickName?: string;
               childAge?: number; childGender?: string; favoriteColor?: string; favoriteAnimal?: string;
             };
+
             const initial = (p.childName ?? p.childNickName ?? "?")[0].toUpperCase();
             const earnedCount = (achievementsData?.achievements as Array<{ earned: boolean }> | undefined)?.filter(a => a.earned).length ?? 0;
+            const totalCount  = (achievementsData?.achievements as unknown[] | undefined)?.length ?? 0;
             const availableCredits = (credits as Array<{ availableCredits?: number }> | undefined)?.[0]?.availableCredits ?? 0;
             const storyCount = (stories as unknown[])?.length ?? 0;
+            const animal = animalEmoji(p.favoriteAnimal);
 
             return (
-              <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-6">
+              <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-6">
 
-                {/* ══ HERO BANNER ══ */}
+                {/* ══ KID CARD ══ */}
                 <div
                   className="relative overflow-hidden rounded-3xl"
-                  style={{ background: bannerBg(p.favoriteColor), minHeight: 220 }}
+                  style={{
+                    background: cardBg(p.favoriteColor),
+                    border: `2px solid ${cardBorder(p.favoriteColor)}`,
+                    boxShadow: "0 8px 40px rgba(0,0,0,0.08)",
+                  }}
                 >
-                  {/* Glow orbs */}
-                  <div className="absolute top-0 right-0 w-72 h-72 rounded-full pointer-events-none"
-                    style={{ background: "radial-gradient(circle,rgba(0,184,166,0.18) 0%,transparent 70%)", transform: "translate(30%,-30%)" }} />
-                  <div className="absolute bottom-0 left-0 w-56 h-56 rounded-full pointer-events-none"
-                    style={{ background: "radial-gradient(circle,rgba(249,199,0,0.12) 0%,transparent 70%)", transform: "translate(-30%,30%)" }} />
-
-                  {/* Lalli Fafa character — top right */}
-                  <div className="absolute right-6 bottom-0 hidden sm:block" style={{ width: 130, height: 130 }}>
-                    <Image src="/lf-hero.png" alt="Lalli Fafa" fill className="object-contain object-bottom" />
+                  {/* Big decorative animal watermark */}
+                  <div
+                    className="absolute right-4 top-1/2 -translate-y-1/2 select-none pointer-events-none"
+                    style={{ fontSize: "7rem", opacity: 0.12, lineHeight: 1 }}
+                    aria-hidden
+                  >
+                    {animal}
                   </div>
 
-                  <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-end gap-6 p-8">
+                  {/* Lalli Fafa character */}
+                  <div className="absolute right-28 bottom-0 hidden sm:block" style={{ width: 90, height: 90 }}>
+                    <Image src="/lf-hero.png" alt="" fill className="object-contain object-bottom" />
+                  </div>
+
+                  {/* Edit button */}
+                  <button
+                    onClick={() => setEditOpen(true)}
+                    className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold transition-all hover:scale-105 z-10"
+                    style={{
+                      background: "rgba(255,255,255,0.7)",
+                      backdropFilter: "blur(8px)",
+                      color: "var(--lf-dark)",
+                      fontFamily: "'Nunito', sans-serif",
+                      border: "1.5px solid rgba(255,255,255,0.9)",
+                    }}
+                  >
+                    <Pencil size={13} /> Edit
+                  </button>
+
+                  <div className="relative z-10 flex items-center gap-6 p-6 sm:p-8">
                     {/* Avatar */}
-                    <div className="relative flex-shrink-0">
-                      {/* Outer glow ring */}
-                      <div className="absolute inset-0 rounded-full"
-                        style={{ background: avatarGradient(p.favoriteColor), filter: "blur(14px)", opacity: 0.55, transform: "scale(1.18)" }} />
-                      <div
-                        className="relative flex items-center justify-center rounded-full"
-                        style={{
-                          width: 100, height: 100,
-                          background: avatarGradient(p.favoriteColor),
-                          border: "4px solid rgba(255,255,255,0.25)",
-                          boxShadow: "0 8px 32px rgba(0,0,0,0.35)",
-                          fontSize: "2.6rem",
-                          fontFamily: "'Baloo 2', sans-serif",
-                          fontWeight: 800,
-                          color: "#fff",
-                          textShadow: "0 2px 8px rgba(0,0,0,0.3)",
-                        }}
+                    <div className="flex-shrink-0">
+                      <input
+                        ref={fileRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleAvatarFile}
+                      />
+                      <button
+                        className="relative group cursor-pointer"
+                        onClick={() => fileRef.current?.click()}
+                        title="Change profile picture"
                       >
-                        {initial}
-                      </div>
-                      {/* Sparkle badge */}
-                      <div
-                        className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center"
-                        style={{ background: "var(--lf-sunshine)", border: "2px solid rgba(255,255,255,0.8)", fontSize: "0.8rem" }}
-                      >
-                        ✨
-                      </div>
+                        {/* Outer glow */}
+                        <div
+                          className="absolute inset-0 rounded-full pointer-events-none"
+                          style={{ background: avatarGrad(p.favoriteColor), filter: "blur(16px)", opacity: 0.4, transform: "scale(1.2)" }}
+                        />
+                        {/* Avatar circle */}
+                        <div
+                          className="relative rounded-full overflow-hidden flex items-center justify-center"
+                          style={{
+                            width: 96, height: 96,
+                            background: avatarSrc ? "transparent" : avatarGrad(p.favoriteColor),
+                            border: "3px solid rgba(255,255,255,0.8)",
+                            boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
+                            fontSize: "2.4rem",
+                            fontFamily: "'Baloo 2', sans-serif",
+                            fontWeight: 800,
+                            color: "#fff",
+                          }}
+                        >
+                          {avatarSrc ? (
+                            <img src={avatarSrc} alt="Profile" className="w-full h-full object-cover" />
+                          ) : (
+                            initial
+                          )}
+                          {/* Camera overlay */}
+                          <div
+                            className="absolute inset-0 rounded-full flex flex-col items-center justify-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            style={{ background: "rgba(0,0,0,0.55)" }}
+                          >
+                            <Camera size={20} style={{ color: "#fff" }} />
+                            <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.55rem", color: "#fff", fontWeight: 700 }}>
+                              CHANGE
+                            </span>
+                          </div>
+                        </div>
+                        {/* Sparkle badge */}
+                        <div
+                          className="absolute -bottom-0.5 -right-0.5 w-7 h-7 rounded-full flex items-center justify-center"
+                          style={{ background: avatarGrad(p.favoriteColor), border: "2.5px solid #fff", fontSize: "0.85rem" }}
+                        >
+                          {animal}
+                        </div>
+                      </button>
                     </div>
 
-                    {/* Name block */}
-                    <div className="flex flex-col gap-1 text-center sm:text-left">
-                      <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "clamp(1.8rem,4vw,2.4rem)", color: "#fff", lineHeight: 1.1 }}>
-                        {p.childName ?? "—"}
+                    {/* Info */}
+                    <div className="flex flex-col gap-2 flex-1 min-w-0">
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        <h1 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 900, fontSize: "clamp(1.8rem,4vw,2.4rem)", color: "var(--lf-dark)", lineHeight: 1.1 }}>
+                          {p.childName ?? "—"}
+                        </h1>
                         {p.childNickName && p.childNickName !== p.childName && (
-                          <span style={{ fontWeight: 600, fontSize: "0.55em", color: "rgba(255,255,255,0.5)", marginLeft: "0.4em" }}>
+                          <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "1rem", fontWeight: 700, color: "rgba(45,45,45,0.4)" }}>
                             "{p.childNickName}"
                           </span>
                         )}
-                      </p>
-                      <div className="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
+                      </div>
+
+                      {/* Chip row */}
+                      <div className="flex flex-wrap gap-2">
                         {p.childAge && (
-                          <span className="flex items-center gap-1" style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.85rem", color: "rgba(255,255,255,0.6)" }}>
-                            <Calendar size={13} /> Age {p.childAge}
+                          <span
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
+                            style={{ background: "rgba(255,255,255,0.7)", color: "var(--lf-dark)", fontFamily: "'Nunito', sans-serif", border: "1px solid rgba(255,255,255,0.9)" }}
+                          >
+                            <Calendar size={11} /> Age {p.childAge}
                           </span>
                         )}
                         {p.childGender && (
-                          <span className="flex items-center gap-1 capitalize" style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.85rem", color: "rgba(255,255,255,0.6)" }}>
-                            <Users size={13} /> {p.childGender}
+                          <span
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold capitalize"
+                            style={{ background: "rgba(255,255,255,0.7)", color: "var(--lf-dark)", fontFamily: "'Nunito', sans-serif", border: "1px solid rgba(255,255,255,0.9)" }}
+                          >
+                            <Users size={11} /> {p.childGender}
                           </span>
                         )}
                         {p.favoriteColor && (
-                          <span className="flex items-center gap-1 capitalize" style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.85rem", color: "rgba(255,255,255,0.6)" }}>
-                            <Palette size={13} /> {p.favoriteColor}
+                          <span
+                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold capitalize"
+                            style={{ background: "rgba(255,255,255,0.7)", color: "var(--lf-dark)", fontFamily: "'Nunito', sans-serif", border: "1px solid rgba(255,255,255,0.9)" }}
+                          >
+                            <span
+                              className="w-3 h-3 rounded-full flex-shrink-0"
+                              style={{ background: avatarGrad(p.favoriteColor) }}
+                            />
+                            {p.favoriteColor}
                           </span>
                         )}
                         {p.favoriteAnimal && (
-                          <span className="flex items-center gap-1 capitalize" style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.85rem", color: "rgba(255,255,255,0.6)" }}>
-                            <PawPrint size={13} /> {p.favoriteAnimal}
+                          <span
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold capitalize"
+                            style={{ background: "rgba(255,255,255,0.7)", color: "var(--lf-dark)", fontFamily: "'Nunito', sans-serif", border: "1px solid rgba(255,255,255,0.9)" }}
+                          >
+                            {animal} {p.favoriteAnimal}
                           </span>
                         )}
                       </div>
-                      <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.8rem", color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+
+                      <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.8rem", color: "rgba(45,45,45,0.4)", fontWeight: 600 }}>
                         Parent: {p.parentName ?? "—"}
                       </p>
                     </div>
@@ -253,51 +582,27 @@ export default function ProfilePage() {
                 {/* ══ STATS ══ */}
                 <div className="grid grid-cols-3 gap-4">
                   {[
-                    {
-                      icon: <BookOpen size={22} />,
-                      label: "Stories",
-                      value: storyCount,
-                      color: "var(--lf-teal)",
-                      bg: "rgba(0,184,166,0.08)",
-                      border: "rgba(0,184,166,0.2)",
-                      sub: storyCount === 1 ? "story created" : "stories created",
-                    },
-                    {
-                      icon: <Sparkles size={22} />,
-                      label: "Credits",
-                      value: availableCredits,
-                      color: "#a855f7",
-                      bg: "rgba(168,85,247,0.08)",
-                      border: "rgba(168,85,247,0.2)",
-                      sub: "available to use",
-                    },
-                    {
-                      icon: <Star size={22} />,
-                      label: "Badges",
-                      value: earnedCount,
-                      color: "#f9c700",
-                      bg: "rgba(249,199,0,0.08)",
-                      border: "rgba(249,199,0,0.2)",
-                      sub: "achievements earned",
-                    },
+                    { icon: <BookOpen size={20} />, label: "Stories", value: storyCount, sub: "created", color: "var(--lf-teal)", bg: "rgba(0,184,166,0.08)", border: "rgba(0,184,166,0.2)" },
+                    { icon: <Sparkles size={20} />, label: "Credits", value: availableCredits, sub: "left", color: "#a855f7", bg: "rgba(168,85,247,0.08)", border: "rgba(168,85,247,0.2)" },
+                    { icon: <Star size={20} />, label: "Badges", value: earnedCount, sub: `of ${totalCount}`, color: "#f9c700", bg: "rgba(249,199,0,0.08)", border: "rgba(249,199,0,0.2)" },
                   ].map((s) => (
                     <div
                       key={s.label}
                       className="flex flex-col gap-3 p-5 rounded-2xl"
-                      style={{ background: s.bg, border: `1.5px solid ${s.border}` }}
+                      style={{ background: "#fff", border: `1.5px solid ${s.border}`, boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}
                     >
                       <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center"
-                        style={{ background: s.bg, color: s.color, border: `1.5px solid ${s.border}` }}
+                        className="w-9 h-9 rounded-xl flex items-center justify-center"
+                        style={{ background: s.bg, color: s.color }}
                       >
                         {s.icon}
                       </div>
                       <div>
-                        <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "2rem", color: "var(--lf-dark)", lineHeight: 1 }}>
+                        <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 900, fontSize: "1.9rem", color: "var(--lf-dark)", lineHeight: 1 }}>
                           {s.value}
                         </p>
-                        <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.75rem", color: "rgba(45,45,45,0.45)", marginTop: 2 }}>
-                          {s.sub}
+                        <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.75rem", color: "rgba(45,45,45,0.4)", marginTop: 3 }}>
+                          {s.label} {s.sub}
                         </p>
                       </div>
                     </div>
@@ -305,28 +610,25 @@ export default function ProfilePage() {
                 </div>
 
                 {/* ══ ACHIEVEMENTS ══ */}
-                {achievementsData?.achievements && (
+                {achievementsData?.achievements && totalCount > 0 && (
                   <div
                     className="flex flex-col gap-5 p-6 rounded-2xl"
-                    style={{ background: "#fff", border: "1.5px solid rgba(0,0,0,0.06)" }}
+                    style={{ background: "#fff", border: "1.5px solid rgba(0,0,0,0.06)", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}
                   >
                     <div className="flex items-center justify-between">
-                      <h2 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1.2rem", color: "var(--lf-dark)" }}>
-                        Achievements
+                      <h2 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1.15rem", color: "var(--lf-dark)" }}>
+                        🏆 Achievements
                       </h2>
-                      <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.8rem", color: "rgba(45,45,45,0.4)", fontWeight: 600 }}>
-                        {earnedCount} / {(achievementsData.achievements as unknown[]).length} unlocked
+                      <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.8rem", color: "rgba(45,45,45,0.4)", fontWeight: 700 }}>
+                        {earnedCount}/{totalCount} unlocked
                       </span>
                     </div>
 
                     {/* Progress bar */}
                     <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(0,0,0,0.06)" }}>
                       <div
-                        className="h-full rounded-full transition-all"
-                        style={{
-                          width: `${(earnedCount / Math.max((achievementsData.achievements as unknown[]).length, 1)) * 100}%`,
-                          background: "linear-gradient(90deg,var(--lf-teal),#00a38d)",
-                        }}
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{ width: `${(earnedCount / Math.max(totalCount, 1)) * 100}%`, background: "linear-gradient(90deg,var(--lf-teal),#00a38d)" }}
                       />
                     </div>
 
@@ -336,63 +638,63 @@ export default function ProfilePage() {
                         return (
                           <div
                             key={a.name}
-                            className="flex items-center gap-4 p-4 rounded-xl transition-all"
+                            className="flex items-center gap-4 p-4 rounded-xl"
                             style={{
-                              background: a.earned ? "rgba(0,184,166,0.06)" : "rgba(0,0,0,0.025)",
-                              border: `1.5px solid ${a.earned ? "rgba(0,184,166,0.2)" : "rgba(0,0,0,0.06)"}`,
+                              background: a.earned ? "rgba(0,184,166,0.05)" : "rgba(0,0,0,0.02)",
+                              border: `1.5px solid ${a.earned ? "rgba(0,184,166,0.18)" : "rgba(0,0,0,0.06)"}`,
                             }}
                           >
-                            {/* Badge icon */}
                             <div
-                              className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
-                              style={{
-                                background: a.earned ? "rgba(0,184,166,0.12)" : "rgba(0,0,0,0.05)",
-                                filter: a.earned ? "none" : "grayscale(1)",
-                                opacity: a.earned ? 1 : 0.45,
-                                fontSize: "1.5rem",
-                              }}
+                              className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                              style={{ background: a.earned ? "rgba(0,184,166,0.1)" : "rgba(0,0,0,0.04)", fontSize: "1.4rem", filter: a.earned ? "none" : "grayscale(1)", opacity: a.earned ? 1 : 0.4 }}
                             >
                               {meta?.icon ?? "🏅"}
                             </div>
-                            <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                              <p
-                                style={{
-                                  fontFamily: "'Nunito', sans-serif",
-                                  fontWeight: 800,
-                                  fontSize: "0.9rem",
-                                  color: a.earned ? "var(--lf-dark)" : "rgba(45,45,45,0.4)",
-                                }}
-                              >
+                            <div className="flex-1 min-w-0">
+                              <p style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 800, fontSize: "0.88rem", color: a.earned ? "var(--lf-dark)" : "rgba(45,45,45,0.35)" }}>
                                 {a.name}
                               </p>
-                              <p
-                                style={{
-                                  fontFamily: "'Nunito', sans-serif",
-                                  fontSize: "0.75rem",
-                                  color: a.earned ? "rgba(45,45,45,0.5)" : "rgba(45,45,45,0.3)",
-                                  lineHeight: 1.3,
-                                }}
-                              >
+                              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.73rem", color: a.earned ? "rgba(45,45,45,0.5)" : "rgba(45,45,45,0.25)", lineHeight: 1.3 }}>
                                 {meta?.description ?? a.description ?? "Keep reading to unlock!"}
                               </p>
                             </div>
-                            {/* Status */}
-                            {a.earned ? (
-                              <div
-                                className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center"
-                                style={{ background: "var(--lf-teal)", fontSize: "0.65rem", color: "#fff", fontWeight: 800 }}
-                              >
-                                ✓
-                              </div>
-                            ) : (
-                              <Lock size={14} style={{ color: "rgba(45,45,45,0.25)", flexShrink: 0 }} />
-                            )}
+                            {a.earned
+                              ? <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold" style={{ background: "var(--lf-teal)", color: "#fff" }}>✓</div>
+                              : <Lock size={13} style={{ color: "rgba(45,45,45,0.2)", flexShrink: 0 }} />
+                            }
                           </div>
                         );
                       })}
                     </div>
                   </div>
                 )}
+
+                {/* ══ ADD ANOTHER CHILD ══ */}
+                <div
+                  className="flex items-center gap-4 p-5 rounded-2xl"
+                  style={{ background: "rgba(249,199,0,0.06)", border: "1.5px dashed rgba(249,199,0,0.4)" }}
+                >
+                  <div
+                    className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: "rgba(249,199,0,0.15)" }}
+                  >
+                    <Plus size={20} style={{ color: "#d4aa00" }} />
+                  </div>
+                  <div className="flex-1">
+                    <p style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 800, fontSize: "0.95rem", color: "var(--lf-dark)" }}>
+                      Add another child
+                    </p>
+                    <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.78rem", color: "rgba(45,45,45,0.45)" }}>
+                      Multi-child support coming soon — stories for every little one!
+                    </p>
+                  </div>
+                  <span
+                    className="flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-bold"
+                    style={{ background: "rgba(249,199,0,0.15)", color: "#b8920a", fontFamily: "'Nunito', sans-serif" }}
+                  >
+                    Soon
+                  </span>
+                </div>
 
                 {/* ══ ACTIONS ══ */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-6">
@@ -406,13 +708,7 @@ export default function ProfilePage() {
                   <button
                     onClick={handleSignOut}
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl font-semibold transition-all hover:bg-black/5"
-                    style={{
-                      background: "#fff",
-                      border: "1.5px solid rgba(0,0,0,0.1)",
-                      color: "rgba(45,45,45,0.6)",
-                      fontFamily: "'Nunito', sans-serif",
-                      fontSize: "1rem",
-                    }}
+                    style={{ background: "#fff", border: "1.5px solid rgba(0,0,0,0.1)", color: "rgba(45,45,45,0.6)", fontFamily: "'Nunito', sans-serif", fontSize: "1rem" }}
                   >
                     <LogOut size={18} /> Sign out
                   </button>
