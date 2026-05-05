@@ -26,6 +26,10 @@ import {
   SkipForward,
   Library,
   Sparkles,
+  FlaskConical,
+  X,
+  Copy,
+  Check,
 } from "lucide-react";
 
 /* ────────────────────────────────────────────────────────────────
@@ -143,6 +147,7 @@ function StoryViewer({
   const scenes: SceneMeta[] = story?.sceneMetadata ?? [];
   const numScenes = scenes.length;
   const [currentScene, setCurrentSceneRaw] = useState(0);
+  const [debugOpen, setDebugOpen] = useState(false);
 
   /* Audio state */
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -281,6 +286,15 @@ function StoryViewer({
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "#0e0c1a" }}>
 
+      {/* ── Prompt inspector modal ── */}
+      {debugOpen && (
+        <PromptInspector
+          scenes={scenes}
+          currentScene={currentScene}
+          onClose={() => setDebugOpen(false)}
+        />
+      )}
+
       {/* ── Top bar ── */}
       <header
         className="flex items-center justify-between px-4 py-3 flex-shrink-0"
@@ -317,14 +331,27 @@ function StoryViewer({
           </div>
         </div>
 
-        {/* Scene counter */}
-        {numScenes > 0 && (
-          <div className="flex-shrink-0 px-3 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
-            <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.8rem", color: "rgba(255,255,255,0.55)" }}>
-              {currentScene + 1} <span style={{ opacity: 0.45 }}>/</span> {numScenes}
-            </span>
-          </div>
-        )}
+        {/* Right side: scene counter + debug toggle */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {numScenes > 0 && (
+            <div className="px-3 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.8rem", color: "rgba(255,255,255,0.55)" }}>
+                {currentScene + 1} <span style={{ opacity: 0.45 }}>/</span> {numScenes}
+              </span>
+            </div>
+          )}
+          {/* Prompt inspector toggle */}
+          {scenes.length > 0 && (
+            <button
+              onClick={() => setDebugOpen(true)}
+              className="flex items-center justify-center w-8 h-8 rounded-full transition-all hover:bg-white/10"
+              title="Inspect image prompts"
+              style={{ color: "rgba(168,85,247,0.7)" }}
+            >
+              <FlaskConical size={15} />
+            </button>
+          )}
+        </div>
       </header>
 
       {/* ── Floating decorations ── */}
@@ -741,6 +768,249 @@ function StoryViewer({
           </Link>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Prompt Inspector (debug panel)
+──────────────────────────────────────────────────────────────── */
+function PromptInspector({
+  scenes,
+  currentScene,
+  onClose,
+}: {
+  scenes: SceneMeta[];
+  currentScene: number;
+  onClose: () => void;
+}) {
+  const [copied, setCopied] = useState<number | null>(null);
+
+  function copyPrompt(idx: number, text: string) {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(idx);
+      setTimeout(() => setCopied(null), 1800);
+    });
+  }
+
+  // Analyse prompts for consistency issues
+  function analysePrompts(prompts: string[]): { issue: string; severity: "warn" | "error" }[] {
+    const issues: { issue: string; severity: "warn" | "error" }[] = [];
+    const nonEmpty = prompts.filter(Boolean);
+    if (nonEmpty.length === 0) return issues;
+
+    // Check style consistency: look for style keywords
+    const styleKeywords = ["watercolour", "watercolor", "illustration", "cartoon", "3d", "realistic", "painted", "digital art"];
+    const stylesFound = new Set<string>();
+    nonEmpty.forEach(p => {
+      styleKeywords.forEach(k => { if (p.toLowerCase().includes(k)) stylesFound.add(k); });
+    });
+    if (stylesFound.size > 1) issues.push({ issue: `Multiple art styles detected across prompts: ${[...stylesFound].join(", ")}`, severity: "error" });
+    if (stylesFound.size === 0) issues.push({ issue: "No explicit art style specified — Gemini will choose randomly per scene", severity: "warn" });
+
+    // Check for character description consistency
+    const hasCharDesc = nonEmpty.filter(p =>
+      /hair|eyes|wearing|dressed|skin|complexion|outfit|appearance/i.test(p)
+    ).length;
+    if (hasCharDesc === 0) issues.push({ issue: "No character appearance anchors found — character looks will vary scene to scene", severity: "error" });
+    else if (hasCharDesc < nonEmpty.length) issues.push({ issue: `Only ${hasCharDesc}/${nonEmpty.length} scenes include character appearance details`, severity: "warn" });
+
+    // Check for a shared character name or description block
+    const charNames = nonEmpty.map(p => {
+      const m = p.match(/\b([A-Z][a-z]{2,12})\b/g);
+      return m ? m[0] : "";
+    });
+    const uniqueNames = new Set(charNames.filter(Boolean));
+    if (uniqueNames.size > 2) issues.push({ issue: `Multiple different character names across prompts: ${[...uniqueNames].slice(0,5).join(", ")}`, severity: "warn" });
+
+    // Prompt length variance
+    const lengths = nonEmpty.map(p => p.length);
+    const avg = lengths.reduce((a, b) => a + b, 0) / lengths.length;
+    const maxVar = Math.max(...lengths.map(l => Math.abs(l - avg)));
+    if (maxVar > avg * 0.5) issues.push({ issue: `High prompt length variance (${Math.min(...lengths)}–${Math.max(...lengths)} chars) — inconsistent detail level`, severity: "warn" });
+
+    return issues;
+  }
+
+  const prompts = scenes.map(s => s.imagePrompt ?? "");
+  const issues = analysePrompts(prompts);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(6px)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full sm:max-w-2xl max-h-[88vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl flex flex-col"
+        style={{ background: "#0e0c1a", border: "1px solid rgba(255,255,255,0.1)" }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div
+          className="sticky top-0 flex items-center justify-between px-6 py-4"
+          style={{ background: "#0e0c1a", borderBottom: "1px solid rgba(255,255,255,0.08)", zIndex: 10 }}
+        >
+          <div className="flex items-center gap-2.5">
+            <FlaskConical size={18} style={{ color: "#a855f7" }} />
+            <h2 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1rem", color: "#fff" }}>
+              Image Prompt Inspector
+            </h2>
+            <span
+              className="px-2 py-0.5 rounded-full text-xs font-bold"
+              style={{ background: "rgba(168,85,247,0.2)", color: "#a855f7" }}
+            >
+              {scenes.length} scenes
+            </span>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-all" style={{ color: "rgba(255,255,255,0.5)" }}>
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-5 p-6">
+          {/* Issues banner */}
+          {issues.length > 0 && (
+            <div className="flex flex-col gap-2 p-4 rounded-2xl" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 800, fontSize: "0.8rem", color: "#ef4444", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                ⚠ Consistency issues detected
+              </p>
+              {issues.map((iss, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <span style={{ fontSize: "0.7rem", marginTop: 2, flexShrink: 0, color: iss.severity === "error" ? "#ef4444" : "#f9c700" }}>
+                    {iss.severity === "error" ? "●" : "◐"}
+                  </span>
+                  <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.78rem", color: iss.severity === "error" ? "rgba(239,68,68,0.9)" : "rgba(249,199,0,0.85)", lineHeight: 1.4 }}>
+                    {iss.issue}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {issues.length === 0 && prompts.some(Boolean) && (
+            <div className="flex items-center gap-2 p-3 rounded-xl" style={{ background: "rgba(0,184,166,0.1)", border: "1px solid rgba(0,184,166,0.2)" }}>
+              <span style={{ color: "var(--lf-teal)", fontSize: "0.85rem" }}>✓</span>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.8rem", color: "var(--lf-teal)", fontWeight: 700 }}>
+                No major consistency issues detected in prompts
+              </p>
+            </div>
+          )}
+
+          {/* Scene prompts */}
+          {scenes.map((scene, idx) => (
+            <div
+              key={idx}
+              className="flex flex-col gap-3 p-4 rounded-2xl"
+              style={{
+                background: idx === currentScene ? "rgba(0,184,166,0.06)" : "rgba(255,255,255,0.03)",
+                border: `1px solid ${idx === currentScene ? "rgba(0,184,166,0.25)" : "rgba(255,255,255,0.07)"}`,
+              }}
+            >
+              {/* Scene header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="px-2.5 py-0.5 rounded-full text-xs font-bold"
+                    style={{
+                      background: idx === currentScene ? "rgba(0,184,166,0.2)" : "rgba(255,255,255,0.08)",
+                      color: idx === currentScene ? "var(--lf-teal)" : "rgba(255,255,255,0.5)",
+                    }}
+                  >
+                    Scene {scene.sceneNumber ?? idx + 1}
+                  </span>
+                  {idx === currentScene && (
+                    <span style={{ fontSize: "0.7rem", color: "var(--lf-teal)", fontFamily: "'Nunito', sans-serif", fontWeight: 700 }}>
+                      ← current
+                    </span>
+                  )}
+                </div>
+                {scene.imagePrompt && (
+                  <button
+                    onClick={() => copyPrompt(idx, scene.imagePrompt!)}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold transition-all hover:bg-white/10"
+                    style={{ color: "rgba(255,255,255,0.4)", fontFamily: "'Nunito', sans-serif" }}
+                  >
+                    {copied === idx ? <Check size={11} style={{ color: "var(--lf-teal)" }} /> : <Copy size={11} />}
+                    {copied === idx ? "Copied" : "Copy"}
+                  </button>
+                )}
+              </div>
+
+              {/* Prompt text */}
+              {scene.imagePrompt ? (
+                <p
+                  className="font-mono leading-relaxed select-text"
+                  style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.65)", background: "rgba(0,0,0,0.3)", padding: "0.75rem", borderRadius: "0.6rem", whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+                >
+                  {scene.imagePrompt}
+                </p>
+              ) : (
+                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.78rem", color: "rgba(255,255,255,0.2)", fontStyle: "italic" }}>
+                  No image prompt stored for this scene.
+                </p>
+              )}
+
+              {/* Character / style quick check */}
+              {scene.imagePrompt && (
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: "Has style",     ok: /watercolou?r|illustration|cartoon|painted|digital/i.test(scene.imagePrompt) },
+                    { label: "Has character", ok: /hair|eyes|wearing|skin|outfit|complexion|dressed/i.test(scene.imagePrompt) },
+                    { label: "Has setting",   ok: /background|setting|scene|forest|room|outside|indoor|outdoor|sky|field/i.test(scene.imagePrompt) },
+                    { label: "Has mood",      ok: /warm|bright|cozy|magical|cheerful|soft|gentle|vibrant/i.test(scene.imagePrompt) },
+                  ].map(tag => (
+                    <span
+                      key={tag.label}
+                      className="px-2 py-0.5 rounded-full text-xs font-bold"
+                      style={{
+                        background: tag.ok ? "rgba(0,184,166,0.12)" : "rgba(239,68,68,0.12)",
+                        color: tag.ok ? "var(--lf-teal)" : "#f87171",
+                      }}
+                    >
+                      {tag.ok ? "✓" : "✗"} {tag.label}
+                    </span>
+                  ))}
+                  <span
+                    className="px-2 py-0.5 rounded-full text-xs font-bold"
+                    style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.35)" }}
+                  >
+                    {scene.imagePrompt.length} chars
+                  </span>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Fix guide */}
+          <div className="flex flex-col gap-3 p-4 rounded-2xl" style={{ background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.15)" }}>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 800, fontSize: "0.78rem", color: "#a855f7", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              📋 What to add to every prompt (in Convex promptBuilder.ts)
+            </p>
+            <p
+              className="font-mono select-text"
+              style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.55)", background: "rgba(0,0,0,0.35)", padding: "0.75rem", borderRadius: "0.6rem", whiteSpace: "pre-wrap", lineHeight: 1.6 }}
+            >
+{`// 1. STYLE LOCK — same on every scene
+const STYLE_PREFIX =
+  "Children's book illustration, soft watercolour style, " +
+  "warm pastel palette, gentle lighting, flat textures, " +
+  "storybook aesthetic. ";
+
+// 2. CHARACTER ANCHOR — built once from profile, reused every scene
+const characterBlock = (profile) =>
+  \`Main character: \${profile.childName}, \` +
+  \`\${profile.childAge}-year-old \${profile.childGender}, \` +
+  \`[physical description consistent throughout]. \`;
+
+// 3. FINAL PROMPT STRUCTURE
+const prompt = STYLE_PREFIX + characterBlock(profile) +
+  "SCENE: " + sceneText +
+  " Background: [scene setting]. Mood: warm, joyful.";`}
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
