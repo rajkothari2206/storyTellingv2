@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
+import { useState } from "react";
 
 const scenes = [
   { src: "/lf-scene-orchard.png",   label: "🍊 The Orange Orchard" },
@@ -20,6 +21,9 @@ const scenes = [
 ];
 
 export function CharactersSection() {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const featured = scenes[selectedIndex];
+
   return (
     <section id="characters" style={{ background: "linear-gradient(160deg, #FFF8E7 0%, #FFE8A8 100%)" }}>
 
@@ -109,16 +113,17 @@ export function CharactersSection() {
             </div>
           </div>
 
-          {/* Hero image */}
+          {/* Hero image — updates when a thumbnail is clicked */}
           <div
             className="relative rounded-3xl overflow-hidden shadow-2xl"
             style={{ minHeight: 400 }}
           >
             <Image
-              src="/lf-scene-orchard.png"
-              alt="Lalli and Fafa in the orange orchard"
+              key={featured.src}
+              src={featured.src}
+              alt={featured.label}
               fill
-              className="object-cover"
+              className="object-cover transition-opacity duration-300"
               style={{ objectPosition: "center 30%" }}
               priority
             />
@@ -130,7 +135,7 @@ export function CharactersSection() {
             {/* Scene label */}
             <div className="absolute bottom-5 left-0 right-0 flex justify-center">
               <span
-                className="px-4 py-1.5 rounded-full text-sm font-bold"
+                className="px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-300"
                 style={{
                   background: "rgba(255,255,255,0.92)",
                   color: "var(--lf-dark)",
@@ -138,7 +143,7 @@ export function CharactersSection() {
                   boxShadow: "0 2px 12px rgba(0,0,0,0.15)",
                 }}
               >
-                🍊 The Orange Orchard Adventure
+                {featured.label}
               </span>
             </div>
           </div>
@@ -239,7 +244,7 @@ export function CharactersSection() {
         </div>
       </div>
 
-      {/* ── Scene strip — auto-scrolling film reel ── */}
+      {/* ── Scene strip — clickable thumbnails ── */}
       <div
         className="overflow-hidden pb-4"
         style={{ borderTop: "1px solid rgba(0,0,0,0.06)" }}
@@ -248,32 +253,54 @@ export function CharactersSection() {
           className="text-center text-xs font-bold uppercase tracking-widest pt-4 pb-3"
           style={{ color: "rgba(14,10,31,0.3)", letterSpacing: "0.15em" }}
         >
-          Their adventures so far
+          Their adventures so far · <span style={{ color: "rgba(14,10,31,0.45)", fontWeight: 500, textTransform: "none", letterSpacing: 0 }}>tap any scene to preview</span>
         </p>
         <div className="flex gap-3 animate-marquee" style={{ width: "max-content" }}>
-          {[...scenes, ...scenes].map((scene, i) => (
-            <div
-              key={i}
-              className="flex-shrink-0 rounded-2xl overflow-hidden relative"
-              style={{ width: 220, height: 148 }}
-            >
-              <Image
-                src={scene.src}
-                alt={scene.label}
-                fill
-                className="object-cover transition-transform duration-500 hover:scale-105"
-              />
-              <div
-                className="absolute inset-0"
+          {[...scenes, ...scenes].map((scene, i) => {
+            const sceneIdx = i % scenes.length;
+            const isSelected = sceneIdx === selectedIndex;
+            return (
+              <button
+                key={i}
+                onClick={() => setSelectedIndex(sceneIdx)}
+                className="flex-shrink-0 rounded-2xl overflow-hidden relative focus:outline-none"
                 style={{
-                  background: "linear-gradient(to top, rgba(14,10,31,0.7) 0%, transparent 55%)",
+                  width: 220,
+                  height: 148,
+                  cursor: "pointer",
+                  border: isSelected ? "3px solid var(--lf-teal)" : "3px solid transparent",
+                  boxShadow: isSelected ? "0 0 0 2px rgba(0,201,167,0.4), 0 8px 24px rgba(0,0,0,0.18)" : "none",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
-              />
-              <p className="absolute bottom-3 left-3 right-3 text-white text-xs font-semibold leading-tight">
-                {scene.label}
-              </p>
-            </div>
-          ))}
+              >
+                <Image
+                  src={scene.src}
+                  alt={scene.label}
+                  fill
+                  className="object-cover transition-transform duration-500 hover:scale-105"
+                />
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: isSelected
+                      ? "linear-gradient(to top, rgba(0,100,85,0.75) 0%, transparent 55%)"
+                      : "linear-gradient(to top, rgba(14,10,31,0.7) 0%, transparent 55%)",
+                  }}
+                />
+                {isSelected && (
+                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center"
+                    style={{ background: "var(--lf-teal)" }}>
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                      <path d="M1 4l2.5 2.5L9 1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                )}
+                <p className="absolute bottom-3 left-3 right-3 text-white text-xs font-semibold leading-tight">
+                  {scene.label}
+                </p>
+              </button>
+            );
+          })}
         </div>
       </div>
 
