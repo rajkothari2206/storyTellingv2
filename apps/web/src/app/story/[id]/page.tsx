@@ -3,6 +3,7 @@
 import { use, useRef, useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import Lottie from "lottie-react";
 import {
   useQuery,
   useConvexAuth,
@@ -63,6 +64,19 @@ const SCENE_ANIM_POOL = [
 ] as const;
 
 const PARTICLE_EMOJIS = ["✨", "⭐", "💫", "🌟", "✦", "·", "❋"];
+
+/**
+ * Lottie overlay files in /public/lottie/ — cycled per scene.
+ * Fetched dynamically so they don't bloat the JS bundle.
+ * sparkle  → magical/general   (~201 KB)
+ * fireflies → outdoor/nature   (~104 KB)
+ * stars     → calm/night scenes (~3 KB)
+ */
+const LOTTIE_OVERLAYS = [
+  "/lottie/sparkle.json",
+  "/lottie/fireflies.json",
+  "/lottie/stars.json",
+];
 
 interface SceneParticle {
   id: number;
@@ -303,6 +317,29 @@ interface StoryShape {
 }
 
 /* ────────────────────────────────────────────────────────────────
+   Lottie overlay hook
+   Fetches the JSON for the current scene's overlay asynchronously.
+   Falls back to null so the image still renders if fetch fails.
+──────────────────────────────────────────────────────────────── */
+function useLottieOverlay(sceneIndex: number) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [data, setData] = useState<Record<string, any> | null>(null);
+  const path = LOTTIE_OVERLAYS[sceneIndex % LOTTIE_OVERLAYS.length];
+
+  useEffect(() => {
+    let cancelled = false;
+    setData(null); // clear previous scene overlay immediately
+    fetch(path)
+      .then(r => r.json())
+      .then(json => { if (!cancelled) setData(json); })
+      .catch(() => { /* silently skip if file missing */ });
+    return () => { cancelled = true; };
+  }, [path]);
+
+  return data;
+}
+
+/* ────────────────────────────────────────────────────────────────
    Background music
 ──────────────────────────────────────────────────────────────── */
 
@@ -526,10 +563,11 @@ function StoryViewer({
   const sceneImageUrl = imageUrls?.[currentScene]?.url ?? null;
   const sceneProgress = numScenes > 1 ? currentScene / (numScenes - 1) : 0;
 
-  /* ── Scene motion & particles ── */
+  /* ── Scene motion, particles & Lottie overlay ── */
   // Deterministic so same story → same animation per scene (no layout jitter)
   const sceneAnimClass = SCENE_ANIM_POOL[currentScene % SCENE_ANIM_POOL.length];
   const sceneParticles = useMemo(() => buildParticles(currentScene), [currentScene]);
+  const lottieData = useLottieOverlay(currentScene);
 
   /**
    * Estimate how many seconds of the narration audio are spent reading the title.
@@ -748,6 +786,19 @@ function StoryViewer({
                   />
                   {/* Shimmer sweep — diagonal glint that crosses the image periodically */}
                   <div className="scene-shimmer" />
+
+                  {/* Lottie overlay — sparkle / fireflies / stars cycling per scene */}
+                  {lottieData && (
+                    <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 2, opacity: 0.55 }}>
+                      <Lottie
+                        animationData={lottieData}
+                        loop
+                        autoplay
+                        style={{ width: "100%", height: "100%" }}
+                        rendererSettings={{ preserveAspectRatio: "xMidYMid slice" }}
+                      />
+                    </div>
+                  )}
 
                   {/* Floating emoji particles — rise up from within the scene */}
                   {sceneParticles.map((p: SceneParticle) => (
