@@ -642,155 +642,126 @@ function StoryViewer({
                 </button>
               )}
 
-              {/* ── Audio controls overlay (bottom of frame) ── */}
-              <div
-                className="absolute bottom-0 left-0 right-0 flex flex-col"
-                style={{ background: "linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 55%, transparent 100%)", padding: "2.5rem 0.85rem 0.75rem" }}
-              >
-                {/* Hidden narration audio */}
-                {narrationUrl && (
-                  <audio
-                    ref={audioRef}
-                    src={narrationUrl}
-                    onTimeUpdate={onTimeUpdate}
-                    onLoadedMetadata={onLoadedMetadata}
-                    onEnded={onEnded}
-                    preload="auto"
-                  />
-                )}
+              {/* Hidden audio elements */}
+              {narrationUrl && (
+                <audio ref={audioRef} src={narrationUrl} onTimeUpdate={onTimeUpdate} onLoadedMetadata={onLoadedMetadata} onEnded={onEnded} preload="auto" />
+              )}
+              <audio ref={bgAudioRef} src={bgPlaylist[bgTrackIdx]} preload="auto" onEnded={() => setBgTrackIdx(i => (i + 1) % bgPlaylist.length)} />
 
-                {/* Hidden background music audio — shuffled, cycles through tracks */}
-                <audio
-                  ref={bgAudioRef}
-                  src={bgPlaylist[bgTrackIdx]}
-                  preload="auto"
-                  onEnded={() => setBgTrackIdx(i => (i + 1) % bgPlaylist.length)}
-                />
-
-                {/* Scene dots */}
-                <div className="flex items-center justify-center gap-1.5 mb-2">
-                  {scenes.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setCurrentScene(i)}
-                      aria-label={`Scene ${i + 1}`}
+              {/* ── Comic subtitle overlay ── */}
+              {cleanSubtitle && (
+                <div
+                  className="absolute left-0 right-0 bottom-0 flex flex-col items-center gap-1 px-3 pb-2"
+                  style={{ background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, transparent 100%)", paddingTop: "2.5rem" }}
+                >
+                  {/* Speaker badge */}
+                  {speaker && (
+                    <span
+                      className="subtitle-line px-2.5 py-0.5 rounded-full text-xs font-black tracking-widest"
                       style={{
-                        width: i === currentScene ? 20 : 6,
-                        height: 6,
-                        borderRadius: 99,
-                        background: i === currentScene ? "var(--lf-teal)" : i < currentScene ? "rgba(0,201,167,0.5)" : "rgba(255,255,255,0.3)",
-                        border: "none",
-                        padding: 0,
-                        cursor: "pointer",
-                        transition: "all 0.3s ease",
-                        flexShrink: 0,
+                        background: speaker.color,
+                        color: speaker.name === "Lalli" ? "#131020" : "#fff",
+                        fontFamily: "'Baloo 2', sans-serif",
+                        textTransform: "uppercase",
+                        fontSize: "0.65rem",
+                        letterSpacing: "0.08em",
                       }}
-                    />
-                  ))}
-                </div>
-
-                {/* Seek bar */}
-                {narrationUrl && (
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.65rem", fontWeight: 700, color: "rgba(255,255,255,0.55)", minWidth: 30, textAlign: "right" }}>
-                      {formatTime(currentTime)}
+                    >
+                      {speaker.name}
                     </span>
-                    <div className="flex-1 relative h-1 rounded-full" style={{ background: "rgba(255,255,255,0.2)" }}>
-                      <div className="absolute left-0 top-0 h-full rounded-full" style={{ width: duration ? `${(currentTime / duration) * 100}%` : "0%", background: "linear-gradient(90deg,var(--lf-teal),#00a38d)" }} />
-                      <input
-                        type="range" min={0} max={duration || 0} step={0.1} value={currentTime}
-                        onChange={onScrubberChange}
-                        onMouseDown={() => setSeeking(true)}
-                        onMouseUp={() => setSeeking(false)}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        style={{ margin: 0 }}
-                      />
-                    </div>
-                    <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.65rem", fontWeight: 700, color: "rgba(255,255,255,0.55)", minWidth: 30 }}>
-                      {formatTime(duration)}
-                    </span>
-                  </div>
-                )}
-
-                {/* Controls row */}
-                <div className="flex items-center justify-between">
-                  {/* Volume */}
-                  <div className="flex items-center gap-1.5">
-                    <button onClick={toggleMute} className="transition-all hover:scale-110" style={{ color: "rgba(255,255,255,0.6)" }}>
-                      {muted || volume === 0 ? <VolumeX size={15} /> : <Volume2 size={15} />}
-                    </button>
-                    <div className="relative w-14 h-1 rounded-full hidden sm:block" style={{ background: "rgba(255,255,255,0.15)" }}>
-                      <div className="absolute left-0 top-0 h-full rounded-full" style={{ width: `${muted ? 0 : volume * 100}%`, background: "rgba(255,255,255,0.5)" }} />
-                      <input type="range" min={0} max={1} step={0.05} value={muted ? 0 : volume} onChange={onVolumeChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                    </div>
-                  </div>
-
-                  {/* Playback controls */}
-                  {narrationUrl && (
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => skip(-10)} className="transition-all hover:scale-110" style={{ color: "rgba(255,255,255,0.5)" }} title="Back 10s">
-                        <SkipBack size={15} />
-                      </button>
-                      <button onClick={() => setCurrentScene(currentScene - 1)} disabled={currentScene === 0} className="transition-all hover:scale-110 disabled:opacity-25" style={{ color: "rgba(255,255,255,0.7)" }}>
-                        <ChevronLeft size={18} />
-                      </button>
-                      <button
-                        onClick={togglePlay}
-                        className="flex items-center justify-center rounded-full transition-all hover:scale-110 active:scale-95"
-                        style={{ width: 44, height: 44, background: "linear-gradient(135deg,var(--lf-teal),#00a38d)", color: "#fff", boxShadow: "0 3px 16px rgba(0,201,167,0.5)", flexShrink: 0 }}
-                      >
-                        {isPlaying ? <Pause size={18} fill="#fff" /> : <Play size={18} fill="#fff" style={{ marginLeft: 2 }} />}
-                      </button>
-                      <button onClick={() => setCurrentScene(currentScene + 1)} disabled={currentScene === numScenes - 1} className="transition-all hover:scale-110 disabled:opacity-25" style={{ color: "rgba(255,255,255,0.7)" }}>
-                        <ChevronRight size={18} />
-                      </button>
-                      <button onClick={() => skip(10)} className="transition-all hover:scale-110" style={{ color: "rgba(255,255,255,0.5)" }} title="Forward 10s">
-                        <SkipForward size={15} />
-                      </button>
-                    </div>
                   )}
-
-                  {/* New story shortcut */}
-                  <Link
-                    href="/dashboard"
-                    className="flex items-center gap-1 text-xs font-bold transition-all hover:opacity-80"
-                    style={{ color: "rgba(0,201,167,0.75)", fontFamily: "'Nunito', sans-serif" }}
+                  {/* Subtitle text */}
+                  <div
+                    key={subtitleText}
+                    className="subtitle-line px-4 py-1.5 rounded-xl text-center"
+                    style={{
+                      background: "rgba(0,0,0,0.58)",
+                      backdropFilter: "blur(8px)",
+                      border: speaker ? `1.5px solid ${speaker.color}60` : "1.5px solid rgba(255,255,255,0.12)",
+                      maxWidth: "90%",
+                    }}
                   >
-                    <Sparkles size={12} />
-                    <span className="hidden sm:inline">New</span>
-                  </Link>
+                    <p style={{
+                      fontFamily: speaker ? "'Baloo 2', sans-serif" : "'Nunito', sans-serif",
+                      fontWeight: speaker ? 700 : 500,
+                      fontStyle: speaker ? "normal" : "italic",
+                      fontSize: "0.92rem",
+                      lineHeight: 1.45,
+                      color: speaker ? speaker.color : "rgba(255,255,255,0.88)",
+                      textShadow: "0 1px 6px rgba(0,0,0,0.9)",
+                      margin: 0,
+                    }}>
+                      {cleanSubtitle}
+                    </p>
+                  </div>
                 </div>
+              )}
+
+              {/* Scene dots — bottom edge */}
+              <div className="absolute bottom-1.5 left-0 right-0 flex items-center justify-center gap-1.5" style={{ pointerEvents: cleanSubtitle ? "none" : "auto", opacity: cleanSubtitle ? 0 : 1, transition: "opacity 0.3s" }}>
+                {scenes.map((_, i) => (
+                  <button key={i} onClick={() => setCurrentScene(i)} aria-label={`Scene ${i + 1}`}
+                    style={{ width: i === currentScene ? 18 : 5, height: 5, borderRadius: 99, background: i === currentScene ? "var(--lf-teal)" : "rgba(255,255,255,0.3)", border: "none", padding: 0, cursor: "pointer", transition: "all 0.3s", flexShrink: 0 }}
+                  />
+                ))}
               </div>
             </div>
 
-            {/* Scene text — comic narration */}
-            {sceneNarrativeText && (
-              <div
-                key={currentScene}
-                className="scene-text-card w-full px-5 py-5 rounded-2xl relative overflow-hidden"
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", backdropFilter: "blur(12px)" }}
-              >
-                {/* Glow orbs */}
-                <div className="absolute pointer-events-none" style={{ top: -30, left: -30, width: 120, height: 120, background: "radial-gradient(circle,rgba(0,201,167,0.12) 0%,transparent 70%)" }} />
-                <div className="absolute pointer-events-none" style={{ bottom: -30, right: -30, width: 100, height: 100, background: "radial-gradient(circle,rgba(249,199,0,0.1) 0%,transparent 70%)" }} />
+            {/* ── Audio controls bar (below image) ── */}
+            <div
+              className="w-full flex flex-col gap-2 px-4 py-3 rounded-2xl"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+            >
+              {/* Seek bar */}
+              <div className="flex items-center gap-3">
+                <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.72rem", fontWeight: 700, color: "rgba(255,255,255,0.4)", minWidth: 34, textAlign: "right" }}>
+                  {formatTime(currentTime)}
+                </span>
+                <div className="flex-1 relative h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.12)" }}>
+                  <div className="absolute left-0 top-0 h-full rounded-full" style={{ width: duration ? `${(currentTime / duration) * 100}%` : "0%", background: "linear-gradient(90deg,var(--lf-teal),#00a38d)" }} />
+                  <input type="range" min={0} max={duration || 0} step={0.1} value={currentTime} onChange={onScrubberChange} onMouseDown={() => setSeeking(true)} onMouseUp={() => setSeeking(false)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" style={{ margin: 0 }} />
+                </div>
+                <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.72rem", fontWeight: 700, color: "rgba(255,255,255,0.4)", minWidth: 34 }}>
+                  {formatTime(duration)}
+                </span>
+              </div>
 
-                {/* Header */}
-                <div className="relative flex items-center gap-2 mb-3 pb-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-                  <span style={{ fontSize: "1.1rem" }}>📖</span>
-                  <span style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "0.75rem", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                    Scene {(scenes[currentScene]?.sceneNumber ?? currentScene + 1)}
+              {/* Controls row */}
+              <div className="flex items-center justify-between">
+                {/* Volume */}
+                <div className="flex items-center gap-2">
+                  <button onClick={toggleMute} className="transition-all hover:scale-110" style={{ color: "rgba(255,255,255,0.5)" }}>
+                    {muted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                  </button>
+                  <div className="relative w-16 h-1 rounded-full hidden sm:block" style={{ background: "rgba(255,255,255,0.12)" }}>
+                    <div className="absolute left-0 top-0 h-full rounded-full" style={{ width: `${muted ? 0 : volume * 100}%`, background: "rgba(255,255,255,0.45)" }} />
+                    <input type="range" min={0} max={1} step={0.05} value={muted ? 0 : volume} onChange={onVolumeChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                  </div>
+                </div>
+
+                {/* Playback */}
+                <div className="flex items-center gap-3">
+                  <button onClick={() => skip(-10)} className="transition-all hover:scale-110" style={{ color: "rgba(255,255,255,0.45)" }} title="Back 10s"><SkipBack size={16} /></button>
+                  <button onClick={() => setCurrentScene(currentScene - 1)} disabled={currentScene === 0} className="transition-all hover:scale-110 disabled:opacity-20" style={{ color: "rgba(255,255,255,0.65)" }}><ChevronLeft size={20} /></button>
+                  <button
+                    onClick={togglePlay}
+                    className="flex items-center justify-center rounded-full transition-all hover:scale-110 active:scale-95"
+                    style={{ width: 48, height: 48, background: "linear-gradient(135deg,var(--lf-teal),#00a38d)", color: "#fff", boxShadow: "0 3px 18px rgba(0,201,167,0.45)", flexShrink: 0 }}
+                  >
+                    {isPlaying ? <Pause size={20} fill="#fff" /> : <Play size={20} fill="#fff" style={{ marginLeft: 2 }} />}
+                  </button>
+                  <button onClick={() => setCurrentScene(currentScene + 1)} disabled={currentScene === numScenes - 1} className="transition-all hover:scale-110 disabled:opacity-20" style={{ color: "rgba(255,255,255,0.65)" }}><ChevronRight size={20} /></button>
+                  <button onClick={() => skip(10)} className="transition-all hover:scale-110" style={{ color: "rgba(255,255,255,0.45)" }} title="Forward 10s"><SkipForward size={16} /></button>
+                </div>
+
+                {/* Scene counter */}
+                <div className="px-2.5 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+                  <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.75rem", color: "rgba(255,255,255,0.4)" }}>
+                    {currentScene + 1} / {numScenes}
                   </span>
                 </div>
-
-                {/* Comic narration */}
-                <div className="relative">
-                  <ComicNarration
-                    text={sceneNarrativeText}
-                    childName={story.params?.childName ?? "Child"}
-                  />
-                </div>
               </div>
-            )}
+            </div>
 
           </>
         ) : story.content ? (
