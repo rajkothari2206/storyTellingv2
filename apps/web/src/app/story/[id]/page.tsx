@@ -52,12 +52,94 @@ function splitSentences(text: string | null | undefined): string[] {
 /* Divide story.content into per-scene chunks by splitting paragraphs equally */
 function getSceneTextChunk(content: string, sceneIndex: number, numScenes: number): string {
   if (!content || numScenes === 0) return "";
-  // Split into non-empty lines / paragraphs
   const paras = content.split("\n").map(l => l.trim()).filter(Boolean);
   if (paras.length === 0) return "";
   const chunkSize = Math.ceil(paras.length / numScenes);
   const start = sceneIndex * chunkSize;
-  return paras.slice(start, start + chunkSize).join(" ").trim();
+  return paras.slice(start, start + chunkSize).join("\n").trim();
+}
+
+/* ── Comic narration helpers ── */
+type NarrationLine = { speaker: "Narrator" | "Lalli" | "Fafa" | "Child"; text: string };
+
+const SPEAKER_STYLES: Record<string, { color: string; bg: string; border: string; emoji: string }> = {
+  Lalli:    { color: "#FFD700", bg: "rgba(255,215,0,0.1)",    border: "rgba(255,215,0,0.45)",    emoji: "✨" },
+  Fafa:     { color: "#00C9A7", bg: "rgba(0,201,167,0.1)",    border: "rgba(0,201,167,0.45)",    emoji: "🐰" },
+  Child:    { color: "#FF9F43", bg: "rgba(255,159,67,0.1)",   border: "rgba(255,159,67,0.45)",   emoji: "⭐" },
+  Narrator: { color: "rgba(255,255,255,0.82)", bg: "transparent", border: "transparent",         emoji: ""  },
+};
+
+function parseNarrationLines(text: string, childName: string): NarrationLine[] {
+  const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+  const childLabel = childName.trim().toLowerCase();
+  return lines.map(line => {
+    const lower = line.toLowerCase();
+    if (lower.startsWith("lalli:")) return { speaker: "Lalli" as const, text: line.slice(6).trim() };
+    if (lower.startsWith("fafa:"))  return { speaker: "Fafa"  as const, text: line.slice(5).trim() };
+    if (lower.startsWith("child:") || lower.startsWith("girl child:") || lower.startsWith("boy child:"))
+      return { speaker: "Child" as const, text: line.replace(/^(child|girl child|boy child):\s*/i, "") };
+    if (childLabel && lower.startsWith(childLabel + ":"))
+      return { speaker: "Child" as const, text: line.slice(childLabel.length + 1).trim() };
+    return { speaker: "Narrator" as const, text: line };
+  });
+}
+
+function ComicNarration({ text, childName }: { text: string; childName: string }) {
+  const lines = parseNarrationLines(text, childName);
+  return (
+    <div className="flex flex-col gap-3">
+      {lines.map((line, i) => {
+        const style = SPEAKER_STYLES[line.speaker];
+        const isDialogue = line.speaker !== "Narrator";
+        return (
+          <div key={i} className="flex flex-col gap-1">
+            {/* Speaker badge for dialogue lines */}
+            {isDialogue && (
+              <span
+                className="self-start px-2.5 py-0.5 rounded-full text-xs font-black tracking-wide"
+                style={{
+                  background: style.bg,
+                  color: style.color,
+                  border: `1px solid ${style.border}`,
+                  fontFamily: "'Baloo 2', sans-serif",
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                  fontSize: "0.7rem",
+                }}
+              >
+                {style.emoji} {line.speaker === "Child" ? childName : line.speaker}
+              </span>
+            )}
+            {/* Line text */}
+            <div
+              style={{
+                borderLeft: isDialogue ? `3.5px solid ${style.color}` : "none",
+                paddingLeft: isDialogue ? "0.85rem" : "0",
+                background: isDialogue ? style.bg : "transparent",
+                borderRadius: isDialogue ? "0 10px 10px 0" : 0,
+                padding: isDialogue ? "0.5rem 0.85rem" : "0",
+              }}
+            >
+              <p
+                style={{
+                  fontFamily: isDialogue ? "'Baloo 2', sans-serif" : "'Nunito', sans-serif",
+                  fontSize: isDialogue ? "1.08rem" : "1rem",
+                  fontWeight: isDialogue ? 700 : 500,
+                  fontStyle: line.speaker === "Narrator" ? "italic" : "normal",
+                  lineHeight: 1.7,
+                  color: style.color,
+                  letterSpacing: isDialogue ? "0.01em" : "normal",
+                  margin: 0,
+                }}
+              >
+                {isDialogue ? `"${line.text.replace(/^[""]|[""]$/g, '')}"` : line.text}
+              </p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 /* Detect a character name to show as the subtitle speaker */
@@ -108,7 +190,7 @@ interface StoryShape {
   status?: string;
   content?: string;            // full narrative text (all scenes combined)
   sceneMetadata?: SceneMeta[];
-  params?: { theme?: string; language?: string; lesson?: string };
+  params?: { theme?: string; language?: string; lesson?: string; childName?: string };
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -567,23 +649,31 @@ function StoryViewer({
               </div>
             </div>
 
-            {/* Scene text */}
+            {/* Scene text — comic narration */}
             {sceneNarrativeText && (
               <div
                 key={currentScene}
-                className="scene-text-card w-full px-6 py-5 rounded-2xl relative overflow-hidden"
-                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(12px)" }}
+                className="scene-text-card w-full px-5 py-5 rounded-2xl relative overflow-hidden"
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", backdropFilter: "blur(12px)" }}
               >
-                {/* Subtle teal glow top-left */}
-                <div className="absolute pointer-events-none" style={{ top: -30, left: -30, width: 120, height: 120, background: "radial-gradient(circle,rgba(0,201,167,0.15) 0%,transparent 70%)" }} />
-                {/* Subtle gold glow bottom-right */}
-                <div className="absolute pointer-events-none" style={{ bottom: -30, right: -30, width: 100, height: 100, background: "radial-gradient(circle,rgba(249,199,0,0.12) 0%,transparent 70%)" }} />
+                {/* Glow orbs */}
+                <div className="absolute pointer-events-none" style={{ top: -30, left: -30, width: 120, height: 120, background: "radial-gradient(circle,rgba(0,201,167,0.12) 0%,transparent 70%)" }} />
+                <div className="absolute pointer-events-none" style={{ bottom: -30, right: -30, width: 100, height: 100, background: "radial-gradient(circle,rgba(249,199,0,0.1) 0%,transparent 70%)" }} />
 
-                <div className="relative flex items-start gap-3">
-                  <span className="text-lg flex-shrink-0 mt-0.5" style={{ opacity: 0.7 }}>📖</span>
-                  <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "1rem", lineHeight: 1.85, color: "rgba(255,255,255,0.88)" }}>
-                    {sceneNarrativeText}
-                  </p>
+                {/* Header */}
+                <div className="relative flex items-center gap-2 mb-3 pb-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                  <span style={{ fontSize: "1.1rem" }}>📖</span>
+                  <span style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "0.75rem", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                    Scene {(scenes[currentScene]?.sceneNumber ?? currentScene + 1)}
+                  </span>
+                </div>
+
+                {/* Comic narration */}
+                <div className="relative">
+                  <ComicNarration
+                    text={sceneNarrativeText}
+                    childName={story.params?.childName ?? "Child"}
+                  />
                 </div>
               </div>
             )}
