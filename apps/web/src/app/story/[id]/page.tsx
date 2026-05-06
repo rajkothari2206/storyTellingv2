@@ -591,61 +591,116 @@ function StoryViewer({
                 </button>
               )}
 
-              {/* ── Subtitle overlay ── */}
-              {cleanSubtitle && (
-                <div
-                  className="absolute left-0 right-0 flex flex-col items-center gap-1 px-4"
-                  style={{ bottom: 14 }}
-                >
-                  {/* Speaker name badge */}
-                  {speaker && (
-                    <span
-                      key={speaker.name + subtitleText.slice(0, 8)}
-                      className="subtitle-line px-2.5 py-0.5 rounded-full text-xs font-black tracking-wide"
+              {/* ── Audio controls overlay (bottom of frame) ── */}
+              <div
+                className="absolute bottom-0 left-0 right-0 flex flex-col"
+                style={{ background: "linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 55%, transparent 100%)", padding: "2.5rem 0.85rem 0.75rem" }}
+              >
+                {/* Hidden audio element lives here */}
+                {narrationUrl && (
+                  <audio
+                    ref={audioRef}
+                    src={narrationUrl}
+                    onTimeUpdate={onTimeUpdate}
+                    onLoadedMetadata={onLoadedMetadata}
+                    onEnded={onEnded}
+                    preload="auto"
+                  />
+                )}
+
+                {/* Scene dots */}
+                <div className="flex items-center justify-center gap-1.5 mb-2">
+                  {scenes.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentScene(i)}
+                      aria-label={`Scene ${i + 1}`}
                       style={{
-                        background: speaker.color,
-                        color: speaker.name === "Lalli" ? "#131020" : "#fff",
-                        boxShadow: `0 2px 10px ${speaker.color}99`,
+                        width: i === currentScene ? 20 : 6,
+                        height: 6,
+                        borderRadius: 99,
+                        background: i === currentScene ? "var(--lf-teal)" : i < currentScene ? "rgba(0,201,167,0.5)" : "rgba(255,255,255,0.3)",
+                        border: "none",
+                        padding: 0,
+                        cursor: "pointer",
+                        transition: "all 0.3s ease",
+                        flexShrink: 0,
                       }}
-                    >
-                      {speaker.name}
+                    />
+                  ))}
+                </div>
+
+                {/* Seek bar */}
+                {narrationUrl && (
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.65rem", fontWeight: 700, color: "rgba(255,255,255,0.55)", minWidth: 30, textAlign: "right" }}>
+                      {formatTime(currentTime)}
                     </span>
+                    <div className="flex-1 relative h-1 rounded-full" style={{ background: "rgba(255,255,255,0.2)" }}>
+                      <div className="absolute left-0 top-0 h-full rounded-full" style={{ width: duration ? `${(currentTime / duration) * 100}%` : "0%", background: "linear-gradient(90deg,var(--lf-teal),#00a38d)" }} />
+                      <input
+                        type="range" min={0} max={duration || 0} step={0.1} value={currentTime}
+                        onChange={onScrubberChange}
+                        onMouseDown={() => setSeeking(true)}
+                        onMouseUp={() => setSeeking(false)}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        style={{ margin: 0 }}
+                      />
+                    </div>
+                    <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.65rem", fontWeight: 700, color: "rgba(255,255,255,0.55)", minWidth: 30 }}>
+                      {formatTime(duration)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Controls row */}
+                <div className="flex items-center justify-between">
+                  {/* Volume */}
+                  <div className="flex items-center gap-1.5">
+                    <button onClick={toggleMute} className="transition-all hover:scale-110" style={{ color: "rgba(255,255,255,0.6)" }}>
+                      {muted || volume === 0 ? <VolumeX size={15} /> : <Volume2 size={15} />}
+                    </button>
+                    <div className="relative w-14 h-1 rounded-full hidden sm:block" style={{ background: "rgba(255,255,255,0.15)" }}>
+                      <div className="absolute left-0 top-0 h-full rounded-full" style={{ width: `${muted ? 0 : volume * 100}%`, background: "rgba(255,255,255,0.5)" }} />
+                      <input type="range" min={0} max={1} step={0.05} value={muted ? 0 : volume} onChange={onVolumeChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                    </div>
+                  </div>
+
+                  {/* Playback controls */}
+                  {narrationUrl && (
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => skip(-10)} className="transition-all hover:scale-110" style={{ color: "rgba(255,255,255,0.5)" }} title="Back 10s">
+                        <SkipBack size={15} />
+                      </button>
+                      <button onClick={() => setCurrentScene(currentScene - 1)} disabled={currentScene === 0} className="transition-all hover:scale-110 disabled:opacity-25" style={{ color: "rgba(255,255,255,0.7)" }}>
+                        <ChevronLeft size={18} />
+                      </button>
+                      <button
+                        onClick={togglePlay}
+                        className="flex items-center justify-center rounded-full transition-all hover:scale-110 active:scale-95"
+                        style={{ width: 44, height: 44, background: "linear-gradient(135deg,var(--lf-teal),#00a38d)", color: "#fff", boxShadow: "0 3px 16px rgba(0,201,167,0.5)", flexShrink: 0 }}
+                      >
+                        {isPlaying ? <Pause size={18} fill="#fff" /> : <Play size={18} fill="#fff" style={{ marginLeft: 2 }} />}
+                      </button>
+                      <button onClick={() => setCurrentScene(currentScene + 1)} disabled={currentScene === numScenes - 1} className="transition-all hover:scale-110 disabled:opacity-25" style={{ color: "rgba(255,255,255,0.7)" }}>
+                        <ChevronRight size={18} />
+                      </button>
+                      <button onClick={() => skip(10)} className="transition-all hover:scale-110" style={{ color: "rgba(255,255,255,0.5)" }} title="Forward 10s">
+                        <SkipForward size={15} />
+                      </button>
+                    </div>
                   )}
 
-                  {/* Subtitle text */}
-                  <div
-                    key={subtitleText}
-                    className="subtitle-line px-4 py-2 rounded-xl text-center max-w-lg"
-                    style={{
-                      background: "rgba(0,0,0,0.72)",
-                      backdropFilter: "blur(8px)",
-                      border: speaker
-                        ? `1.5px solid ${speaker.color}55`
-                        : "1.5px solid rgba(255,255,255,0.15)",
-                    }}
+                  {/* New story shortcut */}
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center gap-1 text-xs font-bold transition-all hover:opacity-80"
+                    style={{ color: "rgba(0,201,167,0.75)", fontFamily: "'Nunito', sans-serif" }}
                   >
-                    <p
-                      style={{
-                        fontFamily: "'Nunito', sans-serif",
-                        fontWeight: 700,
-                        fontSize: "0.88rem",
-                        lineHeight: 1.5,
-                        color: "#fff",
-                        textShadow: "0 1px 4px rgba(0,0,0,0.8)",
-                      }}
-                    >
-                      {cleanSubtitle}
-                    </p>
-                  </div>
+                    <Sparkles size={12} />
+                    <span className="hidden sm:inline">New</span>
+                  </Link>
                 </div>
-              )}
-
-              {/* Progress bar at bottom of image */}
-              <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: "rgba(255,255,255,0.1)" }}>
-                <div
-                  className="h-full transition-all duration-500"
-                  style={{ width: `${((currentScene + 1) / numScenes) * 100}%`, background: "linear-gradient(90deg,var(--lf-teal),#00a38d)" }}
-                />
               </div>
             </div>
 
@@ -678,31 +733,6 @@ function StoryViewer({
               </div>
             )}
 
-            {/* Scene dots */}
-            <div className="flex items-center justify-center gap-2 flex-wrap">
-              {scenes.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentScene(i)}
-                  className="transition-all hover:scale-125"
-                  aria-label={`Go to scene ${i + 1}`}
-                  style={{
-                    width: i === currentScene ? 24 : 8,
-                    height: 8,
-                    borderRadius: 99,
-                    background: i === currentScene
-                      ? "var(--lf-teal)"
-                      : i < currentScene
-                      ? "rgba(0,201,167,0.4)"
-                      : "rgba(255,255,255,0.2)",
-                    transition: "all 0.3s ease",
-                    border: "none",
-                    padding: 0,
-                    cursor: "pointer",
-                  }}
-                />
-              ))}
-            </div>
           </>
         ) : story.content ? (
           /* Fallback plain text */
@@ -721,160 +751,18 @@ function StoryViewer({
         )}
       </div>
 
-      {/* ── Audio player bar ── */}
-      {narrationUrl && (
-        <div
-          className="flex-shrink-0 px-5 py-4"
-          style={{ background: "rgba(14,12,26,0.97)", borderTop: "1px solid rgba(255,255,255,0.07)", backdropFilter: "blur(16px)" }}
-        >
-          <audio
-            ref={audioRef}
-            src={narrationUrl}
-            onTimeUpdate={onTimeUpdate}
-            onLoadedMetadata={onLoadedMetadata}
-            onEnded={onEnded}
-            preload="auto"
-          />
-
-          <div className="max-w-3xl mx-auto flex flex-col gap-3">
-            {/* Scrubber */}
-            <div className="flex items-center gap-3">
-              <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.75rem", fontWeight: 600, color: "rgba(255,255,255,0.45)", minWidth: 36, textAlign: "right" }}>
-                {formatTime(currentTime)}
-              </span>
-              <div className="flex-1 relative h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.12)" }}>
-                {/* Buffered / played track */}
-                <div
-                  className="absolute left-0 top-0 h-full rounded-full transition-all"
-                  style={{ width: duration ? `${(currentTime / duration) * 100}%` : "0%", background: "linear-gradient(90deg,var(--lf-teal),#00a38d)" }}
-                />
-                <input
-                  type="range"
-                  min={0}
-                  max={duration || 0}
-                  step={0.1}
-                  value={currentTime}
-                  onChange={onScrubberChange}
-                  onMouseDown={() => setSeeking(true)}
-                  onMouseUp={() => setSeeking(false)}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  style={{ margin: 0 }}
-                />
-              </div>
-              <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.75rem", fontWeight: 600, color: "rgba(255,255,255,0.45)", minWidth: 36 }}>
-                {formatTime(duration)}
-              </span>
-            </div>
-
-            {/* Controls row */}
-            <div className="flex items-center justify-between gap-4">
-              {/* Left: volume */}
-              <div className="flex items-center gap-2 flex-1">
-                <button onClick={toggleMute} className="flex-shrink-0 transition-all hover:scale-110" style={{ color: "rgba(255,255,255,0.55)" }}>
-                  {muted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
-                </button>
-                <div className="relative w-20 h-1.5 rounded-full overflow-hidden hidden sm:block" style={{ background: "rgba(255,255,255,0.12)" }}>
-                  <div className="absolute left-0 top-0 h-full rounded-full" style={{ width: `${muted ? 0 : volume * 100}%`, background: "rgba(255,255,255,0.5)" }} />
-                  <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.05}
-                    value={muted ? 0 : volume}
-                    onChange={onVolumeChange}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                </div>
-              </div>
-
-              {/* Centre: playback controls */}
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => skip(-10)}
-                  className="flex items-center justify-center transition-all hover:scale-110"
-                  style={{ color: "rgba(255,255,255,0.55)", width: 36, height: 36 }}
-                  title="Back 10s"
-                >
-                  <SkipBack size={18} />
-                </button>
-
-                {/* Prev scene */}
-                <button
-                  onClick={() => setCurrentScene(currentScene - 1)}
-                  disabled={currentScene === 0}
-                  className="flex items-center justify-center rounded-full transition-all hover:scale-110 disabled:opacity-25"
-                  style={{ color: "rgba(255,255,255,0.7)", width: 36, height: 36 }}
-                  title="Previous scene"
-                >
-                  <ChevronLeft size={20} />
-                </button>
-
-                {/* Play / Pause */}
-                <button
-                  onClick={togglePlay}
-                  className="flex items-center justify-center rounded-full transition-all hover:scale-110 active:scale-95"
-                  style={{ width: 52, height: 52, background: "linear-gradient(135deg,var(--lf-teal),#00a38d)", color: "#fff", boxShadow: "0 4px 20px rgba(0,201,167,0.45)", flexShrink: 0 }}
-                >
-                  {isPlaying ? <Pause size={22} fill="#fff" /> : <Play size={22} fill="#fff" style={{ marginLeft: 2 }} />}
-                </button>
-
-                {/* Next scene */}
-                <button
-                  onClick={() => setCurrentScene(currentScene + 1)}
-                  disabled={currentScene === numScenes - 1}
-                  className="flex items-center justify-center rounded-full transition-all hover:scale-110 disabled:opacity-25"
-                  style={{ color: "rgba(255,255,255,0.7)", width: 36, height: 36 }}
-                  title="Next scene"
-                >
-                  <ChevronRight size={20} />
-                </button>
-
-                <button
-                  onClick={() => skip(10)}
-                  className="flex items-center justify-center transition-all hover:scale-110"
-                  style={{ color: "rgba(255,255,255,0.55)", width: 36, height: 36 }}
-                  title="Forward 10s"
-                >
-                  <SkipForward size={18} />
-                </button>
-              </div>
-
-              {/* Right: library link */}
-              <div className="flex items-center gap-3 justify-end flex-1">
-                <Link
-                  href="/library"
-                  className="hidden sm:flex items-center gap-1.5 text-xs font-bold transition-all hover:opacity-80"
-                  style={{ color: "rgba(255,255,255,0.35)", fontFamily: "'Nunito', sans-serif" }}
-                >
-                  <Library size={13} /> Library
-                </Link>
-                <Link
-                  href="/dashboard"
-                  className="hidden sm:flex items-center gap-1.5 text-xs font-bold transition-all hover:opacity-80"
-                  style={{ color: "rgba(0,201,167,0.7)", fontFamily: "'Nunito', sans-serif" }}
-                >
-                  <Sparkles size={13} /> New story
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* If no narration: just a nav footer */}
-      {!narrationUrl && (
-        <div
-          className="flex-shrink-0 flex items-center justify-between px-6 py-4"
-          style={{ background: "rgba(14,12,26,0.97)", borderTop: "1px solid rgba(255,255,255,0.07)" }}
-        >
-          <Link href="/library" className="flex items-center gap-2 text-sm font-semibold" style={{ color: "rgba(255,255,255,0.4)", fontFamily: "'Nunito', sans-serif" }}>
-            <ArrowLeft size={14} /> Back to library
-          </Link>
-          <Link href="/dashboard" className="flex items-center gap-2 text-sm font-bold" style={{ color: "var(--lf-teal)", fontFamily: "'Nunito', sans-serif" }}>
-            <Sparkles size={14} /> Create new story
-          </Link>
-        </div>
-      )}
+      {/* ── Minimal footer ── */}
+      <div
+        className="flex-shrink-0 flex items-center justify-between px-6 py-3"
+        style={{ background: "rgba(14,12,26,0.97)", borderTop: "1px solid rgba(255,255,255,0.06)" }}
+      >
+        <Link href="/library" className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "'Nunito', sans-serif" }}>
+          <Library size={13} /> Library
+        </Link>
+        <Link href="/dashboard" className="flex items-center gap-1.5 text-xs font-bold" style={{ color: "var(--lf-teal)", fontFamily: "'Nunito', sans-serif" }}>
+          <Sparkles size={13} /> New story
+        </Link>
+      </div>
     </div>
   );
 }
