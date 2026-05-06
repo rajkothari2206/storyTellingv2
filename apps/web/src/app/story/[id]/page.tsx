@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useRef, useState, useEffect, useCallback } from "react";
+import { use, useRef, useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -35,6 +35,59 @@ import {
 /* ────────────────────────────────────────────────────────────────
    Helpers
 ──────────────────────────────────────────────────────────────── */
+
+/**
+ * Mulberry32 — tiny seeded PRNG.
+ * Returns a function that produces deterministic floats in [0,1).
+ * Using a seed derived from the scene index means the same story always
+ * gets the same animation / particle layout — no jitter on re-render.
+ */
+function mulberry32(seed: number) {
+  let a = seed;
+  return () => {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Six CSS animation classes — one is assigned deterministically per scene */
+const SCENE_ANIM_POOL = [
+  "scene-anim-kenburns",
+  "scene-anim-bob",
+  "scene-anim-wiggle",
+  "scene-anim-pulse",
+  "scene-anim-stomp",
+  "scene-anim-zoom-breathe",
+] as const;
+
+const PARTICLE_EMOJIS = ["✨", "⭐", "💫", "🌟", "✦", "·", "❋"];
+
+interface SceneParticle {
+  id: number;
+  emoji: string;
+  left: string;
+  bottom: string;
+  size: string;
+  delay: string;
+  duration: string;
+}
+
+/** Generate a stable set of floating particles for a given scene */
+function buildParticles(sceneIndex: number, count = 12): SceneParticle[] {
+  const rng = mulberry32(sceneIndex * 997 + 11);
+  return Array.from({ length: count }, (_, i) => ({
+    id: i,
+    emoji: PARTICLE_EMOJIS[Math.floor(rng() * PARTICLE_EMOJIS.length)],
+    left: `${6 + rng() * 88}%`,
+    bottom: `${12 + rng() * 55}%`,
+    size: `${0.6 + rng() * 0.55}rem`,
+    delay: `${(rng() * 6).toFixed(2)}s`,
+    duration: `${(2.8 + rng() * 3.2).toFixed(2)}s`,
+  }));
+}
+
 function formatTime(s: number) {
   if (!isFinite(s) || isNaN(s)) return "0:00";
   const m = Math.floor(s / 60);
@@ -473,6 +526,11 @@ function StoryViewer({
   const sceneImageUrl = imageUrls?.[currentScene]?.url ?? null;
   const sceneProgress = numScenes > 1 ? currentScene / (numScenes - 1) : 0;
 
+  /* ── Scene motion & particles ── */
+  // Deterministic so same story → same animation per scene (no layout jitter)
+  const sceneAnimClass = SCENE_ANIM_POOL[currentScene % SCENE_ANIM_POOL.length];
+  const sceneParticles = useMemo(() => buildParticles(currentScene), [currentScene]);
+
   /**
    * Estimate how many seconds of the narration audio are spent reading the title.
    * The audio is structured as: [title] [content lines…]
@@ -674,16 +732,40 @@ function StoryViewer({
             {/* Image + nav buttons */}
             <div className="relative w-full rounded-3xl overflow-hidden flex-shrink-0" style={{ aspectRatio: "16/9", background: "#1a1730" }}>
 
-              {/* Scene image */}
+              {/* Scene image — animated wrapper so Ken Burns / bob etc. don't escape the frame */}
               {sceneImageUrl ? (
-                <Image
-                  key={currentScene} // re-mount triggers animation
-                  src={sceneImageUrl}
-                  alt={`Scene ${currentScene + 1}`}
-                  fill
-                  className="object-cover scene-img"
-                  priority
-                />
+                <div
+                  key={currentScene}
+                  className={`absolute inset-0 scene-img ${sceneAnimClass}`}
+                  style={{ transformOrigin: "center center" }}
+                >
+                  <Image
+                    src={sceneImageUrl}
+                    alt={`Scene ${currentScene + 1}`}
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+                  {/* Shimmer sweep — diagonal glint that crosses the image periodically */}
+                  <div className="scene-shimmer" />
+
+                  {/* Floating emoji particles — rise up from within the scene */}
+                  {sceneParticles.map((p: SceneParticle) => (
+                    <span
+                      key={p.id}
+                      className="scene-particle"
+                      style={{
+                        left: p.left,
+                        bottom: p.bottom,
+                        fontSize: p.size,
+                        animationDelay: p.delay,
+                        animationDuration: p.duration,
+                      }}
+                    >
+                      {p.emoji}
+                    </span>
+                  ))}
+                </div>
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="flex flex-col items-center gap-3 opacity-30">

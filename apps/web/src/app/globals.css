@@ -304,7 +304,7 @@
 }
 
 /* ============================================================
-   Story viewer animations
+   Story viewer — base animations
    ============================================================ */
 @keyframes fade-slide {
   from { opacity: 0; transform: translateY(8px); }
@@ -339,3 +339,94 @@
 .twinkle         { animation: twinkle ease-in-out infinite; }
 .drift           { animation: drift ease-in-out infinite; }
 .subtitle-line   { animation: subtitle-in 0.25s ease; }
+
+/* ============================================================
+   Story viewer — SCENE IMAGE MOTION
+   Six distinct motion modes; one is randomly assigned per scene.
+   All use only transform (GPU composited — zero jank).
+   ============================================================ */
+
+/* 1. Ken Burns — slow cinematic zoom + drift */
+@keyframes scene-kenburns {
+  0%   { transform: scale(1.00) translate(  0%,   0%); }
+  25%  { transform: scale(1.07) translate(-1.5%, -1%); }
+  75%  { transform: scale(1.05) translate( 1.2%, 0.8%); }
+  100% { transform: scale(1.00) translate(  0%,   0%); }
+}
+/* 2. Float / Bob — characters appear to breathe */
+@keyframes scene-bob {
+  0%, 100% { transform: scale(1.02) translateY(   0px); }
+  50%       { transform: scale(1.03) translateY(-10px); }
+}
+/* 3. Gentle Wiggle — playful side-to-side rock */
+@keyframes scene-wiggle {
+  0%, 100% { transform: scale(1.02) rotate(  0deg); }
+  25%       { transform: scale(1.02) rotate(-1.1deg); }
+  75%       { transform: scale(1.02) rotate( 1.1deg); }
+}
+/* 4. Heartbeat Pulse — slow in/out scale */
+@keyframes scene-pulse {
+  0%, 100% { transform: scale(1.00); }
+  40%, 60%  { transform: scale(1.06); }
+}
+/* 5. Stomp — bounce then settle (character energy) */
+@keyframes scene-stomp {
+  0%, 100%  { transform: scale(1.00) translateY(   0px); }
+  12%        { transform: scale(1.06) translateY(-12px); }
+  24%        { transform: scale(0.97) translateY(  5px); }
+  34%        { transform: scale(1.01) translateY( -2px); }
+  44%        { transform: scale(1.00) translateY(  0px); }
+}
+/* 6. Zoom Breathe — slow dramatic hold-and-release */
+@keyframes scene-zoom-breathe {
+  0%        { transform: scale(1.00); }
+  35%, 65%  { transform: scale(1.09); }
+  100%      { transform: scale(1.00); }
+}
+
+.scene-anim-kenburns     { animation: scene-kenburns    22s ease-in-out infinite; transform-origin: center center; }
+.scene-anim-bob          { animation: scene-bob          4s ease-in-out infinite; transform-origin: bottom center; }
+.scene-anim-wiggle       { animation: scene-wiggle      3.2s ease-in-out infinite; transform-origin: bottom center; }
+.scene-anim-pulse        { animation: scene-pulse       3.8s ease-in-out infinite; transform-origin: center center; }
+.scene-anim-stomp        { animation: scene-stomp       4.5s ease-in-out infinite; transform-origin: bottom center; }
+.scene-anim-zoom-breathe { animation: scene-zoom-breathe 6s  ease-in-out infinite; transform-origin: center center; }
+
+/* ── Shimmer sweep — diagonal light glint across the image ── */
+@keyframes shimmer-sweep {
+  0%         { left: -60%; opacity: 0; }
+  3%         {              opacity: 1; }
+  48%        { left: 120%; opacity: 1; }
+  50%, 100%  { left: 120%; opacity: 0; }
+}
+.scene-shimmer {
+  position: absolute;
+  top: -20%;
+  width: 45%;
+  height: 140%;
+  background: linear-gradient(
+    105deg,
+    transparent       0%,
+    rgba(255,255,255,0.12) 50%,
+    transparent      100%
+  );
+  transform: skewX(-12deg);
+  pointer-events: none;
+  z-index: 3;
+  animation: shimmer-sweep 8s ease-in-out infinite;
+}
+
+/* ── Floating particles inside image frame ── */
+@keyframes particle-rise {
+  0%   { transform: translateY(0px)   scale(1.0) rotate(  0deg); opacity: 0;   }
+  8%   {                                                           opacity: 0.9; }
+  85%  { transform: translateY(-85px) scale(0.5) rotate( 25deg); opacity: 0.7; }
+  100% { transform: translateY(-105px) scale(0.2) rotate(45deg); opacity: 0;   }
+}
+.scene-particle {
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+  line-height: 1;
+  z-index: 4;
+  animation: particle-rise ease-in-out infinite;
+}
