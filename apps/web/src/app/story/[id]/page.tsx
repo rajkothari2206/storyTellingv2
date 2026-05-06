@@ -283,45 +283,26 @@ function StoryViewer({
   const [seeking, setSeeking] = useState(false);
   const manualNavRef = useRef(false); // suppress auto-advance briefly after manual nav
 
-  /* Background music */
+  /* Background music — always on, fades with narration */
   const bgAudioRef = useRef<HTMLAudioElement>(null);
-  const [bgEnabled, setBgEnabled] = useState(true);
   const [bgTrackIdx, setBgTrackIdx] = useState(0);
-  // Shuffle the playlist once on mount
   const [bgPlaylist] = useState<string[]>(() =>
     [...BG_TRACKS].sort(() => Math.random() - 0.5)
   );
 
-  // Sync bg music with narration play / pause
-  useEffect(() => {
-    const bg = bgAudioRef.current;
-    if (!bg || !bgEnabled) return;
-    if (isPlaying) {
-      bg.volume = 0;
-      bg.play().catch(() => {}); // browsers may block until user gesture — silently ignore
-      fadeVolume(bg, BG_VOLUME, 1400);
-    } else {
-      const cancel = fadeVolume(bg, 0, 900);
-      const t = setTimeout(() => { bg.pause(); }, 950);
-      return () => { cancel(); clearTimeout(t); };
-    }
-  }, [isPlaying, bgEnabled]);
-
-  // Handle bg music toggle independently
   useEffect(() => {
     const bg = bgAudioRef.current;
     if (!bg) return;
-    if (!bgEnabled) {
-      const cancel = fadeVolume(bg, 0, 600);
-      const t = setTimeout(() => bg.pause(), 650);
-      return () => { cancel(); clearTimeout(t); };
-    } else if (isPlaying) {
+    if (isPlaying) {
       bg.volume = 0;
       bg.play().catch(() => {});
-      fadeVolume(bg, BG_VOLUME, 800);
+      fadeVolume(bg, BG_VOLUME, 1400);
+    } else {
+      const cancel = fadeVolume(bg, 0, 900);
+      const t = setTimeout(() => bg.pause(), 950);
+      return () => { cancel(); clearTimeout(t); };
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bgEnabled]);
+  }, [isPlaying]);
 
   /* Seek audio to scene's start position */
   const seekToScene = useCallback(
@@ -733,8 +714,8 @@ function StoryViewer({
 
                 {/* Controls row */}
                 <div className="flex items-center justify-between">
-                  {/* Volume + bg music toggle */}
-                  <div className="flex items-center gap-2">
+                  {/* Volume */}
+                  <div className="flex items-center gap-1.5">
                     <button onClick={toggleMute} className="transition-all hover:scale-110" style={{ color: "rgba(255,255,255,0.6)" }}>
                       {muted || volume === 0 ? <VolumeX size={15} /> : <Volume2 size={15} />}
                     </button>
@@ -742,15 +723,6 @@ function StoryViewer({
                       <div className="absolute left-0 top-0 h-full rounded-full" style={{ width: `${muted ? 0 : volume * 100}%`, background: "rgba(255,255,255,0.5)" }} />
                       <input type="range" min={0} max={1} step={0.05} value={muted ? 0 : volume} onChange={onVolumeChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                     </div>
-                    {/* Background music toggle */}
-                    <button
-                      onClick={() => setBgEnabled(v => !v)}
-                      className="transition-all hover:scale-110"
-                      title={bgEnabled ? "Turn off background music" : "Turn on background music"}
-                      style={{ color: bgEnabled ? "#FFD700" : "rgba(255,255,255,0.3)", fontSize: "0.85rem", lineHeight: 1 }}
-                    >
-                      🎵
-                    </button>
                   </div>
 
                   {/* Playback controls */}
