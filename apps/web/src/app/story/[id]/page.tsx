@@ -158,34 +158,78 @@ function detectSpeaker(sentence: string): { name: string; color: string } | null
 }
 
 /**
- * Given currentTime, duration, scene index, scene sentences, and the estimated
- * offset (in seconds) consumed by the title narration at the start of the audio,
- * returns the subtitle sentence that should be showing right now.
+ * Build per-scene character weights from story content.
+ * Returns an array of { startFrac, endFrac } for each scene (0..1 fractions
+ * of the content audio, weighted by character count).
  *
- * The audio track is structured as:
- *   [title audio] [scene-1 content] [scene-2 content] … [scene-N content]
- * Without accounting for titleOffset the subtitle text runs ahead of the audio.
+ * Why chars? TTS speaking time is roughly proportional to character count, so
+ * a scene with twice as many characters takes twice as long to narrate.
+ */
+function buildSceneTimeline(
+  content: string,
+  numScenes: number
+): Array<{ startFrac: number; endFrac: number }> {
+  if (!content || numScenes === 0) return [];
+  const paras = content.split("\n").map(l => l.trim()).filter(Boolean);
+  const chunkSize = Math.ceil(paras.length / numScenes);
+  const charCounts = Array.from({ length: numScenes }, (_, i) => {
+    const chunk = paras.slice(i * chunkSize, (i + 1) * chunkSize);
+    return Math.max(1, chunk.join("").length);
+  });
+  const total = charCounts.reduce((a, b) => a + b, 0);
+  const timeline: Array<{ startFrac: number; endFrac: number }> = [];
+  let cumulative = 0;
+  for (let i = 0; i < numScenes; i++) {
+    const startFrac = cumulative / total;
+    cumulative += charCounts[i];
+    timeline.push({ startFrac, endFrac: cumulative / total });
+  }
+  return timeline;
+}
+
+/**
+ * Given currentTime, return which subtitle sentence to show.
+ *
+ * Audio structure: [title] [scene-0 content] [scene-1 content] … [scene-N content]
+ *
+ * Both scene boundaries and sentence boundaries are weighted by character count
+ * so that longer text gets proportionally more screen time — matching TTS pacing.
  */
 function getCurrentSubtitle(
   currentTime: number,
   duration: number,
-  numScenes: number,
   sceneIndex: number,
   sentences: string[],
-  titleOffset: number   // estimated seconds taken by title narration
+  titleOffset: number,
+  sceneTimeline: Array<{ startFrac: number; endFrac: number }>
 ): string {
   if (!duration || sentences.length === 0) return "";
-  // Still reading the title — nothing to show yet
   if (currentTime < titleOffset) return "";
+
   const contentDuration = Math.max(1, duration - titleOffset);
-  const sceneDuration = contentDuration / numScenes;
-  const sceneStart = sceneIndex * sceneDuration;
-  const timeInScene = Math.max(0, (currentTime - titleOffset) - sceneStart);
-  const idx = Math.min(
-    sentences.length - 1,
-    Math.floor((timeInScene / sceneDuration) * sentences.length)
-  );
-  return sentences[idx] ?? "";
+  const contentProgress = (currentTime - titleOffset) / contentDuration; // 0..1
+
+  const slot = sceneTimeline[sceneIndex];
+  if (!slot) return "";
+
+  // Are we actually in this scene's time window?
+  if (contentProgress < slot.startFrac || contentProgress >= slot.endFrac) return "";
+
+  const sceneDuration = slot.endFrac - slot.startFrac;
+  if (sceneDuration <= 0) return sentences[0] ?? "";
+
+  // Progress within this scene (0..1)
+  const progressInScene = (contentProgress - slot.startFrac) / sceneDuration;
+
+  // Weight sentences by character count — long sentences get more screen time
+  const charCounts = sentences.map(s => Math.max(1, s.length));
+  const totalChars = charCounts.reduce((a, b) => a + b, 0);
+  let cumulative = 0;
+  for (let i = 0; i < sentences.length; i++) {
+    cumulative += charCounts[i];
+    if (progressInScene < cumulative / totalChars) return sentences[i] ?? "";
+  }
+  return sentences[sentences.length - 1] ?? "";
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -295,8 +339,9 @@ function StoryViewer({
   const [seeking, setSeeking] = useState(false);
   const manualNavRef = useRef(false); // suppress auto-advance briefly after manual nav
 
-  /* Ref that always holds the latest titleOffset so event handlers stay fresh */
+  /* Refs that always hold the latest titleOffset / sceneTimeline so event handlers stay fresh */
   const titleOffsetRef = useRef(0);
+  const sceneTimelineRef = useRef<Array<{ startFrac: number; endFrac: number }>>([]);
 
   /* Background music — always on, fades with narration */
   const bgAudioRef = useRef<HTMLAudioElement>(null);
@@ -319,46 +364,46 @@ function StoryViewer({
     }
   }, [isPlaying]);
 
-  /* Seek audio to scene's start position, skipping past the title narration */
+  /* Seek audio to scene's start position using character-weighted timeline */
   const seekToScene = useCallback(
-    (idx: number, titleOffset: number) => {
+    (idx: number, titleOffset: number, sceneTimeline: Array<{ startFrac: number; endFrac: number }>) => {
       if (!audioRef.current || !duration || numScenes === 0) return;
       const contentDuration = Math.max(1, duration - titleOffset);
-      const target = titleOffset + (idx / numScenes) * contentDuration;
-      audioRef.current.currentTime = target;
+      const startFrac = sceneTimeline[idx]?.startFrac ?? (idx / numScenes);
+      audioRef.current.currentTime = titleOffset + startFrac * contentDuration;
     },
     [duration, numScenes]
   );
 
   const setCurrentScene = useCallback(
-    (idx: number, seekAudio = true, titleOffset = 0) => {
+    (idx: number, seekAudio = true, titleOffset = 0, sceneTimeline: Array<{ startFrac: number; endFrac: number }> = []) => {
       const clamped = Math.max(0, Math.min(numScenes - 1, idx));
       setCurrentSceneRaw(clamped);
       if (seekAudio) {
         manualNavRef.current = true;
-        seekToScene(clamped, titleOffset);
+        seekToScene(clamped, titleOffset, sceneTimeline);
         setTimeout(() => { manualNavRef.current = false; }, 600);
       }
     },
     [numScenes, seekToScene]
   );
 
-  /* Auto-advance scene as audio plays (respects title offset) */
+  /* Auto-advance scene as audio plays — uses character-weighted scene timeline */
   useEffect(() => {
-    if (manualNavRef.current || numScenes === 0 || !duration) return;
-    // titleOffsetFraction computed from story chars; zero-safe
+    if (manualNavRef.current || numScenes === 0 || !duration || !story?.content) return;
     const titleChars = (story?.title ?? "").length;
-    const contentChars = (story?.content ?? "").replace(/\s*\n\s*/g, "").length;
-    const totalChars = titleChars + contentChars;
+    const contentCharsFlat = (story.content ?? "").replace(/\s*\n\s*/g, "").length;
+    const totalChars = titleChars + contentCharsFlat;
     const titleOff = totalChars > 0 ? (titleChars / totalChars) * duration : 0;
     const contentDur = Math.max(1, duration - titleOff);
-    const contentTime = Math.max(0, currentTime - titleOff);
-    const expected = Math.min(
-      numScenes - 1,
-      Math.floor((contentTime / contentDur) * numScenes)
-    );
-    if (expected !== currentScene) {
-      setCurrentSceneRaw(expected);
+    const contentProgress = Math.max(0, currentTime - titleOff) / contentDur; // 0..1
+
+    const timeline = buildSceneTimeline(story.content, numScenes);
+    const expected = timeline.findIndex(slot => contentProgress < slot.endFrac);
+    const clamped = expected === -1 ? numScenes - 1 : Math.max(0, expected);
+
+    if (clamped !== currentScene) {
+      setCurrentSceneRaw(clamped);
     }
   }, [currentTime, duration, numScenes, currentScene, story?.title, story?.content]);
 
@@ -374,10 +419,10 @@ function StoryViewer({
         else { audioRef.current.play(); setIsPlaying(true); }
       } else if (e.code === "ArrowRight") {
         e.preventDefault();
-        setCurrentScene(currentScene + 1, true, titleOffsetRef.current);
+        setCurrentScene(currentScene + 1, true, titleOffsetRef.current, sceneTimelineRef.current);
       } else if (e.code === "ArrowLeft") {
         e.preventDefault();
-        setCurrentScene(currentScene - 1, true, titleOffsetRef.current);
+        setCurrentScene(currentScene - 1, true, titleOffsetRef.current, sceneTimelineRef.current);
       }
     }
     window.addEventListener("keydown", onKey);
@@ -439,8 +484,14 @@ function StoryViewer({
   const titleOffset = duration > 0 && totalCharsForOffset > 0
     ? (titleCharsForOffset / totalCharsForOffset) * duration
     : 0;
-  // Keep ref in sync so keyboard/click handlers always use the latest value
+  // Keep refs in sync so keyboard/click handlers always use the latest values
   titleOffsetRef.current = titleOffset;
+
+  /* Character-weighted scene timeline — shared by subtitle sync, auto-advance, and seek */
+  const sceneTimeline = story?.content
+    ? buildSceneTimeline(story.content, numScenes)
+    : [];
+  sceneTimelineRef.current = sceneTimeline;
 
   /* Derive scene narrative text from story.content (divided equally across scenes) */
   const sceneNarrativeText = story?.content
@@ -449,7 +500,7 @@ function StoryViewer({
 
   /* Subtitle: split scene text into sentences, pick current one by audio time */
   const sceneSentences = sceneNarrativeText ? splitSentences(sceneNarrativeText) : [];
-  const subtitleText = getCurrentSubtitle(currentTime, duration, numScenes, currentScene, sceneSentences, titleOffset);
+  const subtitleText = getCurrentSubtitle(currentTime, duration, currentScene, sceneSentences, titleOffset, sceneTimeline);
   const speaker = subtitleText ? detectSpeaker(subtitleText) : null;
 
   /* Strip "Lalli said" / "Fafa replied" framing so subtitle shows clean dialogue */
@@ -658,7 +709,7 @@ function StoryViewer({
               {/* Prev button */}
               {currentScene > 0 && (
                 <button
-                  onClick={() => setCurrentScene(currentScene - 1, true, titleOffset)}
+                  onClick={() => setCurrentScene(currentScene - 1, true, titleOffset, sceneTimeline)}
                   className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center rounded-full transition-all hover:scale-110 active:scale-95"
                   style={{ width: 44, height: 44, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(8px)", border: "1.5px solid rgba(255,255,255,0.2)", color: "#fff" }}
                   aria-label="Previous scene"
@@ -670,7 +721,7 @@ function StoryViewer({
               {/* Next button */}
               {currentScene < numScenes - 1 && (
                 <button
-                  onClick={() => setCurrentScene(currentScene + 1, true, titleOffset)}
+                  onClick={() => setCurrentScene(currentScene + 1, true, titleOffset, sceneTimeline)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center rounded-full transition-all hover:scale-110 active:scale-95"
                   style={{ width: 44, height: 44, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(8px)", border: "1.5px solid rgba(255,255,255,0.2)", color: "#fff" }}
                   aria-label="Next scene"
@@ -737,7 +788,7 @@ function StoryViewer({
               {/* Scene dots — bottom edge */}
               <div className="absolute bottom-1.5 left-0 right-0 flex items-center justify-center gap-1.5" style={{ pointerEvents: cleanSubtitle ? "none" : "auto", opacity: cleanSubtitle ? 0 : 1, transition: "opacity 0.3s" }}>
                 {scenes.map((_, i) => (
-                  <button key={i} onClick={() => setCurrentScene(i, true, titleOffset)} aria-label={`Scene ${i + 1}`}
+                  <button key={i} onClick={() => setCurrentScene(i, true, titleOffset, sceneTimeline)} aria-label={`Scene ${i + 1}`}
                     style={{ width: i === currentScene ? 18 : 5, height: 5, borderRadius: 99, background: i === currentScene ? "var(--lf-teal)" : "rgba(255,255,255,0.3)", border: "none", padding: 0, cursor: "pointer", transition: "all 0.3s", flexShrink: 0 }}
                   />
                 ))}
@@ -779,7 +830,7 @@ function StoryViewer({
                 {/* Playback */}
                 <div className="flex items-center gap-3">
                   <button onClick={() => skip(-10)} className="transition-all hover:scale-110" style={{ color: "rgba(255,255,255,0.45)" }} title="Back 10s"><SkipBack size={16} /></button>
-                  <button onClick={() => setCurrentScene(currentScene - 1, true, titleOffset)} disabled={currentScene === 0} className="transition-all hover:scale-110 disabled:opacity-20" style={{ color: "rgba(255,255,255,0.65)" }}><ChevronLeft size={20} /></button>
+                  <button onClick={() => setCurrentScene(currentScene - 1, true, titleOffset, sceneTimeline)} disabled={currentScene === 0} className="transition-all hover:scale-110 disabled:opacity-20" style={{ color: "rgba(255,255,255,0.65)" }}><ChevronLeft size={20} /></button>
                   <button
                     onClick={togglePlay}
                     className="flex items-center justify-center rounded-full transition-all hover:scale-110 active:scale-95"
@@ -787,7 +838,7 @@ function StoryViewer({
                   >
                     {isPlaying ? <Pause size={20} fill="#fff" /> : <Play size={20} fill="#fff" style={{ marginLeft: 2 }} />}
                   </button>
-                  <button onClick={() => setCurrentScene(currentScene + 1, true, titleOffset)} disabled={currentScene === numScenes - 1} className="transition-all hover:scale-110 disabled:opacity-20" style={{ color: "rgba(255,255,255,0.65)" }}><ChevronRight size={20} /></button>
+                  <button onClick={() => setCurrentScene(currentScene + 1, true, titleOffset, sceneTimeline)} disabled={currentScene === numScenes - 1} className="transition-all hover:scale-110 disabled:opacity-20" style={{ color: "rgba(255,255,255,0.65)" }}><ChevronRight size={20} /></button>
                   <button onClick={() => skip(10)} className="transition-all hover:scale-110" style={{ color: "rgba(255,255,255,0.45)" }} title="Forward 10s"><SkipForward size={16} /></button>
                 </div>
 
