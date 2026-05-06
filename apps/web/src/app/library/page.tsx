@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -89,6 +89,35 @@ function formatDate(ts?: number): string {
   if (!ts) return "";
   return new Date(ts).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
+
+/* ================================================================
+   Story cover image — queries its own URL so no backend change needed
+   ================================================================ */
+const StoryCoverImage = memo(function StoryCoverImage({
+  storyId,
+  fallback,
+  accent,
+}: {
+  storyId: string;
+  fallback: string;
+  accent: string;
+}) {
+  const url = useQuery(api.stories.getFirstSceneImageUrl, { storyId: storyId as any });
+  const src = url ?? fallback;
+  return (
+    <>
+      <Image
+        src={src}
+        alt="Story scene"
+        fill
+        className="object-cover transition-transform duration-500 group-hover:scale-108"
+        style={{ objectPosition: "center 65%" }}
+      />
+      {/* Gradient overlay */}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(to top,rgba(0,0,0,0.5) 0%,rgba(0,0,0,0.1) 50%,transparent 100%)" }} />
+    </>
+  );
+});
 
 /* ================================================================
    PAGE
@@ -441,9 +470,8 @@ export default function LibraryPage() {
                   params?: { theme?: string; language?: string; lesson?: string; length?: string };
                   status?: string;
                   _creationTime?: number;
-                  coverImageUrl?: string;
                 }>).map((story, idx) => {
-                  const sceneImg = story.coverImageUrl ?? getSceneForTheme(story.params?.theme);
+                  const sceneImg = getSceneForTheme(story.params?.theme);
                   const accent = getAccentForTheme(story.params?.theme);
                   const date = formatDate(story._creationTime);
 
@@ -461,15 +489,11 @@ export default function LibraryPage() {
                     >
                       {/* Scene image */}
                       <div className="relative overflow-hidden flex-shrink-0" style={{ height: 160 }}>
-                        <Image
-                          src={sceneImg}
-                          alt={story.title ?? "Story"}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-108"
-                          style={{ objectPosition: "center 30%" }}
+                        <StoryCoverImage
+                          storyId={story._id}
+                          fallback={sceneImg}
+                          accent={accent}
                         />
-                        {/* Gradient overlay */}
-                        <div className="absolute inset-0" style={{ background: "linear-gradient(to top,rgba(0,0,0,0.5) 0%,rgba(0,0,0,0.1) 50%,transparent 100%)" }} />
 
                         {/* Top badges */}
                         <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
