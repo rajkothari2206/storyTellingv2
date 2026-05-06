@@ -567,7 +567,8 @@ function StoryViewer({
   // Deterministic so same story → same animation per scene (no layout jitter)
   const sceneAnimClass = SCENE_ANIM_POOL[currentScene % SCENE_ANIM_POOL.length];
   const sceneParticles = useMemo(() => buildParticles(currentScene), [currentScene]);
-  const lottieData = useLottieOverlay(currentScene);
+  // lottieData kept here — re-enable the overlay once proper JSON files are in /public/lottie/
+  const _lottieData = useLottieOverlay(currentScene); void _lottieData;
 
   /**
    * Estimate how many seconds of the narration audio are spent reading the title.
@@ -790,18 +791,21 @@ function StoryViewer({
                   {/* Shimmer sweep — diagonal glint that crosses the image periodically */}
                   <div className="scene-shimmer" />
 
-                  {/* Lottie overlay — sparkle / fireflies / stars cycling per scene */}
+                  {/* Lottie overlay — disabled until proper children's animation
+                      files are placed in /public/lottie/.
+                      To re-enable: go to lottiefiles.com, search "children sparkle"
+                      or "magic stars", download free JSON files, save them as
+                      sparkle.json / fireflies.json / stars.json in public/lottie/,
+                      then uncomment the block below.
+
                   {lottieData && (
-                    <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 2, opacity: 0.55 }}>
-                      <Lottie
-                        animationData={lottieData}
-                        loop
-                        autoplay
+                    <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 2, opacity: 0.5 }}>
+                      <Lottie animationData={lottieData} loop autoplay
                         style={{ width: "100%", height: "100%" }}
-                        rendererSettings={{ preserveAspectRatio: "xMidYMid slice" }}
-                      />
+                        rendererSettings={{ preserveAspectRatio: "xMidYMid slice" }} />
                     </div>
                   )}
+                  */}
 
                   {/* Floating emoji particles — rise up from within the scene */}
                   {sceneParticles.map((p: SceneParticle) => (
