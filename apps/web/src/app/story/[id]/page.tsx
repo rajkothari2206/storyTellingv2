@@ -49,6 +49,17 @@ function splitSentences(text: string | null | undefined): string[] {
   return raw.map((s) => s.trim()).filter(Boolean);
 }
 
+/* Divide story.content into per-scene chunks by splitting paragraphs equally */
+function getSceneTextChunk(content: string, sceneIndex: number, numScenes: number): string {
+  if (!content || numScenes === 0) return "";
+  // Split into non-empty lines / paragraphs
+  const paras = content.split("\n").map(l => l.trim()).filter(Boolean);
+  if (paras.length === 0) return "";
+  const chunkSize = Math.ceil(paras.length / numScenes);
+  const start = sceneIndex * chunkSize;
+  return paras.slice(start, start + chunkSize).join(" ").trim();
+}
+
 /* Detect a character name to show as the subtitle speaker */
 const CHARACTERS: { name: string; color: string }[] = [
   { name: "Lalli", color: "#f9c700" },
@@ -88,13 +99,14 @@ function getCurrentSubtitle(
 ──────────────────────────────────────────────────────────────── */
 interface SceneMeta {
   sceneNumber: number;
-  text?: string | null;
+  description?: string | null; // image generation description (from DB)
+  text?: string | null;        // legacy — not stored in DB, kept for type safety
   imagePrompt?: string;
 }
 interface StoryShape {
   title?: string;
   status?: string;
-  content?: string;
+  content?: string;            // full narrative text (all scenes combined)
   sceneMetadata?: SceneMeta[];
   params?: { theme?: string; language?: string; lesson?: string };
 }
@@ -260,8 +272,13 @@ function StoryViewer({
   const sceneImageUrl = imageUrls?.[currentScene]?.url ?? null;
   const sceneProgress = numScenes > 1 ? currentScene / (numScenes - 1) : 0;
 
+  /* Derive scene narrative text from story.content (divided equally across scenes) */
+  const sceneNarrativeText = story?.content
+    ? getSceneTextChunk(story.content, currentScene, numScenes)
+    : (scene?.text ?? "");
+
   /* Subtitle: split scene text into sentences, pick current one by audio time */
-  const sceneSentences = scene?.text ? splitSentences(scene.text) : [];
+  const sceneSentences = sceneNarrativeText ? splitSentences(sceneNarrativeText) : [];
   const subtitleText = getCurrentSubtitle(currentTime, duration, numScenes, currentScene, sceneSentences);
   const speaker = subtitleText ? detectSpeaker(subtitleText) : null;
 
@@ -551,7 +568,7 @@ function StoryViewer({
             </div>
 
             {/* Scene text */}
-            {scene && (
+            {sceneNarrativeText && (
               <div
                 key={currentScene}
                 className="scene-text-card w-full px-6 py-5 rounded-2xl relative overflow-hidden"
@@ -565,7 +582,7 @@ function StoryViewer({
                 <div className="relative flex items-start gap-3">
                   <span className="text-lg flex-shrink-0 mt-0.5" style={{ opacity: 0.7 }}>📖</span>
                   <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "1rem", lineHeight: 1.85, color: "rgba(255,255,255,0.88)" }}>
-                    {scene.text}
+                    {sceneNarrativeText}
                   </p>
                 </div>
               </div>
@@ -626,7 +643,7 @@ function StoryViewer({
             onTimeUpdate={onTimeUpdate}
             onLoadedMetadata={onLoadedMetadata}
             onEnded={onEnded}
-            preload="metadata"
+            preload="auto"
           />
 
           <div className="max-w-3xl mx-auto flex flex-col gap-3">
