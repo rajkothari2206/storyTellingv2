@@ -770,13 +770,16 @@ function StoryViewer({
             {/* Image + nav buttons */}
             <div className="relative w-full rounded-3xl overflow-hidden flex-shrink-0" style={{ aspectRatio: "16/9", background: "#1a1730" }}>
 
-              {/* Scene image — animated wrapper so Ken Burns / bob etc. don't escape the frame */}
+              {/* Scene image
+                  Two nested divs keep CSS animations isolated:
+                  • Outer: scene-img fade-in only (opacity keyframe)
+                  • Inner: motion animation only (transform keyframe)
+                  Separating them prevents the `animation:` shorthand from
+                  overriding each other, and lets each class own its
+                  transform-origin without an inline style stomping on it. */}
               {sceneImageUrl ? (
-                <div
-                  key={currentScene}
-                  className={`absolute inset-0 scene-img ${sceneAnimClass}`}
-                  style={{ transformOrigin: "center center" }}
-                >
+                <div key={currentScene} className="absolute inset-0 scene-img">
+                  <div className={`absolute inset-0 ${sceneAnimClass}`}>
                   <Image
                     src={sceneImageUrl}
                     alt={`Scene ${currentScene + 1}`}
@@ -816,6 +819,7 @@ function StoryViewer({
                       {p.emoji}
                     </span>
                   ))}
+                  </div>
                 </div>
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">

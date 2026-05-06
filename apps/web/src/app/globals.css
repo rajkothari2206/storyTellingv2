@@ -346,50 +346,80 @@
    All use only transform (GPU composited — zero jank).
    ============================================================ */
 
-/* 1. Ken Burns — slow cinematic zoom + drift */
+/*
+ * IMPORTANT: these classes are applied to an INNER div (NOT the same element
+ * as scene-img) so there is no CSS animation conflict.
+ * transform-origin is set per-class here — no inline style override.
+ */
+
+/* 1. Ken Burns — slow cinematic zoom drift across the frame */
 @keyframes scene-kenburns {
-  0%   { transform: scale(1.00) translate(  0%,   0%); }
-  25%  { transform: scale(1.07) translate(-1.5%, -1%); }
-  75%  { transform: scale(1.05) translate( 1.2%, 0.8%); }
-  100% { transform: scale(1.00) translate(  0%,   0%); }
+  0%   { transform: scale(1.00) translate(  0%,    0%); }
+  30%  { transform: scale(1.12) translate(-2.5%, -1.5%); }
+  70%  { transform: scale(1.08) translate( 2.0%,  1.2%); }
+  100% { transform: scale(1.00) translate(  0%,    0%); }
 }
-/* 2. Float / Bob — characters appear to breathe */
+/* 2. Bob / Float — the whole scene gently rises and sinks (breathing) */
 @keyframes scene-bob {
-  0%, 100% { transform: scale(1.02) translateY(   0px); }
-  50%       { transform: scale(1.03) translateY(-10px); }
+  0%, 100% { transform: translateY(  0px) scale(1.04); }
+  50%       { transform: translateY(-20px) scale(1.00); }
 }
-/* 3. Gentle Wiggle — playful side-to-side rock */
+/* 3. Wiggle — distinct side-to-side rock from the bottom anchor */
 @keyframes scene-wiggle {
-  0%, 100% { transform: scale(1.02) rotate(  0deg); }
-  25%       { transform: scale(1.02) rotate(-1.1deg); }
-  75%       { transform: scale(1.02) rotate( 1.1deg); }
+  0%,  100% { transform: rotate(  0.0deg) scale(1.03); }
+  20%        { transform: rotate(-3.0deg) scale(1.03); }
+  40%        { transform: rotate( 3.0deg) scale(1.03); }
+  60%        { transform: rotate(-2.0deg) scale(1.03); }
+  80%        { transform: rotate( 2.0deg) scale(1.03); }
 }
-/* 4. Heartbeat Pulse — slow in/out scale */
+/* 4. Heartbeat Pulse — two quick thumps then a long rest */
 @keyframes scene-pulse {
-  0%, 100% { transform: scale(1.00); }
-  40%, 60%  { transform: scale(1.06); }
+  0%          { transform: scale(1.00); }
+  10%         { transform: scale(1.08); }
+  20%         { transform: scale(1.02); }
+  30%         { transform: scale(1.10); }
+  45%, 100%   { transform: scale(1.00); }
 }
-/* 5. Stomp — bounce then settle (character energy) */
+/* 5. Stomp — big upward leap + squash landing */
 @keyframes scene-stomp {
-  0%, 100%  { transform: scale(1.00) translateY(   0px); }
-  12%        { transform: scale(1.06) translateY(-12px); }
-  24%        { transform: scale(0.97) translateY(  5px); }
-  34%        { transform: scale(1.01) translateY( -2px); }
-  44%        { transform: scale(1.00) translateY(  0px); }
+  0%, 100% { transform: scale(1.00, 1.00) translateY(   0px); }
+  15%       { transform: scale(0.95, 1.10) translateY(-30px); }
+  30%       { transform: scale(1.08, 0.92) translateY(  8px); }
+  45%       { transform: scale(0.98, 1.04) translateY( -4px); }
+  55%       { transform: scale(1.00, 1.00) translateY(  0px); }
 }
-/* 6. Zoom Breathe — slow dramatic hold-and-release */
+/* 6. Zoom Breathe — slow dramatic push-in, hold, pull back */
 @keyframes scene-zoom-breathe {
-  0%        { transform: scale(1.00); }
-  35%, 65%  { transform: scale(1.09); }
-  100%      { transform: scale(1.00); }
+  0%         { transform: scale(1.00); }
+  30%, 70%   { transform: scale(1.18); }
+  100%       { transform: scale(1.00); }
 }
 
-.scene-anim-kenburns     { animation: scene-kenburns    22s ease-in-out infinite; transform-origin: center center; }
-.scene-anim-bob          { animation: scene-bob          4s ease-in-out infinite; transform-origin: bottom center; }
-.scene-anim-wiggle       { animation: scene-wiggle      3.2s ease-in-out infinite; transform-origin: bottom center; }
-.scene-anim-pulse        { animation: scene-pulse       3.8s ease-in-out infinite; transform-origin: center center; }
-.scene-anim-stomp        { animation: scene-stomp       4.5s ease-in-out infinite; transform-origin: bottom center; }
-.scene-anim-zoom-breathe { animation: scene-zoom-breathe 6s  ease-in-out infinite; transform-origin: center center; }
+/* Each class owns its transform-origin — no inline override needed */
+.scene-anim-kenburns     {
+  animation: scene-kenburns    20s ease-in-out infinite;
+  transform-origin: center center;
+}
+.scene-anim-bob          {
+  animation: scene-bob          5s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+.scene-anim-wiggle       {
+  animation: scene-wiggle       3s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+.scene-anim-pulse        {
+  animation: scene-pulse        2.8s ease-in-out infinite;
+  transform-origin: center center;
+}
+.scene-anim-stomp        {
+  animation: scene-stomp        2.2s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+.scene-anim-zoom-breathe {
+  animation: scene-zoom-breathe 7s ease-in-out infinite;
+  transform-origin: center center;
+}
 
 /* ── Shimmer sweep — diagonal light glint across the image ── */
 @keyframes shimmer-sweep {
