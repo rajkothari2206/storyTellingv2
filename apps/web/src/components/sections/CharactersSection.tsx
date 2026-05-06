@@ -124,7 +124,7 @@ export function CharactersSection() {
               alt={featured.label}
               fill
               className="object-cover transition-opacity duration-300"
-              style={{ objectPosition: "center 30%" }}
+              style={{ objectPosition: "center 40%" }}
               priority
             />
             {/* Bottom gradient */}
