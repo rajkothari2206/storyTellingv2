@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const scenes = [
   { src: "/lf-scene-orchard.png",   label: "🍊 The Orange Orchard" },
@@ -22,7 +22,18 @@ const scenes = [
 
 export function CharactersSection() {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [marqueePaused, setMarqueePaused] = useState(false);
+  const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const featured = scenes[selectedIndex];
+
+  function pickScene(idx: number) {
+    setSelectedIndex(idx);
+    setMarqueePaused(true);
+    if (resumeTimer.current) clearTimeout(resumeTimer.current);
+    resumeTimer.current = setTimeout(() => setMarqueePaused(false), 5000);
+  }
+
+  useEffect(() => () => { if (resumeTimer.current) clearTimeout(resumeTimer.current); }, []);
 
   return (
     <section id="characters" style={{ background: "linear-gradient(160deg, #FFF8E7 0%, #FFE8A8 100%)" }}>
@@ -255,14 +266,17 @@ export function CharactersSection() {
         >
           Their adventures so far · <span style={{ color: "rgba(14,10,31,0.45)", fontWeight: 500, textTransform: "none", letterSpacing: 0 }}>tap any scene to preview</span>
         </p>
-        <div className="flex gap-3 animate-marquee" style={{ width: "max-content" }}>
+        <div
+          className="flex gap-3 animate-marquee"
+          style={{ width: "max-content", animationPlayState: marqueePaused ? "paused" : "running" }}
+        >
           {[...scenes, ...scenes].map((scene, i) => {
             const sceneIdx = i % scenes.length;
             const isSelected = sceneIdx === selectedIndex;
             return (
               <button
                 key={i}
-                onClick={() => setSelectedIndex(sceneIdx)}
+                onClick={() => pickScene(sceneIdx)}
                 className="flex-shrink-0 rounded-2xl overflow-hidden relative focus:outline-none"
                 style={{
                   width: 220,
