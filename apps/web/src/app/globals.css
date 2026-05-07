@@ -293,7 +293,10 @@
 
 /* Story viewer — square panel matches Gemini's 1:1 output (no cropping) */
 .story-image-panel { aspect-ratio: 1/1; }
-@media (min-width: 640px) { .story-image-panel { aspect-ratio: 1/1; } }
+/* On desktop the image lives in a 45%-wide column so it's naturally constrained */
+@media (min-width: 1024px) {
+  .story-image-panel { aspect-ratio: 1/1; max-height: calc(100vh - 160px); }
+}
 
 /* Subtitle text — larger on mobile for readability */
 .subtitle-text { font-size: 0.82rem; }
