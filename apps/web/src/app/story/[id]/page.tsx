@@ -897,13 +897,10 @@ function StoryViewer({
 
         {/* ── Slideshow panel ── */}
         {numScenes > 0 ? (
-          <div className="flex flex-col lg:flex-row gap-4 w-full items-start">
-
-          {/* ── LEFT column: image (full width mobile, ~half on desktop) ── */}
-          <div className="w-full lg:w-[45%] lg:flex-shrink-0 lg:sticky lg:top-20">
+          <>
             {/* Image + nav buttons — swipeable on touch */}
             <div
-              className="story-image-panel relative w-full rounded-3xl overflow-hidden"
+              className="story-image-panel relative w-full rounded-3xl overflow-hidden flex-shrink-0"
               style={{ background: "#1a1730" }}
               onTouchStart={onTouchStart}
               onTouchEnd={onTouchEnd}
@@ -1017,10 +1014,6 @@ function StoryViewer({
                 ))}
               </div>
             </div>
-          </div>{/* end left column */}
-
-          {/* ── RIGHT column: subtitle + controls + share ── */}
-          <div className="w-full lg:flex-1 flex flex-col gap-3">
 
             {/* ── Subtitle strip — sits in natural dark space below image ── */}
             <div
@@ -1230,8 +1223,7 @@ function StoryViewer({
               </div>
             </div>
 
-          </div>
-          </div>
+          </>
         ) : story.content ? (
           /* Fallback plain text */
           <div className="w-full max-w-2xl px-6 py-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
