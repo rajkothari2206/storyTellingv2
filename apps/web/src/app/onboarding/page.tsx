@@ -13,10 +13,11 @@ import {
   Unauthenticated,
 } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { Loader2, ChevronRight, ChevronLeft, Sparkles, Camera } from "lucide-react";
 
-const STEPS = 5;
+const STEPS = 4;
 
 const COLORS = [
   { name: "Red",      hex: "#ef4444" },
@@ -69,10 +70,6 @@ interface FormData {
 }
 
 const STEP_META = [
-  {
-    heading: "Welcome to\nLalli Fafa! 👋",
-    sub: "Let's create your family profile. Takes about 2 minutes and every story will feel made just for your child.",
-  },
   {
     heading: "Who's the\nhero? 🌟",
     sub: "Your child becomes the star of every adventure we create together.",
@@ -145,6 +142,10 @@ function OnboardingForm() {
   const setProfilePicture = useMutation(api.userProfiles.setProfilePicture);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Pull the parent's name from their auth session (set during sign-up)
+  const { data: session } = authClient.useSession();
+  const sessionName = session?.user?.name ?? "";
+
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -183,11 +184,7 @@ function OnboardingForm() {
   }
 
   function handleNext() {
-    if (step === 1 && !form.parentName.trim()) {
-      toast.error("Please enter your name");
-      return;
-    }
-    if (step === 2) {
+    if (step === 1) {
       if (!form.childName.trim()) { toast.error("Please enter your child's name"); return; }
       if (!form.childDateOfBirth) { toast.error("Please enter your child's date of birth"); return; }
       const age = computeAge(form.childDateOfBirth);
@@ -201,7 +198,7 @@ function OnboardingForm() {
     try {
       const age = computeAge(form.childDateOfBirth);
       await createProfile({
-        parentName: form.parentName.trim(),
+        parentName: sessionName || form.parentName.trim(),
         childName: form.childName.trim(),
         childAge: age,
         childGender: form.childGender,
@@ -366,42 +363,8 @@ function OnboardingForm() {
           <div className="w-full" style={{ maxWidth: 500 }}>
             <form onSubmit={handleSubmit} className="flex flex-col gap-7">
 
-              {/* ────────────── Step 1: Parent name ────────────── */}
+              {/* ────────────── Step 1: Child info ────────────── */}
               {step === 1 && (
-                <div className="flex flex-col gap-6">
-                  <div className="flex flex-col gap-2">
-                    <h1 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "2rem", color: "#fff", lineHeight: 1.2 }}>
-                      Hey there! 👋
-                    </h1>
-                    <p style={{ fontFamily: "'Nunito', sans-serif", color: "rgba(255,255,255,0.4)", lineHeight: 1.65 }}>
-                      Let&apos;s set up your family profile. What shall we call you?
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label style={labelStyle}>Your name</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Priya Sharma"
-                      value={form.parentName}
-                      onChange={(e) => update("parentName", e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleNext()}
-                      style={inputStyle}
-                      autoFocus
-                    />
-                  </div>
-
-                  {/* What to expect callout */}
-                  <div style={{ background: "rgba(0,201,167,0.07)", border: "1px solid rgba(0,201,167,0.16)", borderRadius: "1rem", padding: "16px 20px" }}>
-                    <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.88rem", color: "rgba(255,255,255,0.5)", lineHeight: 1.75, margin: 0 }}>
-                      ✨ <strong style={{ color: "rgba(255,255,255,0.75)" }}>Takes about 2 minutes.</strong> You&apos;ll set your child&apos;s character, pick their favourite colour &amp; animal, and optionally add a photo so we can generate their personalised cartoon avatar.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* ────────────── Step 2: Child info ────────────── */}
-              {step === 2 && (
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-col gap-2">
                     <h1 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "2rem", color: "#fff", lineHeight: 1.2 }}>
@@ -494,8 +457,8 @@ function OnboardingForm() {
                 </div>
               )}
 
-              {/* ────────────── Step 3: Photo upload ────────────── */}
-              {step === 3 && (
+              {/* ────────────── Step 2: Photo upload ────────────── */}
+              {step === 2 && (
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-col gap-2">
                     <h1 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "2rem", color: "#fff", lineHeight: 1.2 }}>
@@ -611,8 +574,8 @@ function OnboardingForm() {
                 </div>
               )}
 
-              {/* ────────────── Step 4: Favourite colour ────────────── */}
-              {step === 4 && (
+              {/* ────────────── Step 3: Favourite colour ────────────── */}
+              {step === 3 && (
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-col gap-2">
                     <h1 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "2rem", color: "#fff", lineHeight: 1.2 }}>
@@ -659,8 +622,8 @@ function OnboardingForm() {
                 </div>
               )}
 
-              {/* ────────────── Step 5: Favourite animal ────────────── */}
-              {step === 5 && (
+              {/* ────────────── Step 4: Favourite animal ────────────── */}
+              {step === 4 && (
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-col gap-2">
                     <h1 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "2rem", color: "#fff", lineHeight: 1.2 }}>
@@ -759,6 +722,15 @@ function OnboardingForm() {
                   )}
 
                   {/* Skip option for optional steps */}
+                  {step === 2 && (
+                    <button
+                      type="button"
+                      onClick={() => setStep((s) => s + 1)}
+                      style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.85rem", color: "rgba(255,255,255,0.25)", background: "none", border: "none", cursor: "pointer", padding: "4px", textAlign: "center" }}
+                    >
+                      Skip for now →
+                    </button>
+                  )}
                   {step === 3 && (
                     <button
                       type="button"
@@ -768,16 +740,7 @@ function OnboardingForm() {
                       Skip for now →
                     </button>
                   )}
-                  {step === 4 && (
-                    <button
-                      type="button"
-                      onClick={() => setStep((s) => s + 1)}
-                      style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.85rem", color: "rgba(255,255,255,0.25)", background: "none", border: "none", cursor: "pointer", padding: "4px", textAlign: "center" }}
-                    >
-                      Skip for now →
-                    </button>
-                  )}
-                  {step === 5 && !loading && (
+                  {step === 4 && !loading && (
                     <button
                       type="button"
                       onClick={doSubmit}
