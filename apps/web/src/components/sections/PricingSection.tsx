@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { Check, Star, Sparkles } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 
 const plans = [
   {
@@ -17,7 +20,9 @@ const plans = [
     ],
     locked: ["5-min stories", "Voice narration", "AI illustrations"],
     cta: "Start free",
+    ctaLoggedIn: "Go to Dashboard",
     href: "/sign-up",
+    hrefLoggedIn: "/dashboard",
     style: "ghost",
   },
   {
@@ -37,7 +42,9 @@ const plans = [
       "Cancel anytime",
     ],
     cta: "Start Magic Pass",
+    ctaLoggedIn: "Get Magic Pass",
     href: "/sign-up?plan=monthly",
+    hrefLoggedIn: "/pricing",
     style: "primary",
     highlight: true,
   },
@@ -56,12 +63,17 @@ const plans = [
       "Highest credit value",
     ],
     cta: "Go yearly",
+    ctaLoggedIn: "Get yearly plan",
     href: "/sign-up?plan=yearly",
+    hrefLoggedIn: "/pricing",
     style: "secondary",
   },
 ];
 
 export function PricingSection() {
+  const { data: session } = authClient.useSession();
+  const isLoggedIn = !!session;
+
   return (
     <section
       id="pricing"
@@ -195,7 +207,7 @@ export function PricingSection() {
                 {/* CTA */}
                 <div className="mt-auto pt-2">
                   <Link
-                    href={plan.href}
+                    href={isLoggedIn ? plan.hrefLoggedIn : plan.href}
                     className={plan.style === "primary" ? "btn-primary" : plan.style === "secondary" ? "btn-secondary" : "btn-ghost"}
                     style={{
                       display: "flex",
@@ -207,7 +219,7 @@ export function PricingSection() {
                     }}
                   >
                     {plan.id !== "free" && <Sparkles size={15} />}
-                    {plan.cta}
+                    {isLoggedIn ? plan.ctaLoggedIn : plan.cta}
                   </Link>
                 </div>
               </div>

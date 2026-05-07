@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { authClient } from "@/lib/auth-client";
 
 const steps = [
   {
@@ -43,6 +46,9 @@ const steps = [
 ];
 
 export function HowItWorksSection() {
+  const { data: session } = authClient.useSession();
+  const isLoggedIn = !!session;
+
   return (
     <section
       id="how-it-works"
@@ -177,11 +183,11 @@ export function HowItWorksSection() {
             <span style={{ color: "#b8860b" }}>just 3 minutes away.</span>
           </p>
           <a
-            href="/sign-up"
+            href={isLoggedIn ? "/dashboard" : "/sign-up"}
             className="btn-primary flex-shrink-0"
             style={{ fontSize: "0.9rem", padding: "0.6rem 1.4rem" }}
           >
-            ✨ Try it free
+            {isLoggedIn ? "✨ Create a story" : "✨ Try it free"}
           </a>
         </div>
 

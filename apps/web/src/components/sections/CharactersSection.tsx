@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
+import { authClient } from "@/lib/auth-client";
 
 const scenes = [
   { src: "/lf-scene-orchard.png",   label: "🍊 The Orange Orchard" },
@@ -21,6 +22,8 @@ const scenes = [
 ];
 
 export function CharactersSection() {
+  const { data: session } = authClient.useSession();
+  const isLoggedIn = !!session;
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [marqueePaused, setMarqueePaused] = useState(false);
   const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -335,11 +338,11 @@ export function CharactersSection() {
           <span style={{ color: "var(--lf-sunshine)" }}>third hero</span> alongside them.
         </p>
         <Link
-          href="/sign-up"
+          href={isLoggedIn ? "/dashboard" : "/sign-up"}
           className="btn-primary"
           style={{ fontSize: "0.9rem", padding: "0.65rem 1.5rem", flexShrink: 0 }}
         >
-          <Sparkles size={15} /> Start a story
+          <Sparkles size={15} /> {isLoggedIn ? "Create a story" : "Start a story"}
         </Link>
       </div>
     </section>
