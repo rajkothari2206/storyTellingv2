@@ -427,6 +427,8 @@ function StoryViewer({
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
   const [seeking, setSeeking] = useState(false);
+  const [subtitleOffset, setSubtitleOffset] = useState(0); // seconds; + = show subtitles sooner
+  const [showTextPanel, setShowTextPanel] = useState(false);
   const manualNavRef = useRef(false); // suppress auto-advance briefly after manual nav
 
   /* Refs that always hold the latest titleOffset / sceneTimeline so event handlers stay fresh */
@@ -596,8 +598,11 @@ function StoryViewer({
 
   /* Subtitle: split scene text into sentences, pick current one by audio time */
   const sceneSentences = sceneNarrativeText ? splitSentences(sceneNarrativeText) : [];
-  const subtitleText = getCurrentSubtitle(currentTime, duration, currentScene, sceneSentences, titleOffset, sceneTimeline);
+  const adjustedTime = Math.max(0, currentTime + subtitleOffset);
+  const subtitleText = getCurrentSubtitle(adjustedTime, duration, currentScene, sceneSentences, titleOffset, sceneTimeline);
   const speaker = subtitleText ? detectSpeaker(subtitleText) : null;
+  /* Index of the currently highlighted sentence (for the text panel) */
+  const activeSubtitleIdx = sceneSentences.indexOf(subtitleText);
 
   /* Strip "Lalli said" / "Fafa replied" framing so subtitle shows clean dialogue */
   const cleanSubtitle = (subtitleText || "")
@@ -975,13 +980,70 @@ function StoryViewer({
                   <button onClick={() => skip(10)} className="transition-all hover:scale-110" style={{ color: "rgba(255,255,255,0.45)" }} title="Forward 10s"><SkipForward size={16} /></button>
                 </div>
 
-                {/* Scene counter */}
-                <div className="px-2.5 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
-                  <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.75rem", color: "rgba(255,255,255,0.4)" }}>
-                    {currentScene + 1} / {numScenes}
-                  </span>
+                {/* Right: subtitle sync nudge + text panel toggle */}
+                <div className="flex items-center gap-2">
+                  {/* Sync nudge — hidden on very small screens */}
+                  <div className="hidden sm:flex items-center gap-1" title="Nudge subtitle timing">
+                    <button
+                      onClick={() => setSubtitleOffset(o => Math.max(-10, o - 0.5))}
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-xs transition-all hover:bg-white/10"
+                      style={{ color: "rgba(255,255,255,0.35)", fontFamily: "monospace" }}
+                    >−</button>
+                    <span style={{ fontFamily: "monospace", fontSize: "0.65rem", color: subtitleOffset === 0 ? "rgba(255,255,255,0.2)" : "var(--lf-teal)", minWidth: 28, textAlign: "center" }}>
+                      {subtitleOffset === 0 ? "sync" : `${subtitleOffset > 0 ? "+" : ""}${subtitleOffset.toFixed(1)}s`}
+                    </span>
+                    <button
+                      onClick={() => setSubtitleOffset(o => Math.min(10, o + 0.5))}
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-xs transition-all hover:bg-white/10"
+                      style={{ color: "rgba(255,255,255,0.35)", fontFamily: "monospace" }}
+                    >+</button>
+                  </div>
+
+                  {/* Text panel toggle */}
+                  <button
+                    onClick={() => setShowTextPanel(p => !p)}
+                    className="px-2.5 py-1 rounded-full transition-all hover:bg-white/10"
+                    style={{
+                      fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.72rem",
+                      color: showTextPanel ? "var(--lf-teal)" : "rgba(255,255,255,0.35)",
+                      border: `1px solid ${showTextPanel ? "rgba(0,201,167,0.35)" : "rgba(255,255,255,0.1)"}`,
+                    }}
+                    title="Toggle story text"
+                  >
+                    📖
+                  </button>
                 </div>
               </div>
+
+              {/* Story text panel — collapsible, shows all sentences with active one highlighted */}
+              {showTextPanel && sceneSentences.length > 0 && (
+                <div
+                  className="mt-2 flex flex-col gap-1.5 max-h-44 overflow-y-auto rounded-xl px-4 py-3"
+                  style={{ background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.07)" }}
+                >
+                  {sceneSentences.map((sentence, i) => (
+                    <p
+                      key={i}
+                      style={{
+                        fontFamily: "'Nunito', sans-serif",
+                        fontSize: "0.82rem",
+                        lineHeight: 1.6,
+                        color: i === activeSubtitleIdx
+                          ? "#fff"
+                          : "rgba(255,255,255,0.3)",
+                        fontWeight: i === activeSubtitleIdx ? 700 : 400,
+                        background: i === activeSubtitleIdx ? "rgba(0,201,167,0.1)" : "transparent",
+                        borderLeft: i === activeSubtitleIdx ? "2.5px solid var(--lf-teal)" : "2.5px solid transparent",
+                        paddingLeft: "0.6rem",
+                        borderRadius: "0 6px 6px 0",
+                        transition: "all 0.25s",
+                      }}
+                    >
+                      {sentence}
+                    </p>
+                  ))}
+                </div>
+              )}
             </div>
 
           </>
