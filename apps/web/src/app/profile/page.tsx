@@ -40,31 +40,46 @@ import { UserPill } from "@/components/layout/UserPill";
 /* ──────────────────── helpers ───────────────────────── */
 
 const AVATAR_GRADIENTS: Record<string, string> = {
-  pink:   "linear-gradient(135deg,#FF6B9D 0%,#C850C0 100%)",
-  red:    "linear-gradient(135deg,#FF6B6B 0%,#EE5A24 100%)",
-  blue:   "linear-gradient(135deg,#74b9ff 0%,#0984e3 100%)",
-  green:  "linear-gradient(135deg,#55efc4 0%,#00b894 100%)",
-  purple: "linear-gradient(135deg,#a29bfe 0%,#6c5ce7 100%)",
-  yellow: "linear-gradient(135deg,#ffd93d 0%,#fdcb6e 100%)",
-  orange: "linear-gradient(135deg,#ffa07a 0%,#FF6348 100%)",
-  teal:   "linear-gradient(135deg,#81ecec 0%,#00cec9 100%)",
-  white:  "linear-gradient(135deg,#dfe6e9 0%,#b2bec3 100%)",
+  pink:      "linear-gradient(135deg,#FF6B9D 0%,#C850C0 100%)",
+  red:       "linear-gradient(135deg,#FF6B6B 0%,#EE5A24 100%)",
+  blue:      "linear-gradient(135deg,#74b9ff 0%,#0984e3 100%)",
+  green:     "linear-gradient(135deg,#55efc4 0%,#00b894 100%)",
+  purple:    "linear-gradient(135deg,#a29bfe 0%,#6c5ce7 100%)",
+  yellow:    "linear-gradient(135deg,#ffd93d 0%,#fdcb6e 100%)",
+  orange:    "linear-gradient(135deg,#ffa07a 0%,#FF6348 100%)",
+  teal:      "linear-gradient(135deg,#81ecec 0%,#00cec9 100%)",
+  white:     "linear-gradient(135deg,#dfe6e9 0%,#b2bec3 100%)",
+  mint:      "linear-gradient(135deg,#6ee7b7 0%,#10b981 100%)",
+  lavender:  "linear-gradient(135deg,#c084fc 0%,#9333ea 100%)",
+  coral:     "linear-gradient(135deg,#fb7185 0%,#e11d48 100%)",
+  gold:      "linear-gradient(135deg,#fbbf24 0%,#d97706 100%)",
+  navy:      "linear-gradient(135deg,#93c5fd 0%,#3b82f6 100%)",
+  magenta:   "linear-gradient(135deg,#e879f9 0%,#a21caf 100%)",
+  lime:      "linear-gradient(135deg,#bef264 0%,#65a30d 100%)",
+  "sky blue":"linear-gradient(135deg,#7dd3fc 0%,#0ea5e9 100%)",
 };
 
-const CARD_BG: Record<string, string> = {
-  pink:   "linear-gradient(135deg,#FFF0F7 0%,#FFE0EF 100%)",
-  red:    "linear-gradient(135deg,#FFF0F0 0%,#FFE0E0 100%)",
-  blue:   "linear-gradient(135deg,#F0F5FF 0%,#E0ECFF 100%)",
-  green:  "linear-gradient(135deg,#F0FFF8 0%,#E0FFF0 100%)",
-  purple: "linear-gradient(135deg,#F7F0FF 0%,#EFE0FF 100%)",
-  yellow: "linear-gradient(135deg,#FFFBF0 0%,#FFF5D6 100%)",
-  orange: "linear-gradient(135deg,#FFF5F0 0%,#FFE8D6 100%)",
-  teal:   "linear-gradient(135deg,#F0FFFD 0%,#D6FFFA 100%)",
+/* Vivid accent colour for the dark hero card */
+const AVATAR_ACCENT: Record<string, string> = {
+  pink:      "#FF6B9D", red:      "#ef4444", blue:      "#3b82f6",
+  green:     "#22c55e", purple:   "#a855f7", yellow:    "#eab308",
+  orange:    "#f97316", teal:     "#14b8a6", mint:      "#34d399",
+  lavender:  "#c084fc", coral:    "#fb7185", gold:      "#f59e0b",
+  navy:      "#93c5fd", magenta:  "#d946ef", lime:      "#84cc16",
+  "sky blue":"#38bdf8", white:    "#94a3b8",
 };
 
-const CARD_BORDER: Record<string, string> = {
-  pink: "#FFB3D4", red: "#FFB3B3", blue: "#B3CCFF", green: "#B3F5D4",
-  purple: "#CFB3FF", yellow: "#FFE57A", orange: "#FFCFAD", teal: "#B3EEE8",
+/* Glow colour for the radial behind avatar */
+const GLOW_COLORS: Record<string, string> = {
+  pink:      "rgba(255,107,157,0.45)", red:      "rgba(239,68,68,0.4)",
+  blue:      "rgba(59,130,246,0.4)",   green:    "rgba(34,197,94,0.4)",
+  purple:    "rgba(168,85,247,0.4)",   yellow:   "rgba(234,179,8,0.4)",
+  orange:    "rgba(249,115,22,0.4)",   teal:     "rgba(20,184,166,0.4)",
+  mint:      "rgba(52,211,153,0.4)",   lavender: "rgba(192,132,252,0.4)",
+  coral:     "rgba(251,113,133,0.4)",  gold:     "rgba(245,158,11,0.4)",
+  navy:      "rgba(147,197,253,0.3)",  magenta:  "rgba(217,70,239,0.4)",
+  lime:      "rgba(132,204,22,0.4)",   "sky blue":"rgba(56,189,248,0.4)",
+  white:     "rgba(148,163,184,0.3)",
 };
 
 const ANIMAL_EMOJI: Record<string, string> = {
@@ -88,11 +103,11 @@ const ANIMALS = ["Rabbit","Dog","Cat","Elephant","Lion","Tiger","Bear","Panda","
 function avatarGrad(color?: string) {
   return AVATAR_GRADIENTS[(color ?? "").toLowerCase()] ?? "linear-gradient(135deg,var(--lf-teal) 0%,#00a38d 100%)";
 }
-function cardBg(color?: string) {
-  return CARD_BG[(color ?? "").toLowerCase()] ?? "linear-gradient(135deg,#FFF8E7 0%,#E6FAF6 100%)";
+function accentClr(color?: string) {
+  return AVATAR_ACCENT[(color ?? "").toLowerCase()] ?? "#00c9a7";
 }
-function cardBorder(color?: string) {
-  return CARD_BORDER[(color ?? "").toLowerCase()] ?? "rgba(0,184,166,0.3)";
+function glowClr(color?: string) {
+  return GLOW_COLORS[(color ?? "").toLowerCase()] ?? "rgba(0,201,167,0.35)";
 }
 function animalEmoji(animal?: string) {
   return ANIMAL_EMOJI[(animal ?? "").toLowerCase()] ?? "🐾";
@@ -420,160 +435,131 @@ export default function ProfilePage() {
             return (
               <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-6">
 
-                {/* ══ KID CARD ══ */}
+                {/* ══ KID CARD — dark hero style ══ */}
                 <div
                   className="relative overflow-hidden rounded-3xl"
                   style={{
-                    background: cardBg(p.favoriteColor),
-                    border: `2px solid ${cardBorder(p.favoriteColor)}`,
-                    boxShadow: "0 8px 40px rgba(0,0,0,0.08)",
+                    background: "linear-gradient(145deg,#160d35 0%,#1e1247 40%,#0f2240 100%)",
+                    boxShadow: `0 24px 64px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.07), 0 0 80px ${glowClr(p.favoriteColor)}`,
+                    border: "1px solid rgba(255,255,255,0.07)",
                   }}
                 >
-                  {/* Big decorative animal watermark */}
-                  <div
-                    className="absolute right-4 top-1/2 -translate-y-1/2 select-none pointer-events-none"
-                    style={{ fontSize: "7rem", opacity: 0.12, lineHeight: 1 }}
-                    aria-hidden
-                  >
-                    {animal}
-                  </div>
+                  {/* Colour glow orb */}
+                  <div className="absolute pointer-events-none" style={{ top: -60, left: -60, width: 320, height: 320, background: `radial-gradient(circle, ${glowClr(p.favoriteColor)} 0%, transparent 65%)` }} />
+                  {/* Right side shimmer */}
+                  <div className="absolute pointer-events-none" style={{ bottom: -40, right: -40, width: 200, height: 200, background: "radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%)" }} />
+
+                  {/* Floating sparkles */}
+                  <div className="absolute pointer-events-none select-none" style={{ top: 18, right: "38%", fontSize: "1rem", opacity: 0.55, animation: "float 3s ease-in-out infinite" }}>✨</div>
+                  <div className="absolute pointer-events-none select-none" style={{ top: 46, right: "22%", fontSize: "0.7rem", opacity: 0.4, animation: "float 3s ease-in-out infinite", animationDelay: "1.1s" }}>⭐</div>
+                  <div className="absolute pointer-events-none select-none" style={{ bottom: 32, right: "12%", fontSize: "0.75rem", opacity: 0.3, animation: "float 3s ease-in-out infinite", animationDelay: "0.6s" }}>✨</div>
+
+                  {/* Large faded animal watermark */}
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 select-none pointer-events-none hidden sm:block" style={{ fontSize: "9rem", opacity: 0.06, lineHeight: 1 }} aria-hidden>{animal}</div>
 
                   {/* Lalli Fafa character */}
-                  <div className="absolute right-28 bottom-0 hidden sm:block" style={{ width: 90, height: 90 }}>
+                  <div className="absolute right-24 bottom-0 hidden md:block pointer-events-none" style={{ width: 95, height: 95, opacity: 0.65 }}>
                     <Image src="/lf-hero.png" alt="" fill className="object-contain object-bottom" />
                   </div>
 
-                  {/* Edit button */}
-                  <button
-                    onClick={() => setEditOpen(true)}
-                    className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold transition-all hover:scale-105 z-10"
-                    style={{
-                      background: "rgba(255,255,255,0.7)",
-                      backdropFilter: "blur(8px)",
-                      color: "var(--lf-dark)",
-                      fontFamily: "'Nunito', sans-serif",
-                      border: "1.5px solid rgba(255,255,255,0.9)",
-                    }}
-                  >
-                    <Pencil size={13} /> Edit
-                  </button>
+                  {/* ── Top row: Hero badge + Edit ── */}
+                  <div className="relative z-10 flex items-center justify-between px-6 pt-5 pb-1">
+                    <div
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+                      style={{ background: `${accentClr(p.favoriteColor)}1a`, border: `1px solid ${accentClr(p.favoriteColor)}40` }}
+                    >
+                      <span style={{ fontSize: "0.7rem" }}>⭐</span>
+                      <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 800, fontSize: "0.68rem", color: accentClr(p.favoriteColor), letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                        Story Hero
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setEditOpen(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold transition-all hover:scale-105"
+                      style={{ background: "rgba(255,255,255,0.09)", backdropFilter: "blur(8px)", color: "rgba(255,255,255,0.7)", fontFamily: "'Nunito', sans-serif", border: "1px solid rgba(255,255,255,0.15)" }}
+                    >
+                      <Pencil size={12} /> Edit
+                    </button>
+                  </div>
 
-                  <div className="relative z-10 flex items-center gap-6 p-6 sm:p-8">
+                  {/* ── Main content: avatar + info ── */}
+                  <div className="relative z-10 flex items-center gap-5 px-6 py-4">
                     {/* Avatar */}
                     <div className="flex-shrink-0">
-                      <input
-                        ref={fileRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleAvatarFile}
-                      />
-                      <button
-                        className="relative group cursor-pointer"
-                        onClick={() => fileRef.current?.click()}
-                        title="Change profile picture"
-                      >
-                        {/* Outer glow */}
-                        <div
-                          className="absolute inset-0 rounded-full pointer-events-none"
-                          style={{ background: avatarGrad(p.favoriteColor), filter: "blur(16px)", opacity: 0.4, transform: "scale(1.2)" }}
-                        />
+                      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarFile} />
+                      <button className="relative group cursor-pointer" onClick={() => fileRef.current?.click()} title="Change photo">
+                        {/* Glow behind avatar */}
+                        <div className="absolute inset-0 rounded-full pointer-events-none" style={{ background: avatarGrad(p.favoriteColor), filter: "blur(18px)", opacity: 0.6, transform: "scale(1.35)" }} />
                         {/* Avatar circle */}
                         <div
                           className="relative rounded-full overflow-hidden flex items-center justify-center"
                           style={{
-                            width: 96, height: 96,
+                            width: 100, height: 100,
                             background: avatarSrc ? "transparent" : avatarGrad(p.favoriteColor),
-                            border: "3px solid rgba(255,255,255,0.8)",
-                            boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
-                            fontSize: "2.4rem",
-                            fontFamily: "'Baloo 2', sans-serif",
-                            fontWeight: 800,
-                            color: "#fff",
+                            border: `3px solid ${accentClr(p.favoriteColor)}60`,
+                            boxShadow: `0 0 0 2px rgba(255,255,255,0.08), 0 8px 32px rgba(0,0,0,0.5)`,
+                            fontSize: "2.6rem", fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, color: "#fff",
                           }}
                         >
-                          {avatarSrc ? (
-                            <img src={avatarSrc} alt="Profile" className="w-full h-full object-cover" />
-                          ) : (
-                            initial
-                          )}
-                          {/* Camera overlay */}
-                          <div
-                            className="absolute inset-0 rounded-full flex flex-col items-center justify-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                            style={{ background: "rgba(0,0,0,0.55)" }}
-                          >
-                            <Camera size={20} style={{ color: "#fff" }} />
-                            <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.55rem", color: "#fff", fontWeight: 700 }}>
-                              CHANGE
-                            </span>
+                          {avatarSrc ? <img src={avatarSrc} alt="Profile" className="w-full h-full object-cover" /> : initial}
+                          <div className="absolute inset-0 rounded-full flex flex-col items-center justify-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: "rgba(0,0,0,0.65)" }}>
+                            <Camera size={22} style={{ color: "#fff" }} />
+                            <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.52rem", color: "#fff", fontWeight: 800, letterSpacing: "0.06em" }}>CHANGE</span>
                           </div>
                         </div>
-                        {/* Sparkle badge */}
-                        <div
-                          className="absolute -bottom-0.5 -right-0.5 w-7 h-7 rounded-full flex items-center justify-center"
-                          style={{ background: avatarGrad(p.favoriteColor), border: "2.5px solid #fff", fontSize: "0.85rem" }}
-                        >
+                        {/* Animal badge */}
+                        <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center" style={{ background: avatarGrad(p.favoriteColor), border: "2.5px solid #160d35", fontSize: "1rem", boxShadow: "0 2px 8px rgba(0,0,0,0.4)" }}>
                           {animal}
                         </div>
                       </button>
                     </div>
 
                     {/* Info */}
-                    <div className="flex flex-col gap-2 flex-1 min-w-0">
-                      <div className="flex items-baseline gap-2 flex-wrap">
-                        <h1 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 900, fontSize: "clamp(1.8rem,4vw,2.4rem)", color: "var(--lf-dark)", lineHeight: 1.1 }}>
-                          {p.childName ?? "—"}
-                        </h1>
-                        {p.childNickName && p.childNickName !== p.childName && (
-                          <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "1rem", fontWeight: 700, color: "rgba(45,45,45,0.4)" }}>
-                            "{p.childNickName}"
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Chip row */}
-                      <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-col gap-1 flex-1 min-w-0">
+                      <h1 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 900, fontSize: "clamp(2rem,5vw,2.8rem)", color: "#fff", lineHeight: 1.05, textShadow: `0 0 40px ${accentClr(p.favoriteColor)}60` }}>
+                        {p.childName ?? "—"}
+                      </h1>
+                      {p.childNickName && p.childNickName !== p.childName && (
+                        <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.95rem", fontWeight: 700, color: "rgba(255,255,255,0.4)" }}>
+                          &ldquo;{p.childNickName}&rdquo;
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2 flex-wrap mt-0.5">
                         {p.childAge && (
-                          <span
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
-                            style={{ background: "rgba(255,255,255,0.7)", color: "var(--lf-dark)", fontFamily: "'Nunito', sans-serif", border: "1px solid rgba(255,255,255,0.9)" }}
-                          >
-                            <Calendar size={11} /> Age {p.childAge}
+                          <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.85rem", color: "rgba(255,255,255,0.55)" }}>
+                            Age {p.childAge}
                           </span>
                         )}
+                        {p.childAge && p.childGender && <span style={{ color: "rgba(255,255,255,0.2)" }}>·</span>}
                         {p.childGender && (
-                          <span
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold capitalize"
-                            style={{ background: "rgba(255,255,255,0.7)", color: "var(--lf-dark)", fontFamily: "'Nunito', sans-serif", border: "1px solid rgba(255,255,255,0.9)" }}
-                          >
-                            <Users size={11} /> {p.childGender}
-                          </span>
-                        )}
-                        {p.favoriteColor && (
-                          <span
-                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold capitalize"
-                            style={{ background: "rgba(255,255,255,0.7)", color: "var(--lf-dark)", fontFamily: "'Nunito', sans-serif", border: "1px solid rgba(255,255,255,0.9)" }}
-                          >
-                            <span
-                              className="w-3 h-3 rounded-full flex-shrink-0"
-                              style={{ background: avatarGrad(p.favoriteColor) }}
-                            />
-                            {p.favoriteColor}
-                          </span>
-                        )}
-                        {p.favoriteAnimal && (
-                          <span
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold capitalize"
-                            style={{ background: "rgba(255,255,255,0.7)", color: "var(--lf-dark)", fontFamily: "'Nunito', sans-serif", border: "1px solid rgba(255,255,255,0.9)" }}
-                          >
-                            {animal} {p.favoriteAnimal}
+                          <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.85rem", color: "rgba(255,255,255,0.55)", textTransform: "capitalize" }}>
+                            {p.childGender === "male" ? "Boy" : p.childGender === "female" ? "Girl" : "Other"}
                           </span>
                         )}
                       </div>
-
-                      <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.8rem", color: "rgba(45,45,45,0.4)", fontWeight: 600 }}>
-                        Parent: {p.parentName ?? "—"}
+                      <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.77rem", color: "rgba(255,255,255,0.25)", fontWeight: 600, marginTop: 2 }}>
+                        ✨ {p.parentName ?? "—"}&apos;s little hero
                       </p>
+                    </div>
+                  </div>
+
+                  {/* ── Bottom attribute strip ── */}
+                  <div className="relative z-10 flex gap-2 px-6 pb-5 flex-wrap">
+                    {p.favoriteColor && (
+                      <div className="flex items-center gap-2 px-3.5 py-2 rounded-2xl" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                        <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: accentClr(p.favoriteColor), boxShadow: `0 0 8px ${accentClr(p.favoriteColor)}` }} />
+                        <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.78rem", color: "rgba(255,255,255,0.6)" }}>{p.favoriteColor}</span>
+                      </div>
+                    )}
+                    {p.favoriteAnimal && (
+                      <div className="flex items-center gap-2 px-3.5 py-2 rounded-2xl" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                        <span style={{ fontSize: "0.9rem" }}>{animal}</span>
+                        <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.78rem", color: "rgba(255,255,255,0.6)" }}>{p.favoriteAnimal}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 px-3.5 py-2 rounded-2xl" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                      <BookOpen size={13} style={{ color: "rgba(255,255,255,0.45)" }} />
+                      <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.78rem", color: "rgba(255,255,255,0.6)" }}>{storyCount} {storyCount === 1 ? "story" : "stories"}</span>
                     </div>
                   </div>
                 </div>
@@ -581,27 +567,24 @@ export default function ProfilePage() {
                 {/* ══ STATS ══ */}
                 <div className="grid grid-cols-3 gap-4">
                   {[
-                    { icon: <BookOpen size={20} />, label: "Stories", value: storyCount, sub: "created", color: "var(--lf-teal)", bg: "rgba(0,184,166,0.08)", border: "rgba(0,184,166,0.2)" },
-                    { icon: <Sparkles size={20} />, label: "Credits", value: availableCredits, sub: "left", color: "#a855f7", bg: "rgba(168,85,247,0.08)", border: "rgba(168,85,247,0.2)" },
-                    { icon: <Star size={20} />, label: "Badges", value: earnedCount, sub: `of ${totalCount}`, color: "#f9c700", bg: "rgba(249,199,0,0.08)", border: "rgba(249,199,0,0.2)" },
+                    { icon: <BookOpen size={20} />, label: "Stories created", value: storyCount, bg: "linear-gradient(135deg,#00c9a7 0%,#00a38d 100%)", glow: "rgba(0,201,167,0.35)", textColor: "#fff" },
+                    { icon: <Sparkles size={20} />, label: "Credits left", value: availableCredits, bg: "linear-gradient(135deg,#a855f7 0%,#7c3aed 100%)", glow: "rgba(168,85,247,0.35)", textColor: "#fff" },
+                    { icon: <Star size={20} />, label: `Badges ${earnedCount}/${totalCount}`, value: earnedCount, bg: "linear-gradient(135deg,#f9c700 0%,#e6ac00 100%)", glow: "rgba(249,199,0,0.4)", textColor: "#1a1630" },
                   ].map((s) => (
                     <div
                       key={s.label}
-                      className="flex flex-col gap-3 p-5 rounded-2xl"
-                      style={{ background: "#fff", border: `1.5px solid ${s.border}`, boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}
+                      className="relative flex flex-col gap-3 p-5 rounded-2xl overflow-hidden"
+                      style={{ background: s.bg, boxShadow: `0 8px 24px ${s.glow}` }}
                     >
-                      <div
-                        className="w-9 h-9 rounded-xl flex items-center justify-center"
-                        style={{ background: s.bg, color: s.color }}
-                      >
-                        {s.icon}
-                      </div>
-                      <div>
-                        <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 900, fontSize: "1.9rem", color: "var(--lf-dark)", lineHeight: 1 }}>
+                      {/* Background orb */}
+                      <div className="absolute top-0 right-0 w-16 h-16 rounded-full pointer-events-none" style={{ background: "rgba(255,255,255,0.15)", transform: "translate(35%,-35%)" }} />
+                      <div style={{ color: s.textColor, opacity: 0.85, position: "relative" }}>{s.icon}</div>
+                      <div style={{ position: "relative" }}>
+                        <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 900, fontSize: "1.9rem", color: s.textColor, lineHeight: 1 }}>
                           {s.value}
                         </p>
-                        <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.75rem", color: "rgba(45,45,45,0.4)", marginTop: 3 }}>
-                          {s.label} {s.sub}
+                        <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.72rem", color: s.textColor, opacity: 0.75, marginTop: 4, fontWeight: 700 }}>
+                          {s.label}
                         </p>
                       </div>
                     </div>
