@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react"; // useEffect used for outside-click
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery, useConvexAuth } from "convex/react";
@@ -41,7 +41,6 @@ export function UserPill({ variant = "light" }: Props) {
   const router = useRouter();
   const { isAuthenticated } = useConvexAuth();
   const [open, setOpen] = useState(false);
-  const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   const profile = useQuery(
@@ -52,11 +51,10 @@ export function UserPill({ variant = "light" }: Props) {
     | null
     | undefined;
 
-  // Load avatar from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem("lf_avatar");
-    if (stored) setAvatarSrc(stored);
-  }, []);
+  const profilePhotoUrl = useQuery(
+    api.userProfiles.getProfilePhotoUrl,
+    isAuthenticated ? {} : "skip"
+  ) as string | null | undefined;
 
   // Close on outside click
   useEffect(() => {
@@ -112,15 +110,15 @@ export function UserPill({ variant = "light" }: Props) {
           style={{
             width: 28,
             height: 28,
-            background: avatarSrc ? "transparent" : grad,
+            background: profilePhotoUrl ? "transparent" : grad,
             fontSize: "0.75rem",
             fontFamily: "'Baloo 2', sans-serif",
             fontWeight: 800,
             color: "#fff",
           }}
         >
-          {avatarSrc ? (
-            <img src={avatarSrc} alt={childName} className="w-full h-full object-cover" />
+          {profilePhotoUrl ? (
+            <img src={profilePhotoUrl} alt={childName} className="w-full h-full object-cover" />
           ) : (
             initial
           )}

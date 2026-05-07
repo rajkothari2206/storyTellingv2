@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Sparkles, Play, Star } from "lucide-react";
+import { Sparkles, Play, Star, LayoutDashboard } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 
 const stats = [
   { value: "10,000+", label: "Happy families" },
@@ -11,6 +12,9 @@ const stats = [
 ];
 
 export function HeroSection() {
+  const { data: session } = authClient.useSession();
+  const isLoggedIn = !!session;
+
   return (
     <section
       className="relative overflow-hidden"
@@ -107,14 +111,25 @@ export function HeroSection() {
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-1">
-              <Link
-                href="/sign-up"
-                className="btn-primary"
-                style={{ fontSize: "1.05rem", padding: "0.9rem 2.25rem" }}
-              >
-                <Sparkles size={17} />
-                Start Free — No credit card
-              </Link>
+              {isLoggedIn ? (
+                <Link
+                  href="/dashboard"
+                  className="btn-primary"
+                  style={{ fontSize: "1.05rem", padding: "0.9rem 2.25rem" }}
+                >
+                  <LayoutDashboard size={17} />
+                  Go to Dashboard
+                </Link>
+              ) : (
+                <Link
+                  href="/sign-up"
+                  className="btn-primary"
+                  style={{ fontSize: "1.05rem", padding: "0.9rem 2.25rem" }}
+                >
+                  <Sparkles size={17} />
+                  Start Free — No credit card
+                </Link>
+              )}
               <Link
                 href="/stories"
                 className="btn-ghost"

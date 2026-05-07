@@ -1,7 +1,13 @@
+"use client";
+
 import Link from "next/link";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowRight, LayoutDashboard } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 
 export function CTASection() {
+  const { data: session } = authClient.useSession();
+  const isLoggedIn = !!session;
+
   return (
     <section className="py-7 lg:py-10" style={{ background: "#fff" }}>
       <div className="mx-auto px-6" style={{ maxWidth: 900 }}>
@@ -52,14 +58,25 @@ export function CTASection() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 mt-2">
-              <Link
-                href="/sign-up"
-                className="btn-primary"
-                style={{ fontSize: "1.05rem", padding: "0.9rem 2.5rem" }}
-              >
-                <Sparkles size={18} />
-                Start free today
-              </Link>
+              {isLoggedIn ? (
+                <Link
+                  href="/dashboard"
+                  className="btn-primary"
+                  style={{ fontSize: "1.05rem", padding: "0.9rem 2.5rem" }}
+                >
+                  <LayoutDashboard size={18} />
+                  Create a story
+                </Link>
+              ) : (
+                <Link
+                  href="/sign-up"
+                  className="btn-primary"
+                  style={{ fontSize: "1.05rem", padding: "0.9rem 2.5rem" }}
+                >
+                  <Sparkles size={18} />
+                  Start free today
+                </Link>
+              )}
               <Link
                 href="/stories"
                 className="btn-ghost"
@@ -75,9 +92,11 @@ export function CTASection() {
               </Link>
             </div>
 
-            <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.82rem" }}>
-              250 free credits on signup · No card required · Cancel Magic Pass anytime
-            </p>
+            {!isLoggedIn && (
+              <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.82rem" }}>
+                250 free credits on signup · No card required · Cancel Magic Pass anytime
+              </p>
+            )}
           </div>
         </div>
       </div>

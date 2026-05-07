@@ -149,7 +149,17 @@ export function SiteHeader() {
 
           {/* Auth + CTA */}
           {isLoggedIn ? (
-            <UserPill variant="light" />
+            <div className="flex items-center gap-2">
+              <Link
+                href="/dashboard"
+                className="btn-primary"
+                style={{ fontSize: 14, padding: "0.5rem 1.25rem" }}
+              >
+                <LayoutDashboard size={14} />
+                Dashboard
+              </Link>
+              <UserPill variant="light" />
+            </div>
           ) : (
             <>
               <Link
@@ -211,9 +221,19 @@ export function SiteHeader() {
             ))}
             <div className="flex flex-col gap-2 mt-4">
               {isLoggedIn ? (
-                <div className="flex justify-center">
-                  <UserPill variant="light" />
-                </div>
+                <>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMenuOpen(false)}
+                    className="btn-primary w-full text-center"
+                  >
+                    <LayoutDashboard size={16} />
+                    Dashboard
+                  </Link>
+                  <div className="flex justify-center pt-1">
+                    <UserPill variant="light" />
+                  </div>
+                </>
               ) : (
                 <>
                   <Link
