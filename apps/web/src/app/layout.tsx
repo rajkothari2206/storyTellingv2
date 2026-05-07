@@ -71,7 +71,7 @@ export const metadata: Metadata = {
       "AI-powered personalised children's stories where your child is the hero alongside Lalli & Fafa. English & Hindi. Safe, ad-free, loved by families across India.",
     images: [
       {
-        url: "/og-image.png",
+        url: `${BASE}/opengraph-image`,
         width: 1200,
         height: 630,
         alt: "Lalli Fafa — Personalised children's stories in English & Hindi",
@@ -88,7 +88,7 @@ export const metadata: Metadata = {
     title: "Lalli Fafa — Personalised Stories for Kids",
     description:
       "AI-powered personalised children's stories in English & Hindi. Your child is the hero!",
-    images: ["/og-image.png"],
+    images: [`${BASE}/opengraph-image`],
   },
 
   /* ── Icons & manifest ── */
@@ -112,11 +112,10 @@ export const metadata: Metadata = {
     },
   },
 
-  /* ── Verification (add your codes here once verified) ── */
-  verification: {
-    google: "add-your-google-search-console-token-here",
-    // yandex: "...",
-  },
+  /* ── Verification ── */
+  // To verify: go to Google Search Console → Add property → HTML tag method
+  // Then replace the empty string below with the token from the <meta> tag content value
+  // verification: { google: "YOUR_TOKEN_HERE" },
 };
 
 export default function RootLayout({
