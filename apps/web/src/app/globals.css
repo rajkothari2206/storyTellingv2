@@ -293,9 +293,10 @@
 
 /* Story viewer — square panel matches Gemini's 1:1 output (no cropping) */
 .story-image-panel { aspect-ratio: 1/1; width: 100%; }
-/* On desktop: cap image size so subtitle + controls + share all fit on one screen */
+/* On desktop: limit frame height so subtitle + controls + share fit on one screen.
+   aspect-ratio: 1/1 means max-height also limits the width proportionally. */
 @media (min-width: 1024px) {
-  .story-image-panel { max-width: 440px; max-height: 440px; margin: 0 auto; }
+  .story-image-panel { max-height: 45vh; margin: 0 auto; }
 }
 
 /* Subtitle text — larger on mobile for readability */
