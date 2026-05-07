@@ -430,6 +430,8 @@ function StoryViewer({
   const [subtitleOffset, setSubtitleOffset] = useState(0); // seconds; + = show subtitles sooner
   const [showTextPanel, setShowTextPanel] = useState(false);
   const manualNavRef = useRef(false); // suppress auto-advance briefly after manual nav
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
 
   /* Refs that always hold the latest titleOffset / sceneTimeline so event handlers stay fresh */
   const titleOffsetRef = useRef(0);
@@ -546,6 +548,21 @@ function StoryViewer({
     const v = Number(e.target.value);
     setVolume(v);
     if (audioRef.current) { audioRef.current.volume = v; setMuted(v === 0); }
+  };
+
+  /* Touch / swipe navigation */
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    // Only treat as horizontal swipe if horizontal movement dominates
+    if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx < 0) setCurrentScene(currentScene + 1, true, titleOffset, sceneTimeline); // swipe left → next
+      else         setCurrentScene(currentScene - 1, true, titleOffset, sceneTimeline); // swipe right → prev
+    }
   };
 
   const toggleMute = () => {
@@ -772,8 +789,13 @@ function StoryViewer({
         {/* ── Slideshow panel ── */}
         {numScenes > 0 ? (
           <>
-            {/* Image + nav buttons */}
-            <div className="relative w-full rounded-3xl overflow-hidden flex-shrink-0" style={{ aspectRatio: "16/9", background: "#1a1730" }}>
+            {/* Image + nav buttons — swipeable on touch */}
+            <div
+              className="story-image-panel relative w-full rounded-3xl overflow-hidden flex-shrink-0"
+              style={{ aspectRatio: "4/3", background: "#1a1730" }}
+              onTouchStart={onTouchStart}
+              onTouchEnd={onTouchEnd}
+            >
 
               {/* Scene image
                   Two nested divs keep CSS animations isolated:
@@ -907,11 +929,10 @@ function StoryViewer({
                       maxWidth: "90%",
                     }}
                   >
-                    <p style={{
+                    <p className="subtitle-text" style={{
                       fontFamily: speaker ? "'Baloo 2', sans-serif" : "'Nunito', sans-serif",
                       fontWeight: speaker ? 700 : 500,
                       fontStyle: speaker ? "normal" : "italic",
-                      fontSize: "0.92rem",
                       lineHeight: 1.45,
                       color: speaker ? speaker.color : "rgba(255,255,255,0.88)",
                       textShadow: "0 1px 6px rgba(0,0,0,0.9)",
@@ -1066,7 +1087,7 @@ function StoryViewer({
 
       {/* ── Minimal footer ── */}
       <div
-        className="flex-shrink-0 flex items-center justify-between px-6 py-3"
+        className="story-footer flex-shrink-0 flex items-center justify-between px-6 py-3"
         style={{ background: "rgba(14,12,26,0.97)", borderTop: "1px solid rgba(255,255,255,0.06)" }}
       >
         <Link href="/library" className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "'Nunito', sans-serif" }}>

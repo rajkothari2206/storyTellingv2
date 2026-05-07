@@ -291,6 +291,17 @@
 .animate-float-delay { animation: float 3s ease-in-out 1.2s infinite; }
 .animate-wiggle      { animation: wiggle 2s ease-in-out infinite; }
 
+/* Story viewer — responsive image panel aspect ratio */
+.story-image-panel { aspect-ratio: 4/3; }
+@media (min-width: 640px) { .story-image-panel { aspect-ratio: 16/9; } }
+
+/* Subtitle text — larger on mobile for readability */
+.subtitle-text { font-size: 0.82rem; }
+@media (min-width: 640px) { .subtitle-text { font-size: 0.92rem; } }
+
+/* Safe area for iPhone home bar */
+.story-footer { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+
 /* Scene strip marquee */
 @keyframes marquee {
   from { transform: translateX(0); }
