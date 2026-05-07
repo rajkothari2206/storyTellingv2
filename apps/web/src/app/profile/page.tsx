@@ -293,7 +293,7 @@ export default function ProfilePage() {
   const credits          = useQuery(api.credit.list,                isAuthenticated ? {} : "skip");
   const stories          = useQuery(api.stories.list,               isAuthenticated ? {} : "skip");
   const achievementsData = useQuery(api.userProfiles.getAchievements, isAuthenticated ? {} : "skip");
-  const createProfile    = useMutation(api.userProfiles.createProfile);
+  const updateProfile    = useMutation(api.userProfiles.updateProfile);
 
   const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
   const [editOpen, setEditOpen]   = useState(false);
@@ -319,17 +319,17 @@ export default function ProfilePage() {
   }
 
   const handleSaveProfile = useCallback(async (form: ProfileFields) => {
-    await createProfile({
+    await updateProfile({
       parentName: form.parentName,
       childName: form.childName,
       childAge: parseInt(form.childAge) || 0,
-      childGender: form.childGender,
-      childNickName: form.childNickName,
-      favoriteColor: form.favoriteColor,
-      favoriteAnimal: form.favoriteAnimal,
+      childGender: form.childGender as "male" | "female" | "other",
+      childNickName: form.childNickName || undefined,
+      favoriteColor: form.favoriteColor || undefined,
+      favoriteAnimal: form.favoriteAnimal || undefined,
     });
     toast.success("Profile updated! ✨");
-  }, [createProfile]);
+  }, [updateProfile]);
 
   async function handleSignOut() {
     await authClient.signOut();
