@@ -429,6 +429,7 @@ function StoryViewer({
   const [muted, setMuted] = useState(false);
   const [seeking, setSeeking] = useState(false);
   const [subtitleOffset, setSubtitleOffset] = useState(0); // seconds; + = show subtitles sooner
+  const [showSubtitles, setShowSubtitles] = useState(true); // CC toggle
   const [showTextPanel, setShowTextPanel] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
@@ -1004,16 +1005,26 @@ function StoryViewer({
               )}
               <audio ref={bgAudioRef} src={bgPlaylist[bgTrackIdx]} preload="auto" onEnded={() => setBgTrackIdx(i => (i + 1) % bgPlaylist.length)} />
 
-              {/* ── Comic subtitle overlay ── */}
-              {cleanSubtitle && (
-                <div
-                  className="absolute left-0 right-0 bottom-0 flex flex-col items-center gap-1 px-3 pb-2"
-                  style={{ background: "linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 100%)", paddingTop: "3rem" }}
-                >
-                  {/* Speaker badge */}
+              {/* Scene dots — bottom edge */}
+              <div className="absolute bottom-1.5 left-0 right-0 flex items-center justify-center gap-1.5">
+                {scenes.map((_, i) => (
+                  <button key={i} onClick={() => setCurrentScene(i, true, titleOffset, sceneTimeline)} aria-label={`Scene ${i + 1}`}
+                    style={{ width: i === currentScene ? 18 : 5, height: 5, borderRadius: 99, background: i === currentScene ? "var(--lf-teal)" : "rgba(255,255,255,0.3)", border: "none", padding: 0, cursor: "pointer", transition: "all 0.3s", flexShrink: 0 }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* ── Subtitle strip — sits in natural dark space below image ── */}
+            <div
+              className="w-full flex flex-col items-center justify-center px-4 py-2 rounded-2xl transition-all"
+              style={{ minHeight: 56, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+            >
+              {showSubtitles && cleanSubtitle ? (
+                <div key={subtitleText} className="flex flex-col items-center gap-1 w-full">
                   {speaker && (
                     <span
-                      className="subtitle-line px-2.5 py-0.5 rounded-full text-xs font-black tracking-widest"
+                      className="px-2.5 py-0.5 rounded-full text-xs font-black tracking-widest"
                       style={{
                         background: speaker.color,
                         color: speaker.name === "Lalli" ? "#131020" : "#fff",
@@ -1021,46 +1032,30 @@ function StoryViewer({
                         textTransform: "uppercase",
                         fontSize: "0.65rem",
                         letterSpacing: "0.08em",
-                        opacity: 0.92,
                       }}
                     >
                       {speaker.name}
                     </span>
                   )}
-                  {/* Subtitle text — semi-transparent pill, readable via text shadow */}
-                  <div
-                    key={subtitleText}
-                    className="subtitle-line px-4 py-1.5 rounded-xl text-center"
+                  <p
+                    className="subtitle-text text-center"
                     style={{
-                      background: "rgba(0,0,0,0.32)",
-                      backdropFilter: "blur(10px)",
-                      border: speaker ? `1px solid ${speaker.color}40` : "1px solid rgba(255,255,255,0.08)",
-                      maxWidth: "92%",
+                      fontFamily: speaker ? "'Baloo 2', sans-serif" : "'Nunito', sans-serif",
+                      fontWeight: speaker ? 700 : 500,
+                      fontStyle: speaker ? "normal" : "italic",
+                      lineHeight: 1.5,
+                      color: speaker ? speaker.color : "rgba(255,255,255,0.9)",
+                      margin: 0,
                     }}
                   >
-                    <p className="subtitle-text" style={{
-                      fontFamily: speaker ? "'Baloo 2', sans-serif" : "'Nunito', sans-serif",
-                      fontWeight: speaker ? 700 : 600,
-                      fontStyle: speaker ? "normal" : "italic",
-                      lineHeight: 1.45,
-                      color: speaker ? speaker.color : "#fff",
-                      textShadow: "0 1px 8px rgba(0,0,0,1), 0 2px 16px rgba(0,0,0,0.8)",
-                      margin: 0,
-                    }}>
-                      {cleanSubtitle}
-                    </p>
-                  </div>
+                    {cleanSubtitle}
+                  </p>
                 </div>
+              ) : (
+                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.75rem", color: "rgba(255,255,255,0.12)", margin: 0 }}>
+                  {showSubtitles ? "♪" : "Subtitles off"}
+                </p>
               )}
-
-              {/* Scene dots — bottom edge */}
-              <div className="absolute bottom-1.5 left-0 right-0 flex items-center justify-center gap-1.5" style={{ pointerEvents: cleanSubtitle ? "none" : "auto", opacity: cleanSubtitle ? 0 : 1, transition: "opacity 0.3s" }}>
-                {scenes.map((_, i) => (
-                  <button key={i} onClick={() => setCurrentScene(i, true, titleOffset, sceneTimeline)} aria-label={`Scene ${i + 1}`}
-                    style={{ width: i === currentScene ? 18 : 5, height: 5, borderRadius: 99, background: i === currentScene ? "var(--lf-teal)" : "rgba(255,255,255,0.3)", border: "none", padding: 0, cursor: "pointer", transition: "all 0.3s", flexShrink: 0 }}
-                  />
-                ))}
-              </div>
             </div>
 
             {/* ── Audio controls bar (below image) ── */}
@@ -1110,24 +1105,27 @@ function StoryViewer({
                   <button onClick={() => skip(10)} className="transition-all hover:scale-110" style={{ color: "rgba(255,255,255,0.45)" }} title="Forward 10s"><SkipForward size={16} /></button>
                 </div>
 
-                {/* Right: subtitle sync nudge + text panel toggle */}
+                {/* Right: CC toggle + text panel toggle */}
                 <div className="flex items-center gap-2">
-                  {/* Sync nudge — hidden on very small screens */}
-                  <div className="hidden sm:flex items-center gap-1" title="Nudge subtitle timing">
-                    <button
-                      onClick={() => setSubtitleOffset(o => Math.max(-10, o - 0.5))}
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-xs transition-all hover:bg-white/10"
-                      style={{ color: "rgba(255,255,255,0.35)", fontFamily: "monospace" }}
-                    >−</button>
-                    <span style={{ fontFamily: "monospace", fontSize: "0.65rem", color: subtitleOffset === 0 ? "rgba(255,255,255,0.2)" : "var(--lf-teal)", minWidth: 28, textAlign: "center" }}>
-                      {subtitleOffset === 0 ? "sync" : `${subtitleOffset > 0 ? "+" : ""}${subtitleOffset.toFixed(1)}s`}
-                    </span>
-                    <button
-                      onClick={() => setSubtitleOffset(o => Math.min(10, o + 0.5))}
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-xs transition-all hover:bg-white/10"
-                      style={{ color: "rgba(255,255,255,0.35)", fontFamily: "monospace" }}
-                    >+</button>
-                  </div>
+                  {/* CC — subtitle on/off */}
+                  <button
+                    onClick={() => setShowSubtitles(s => !s)}
+                    className="px-2 py-1 rounded transition-all hover:bg-white/10"
+                    title={showSubtitles ? "Hide subtitles" : "Show subtitles"}
+                    style={{
+                      fontFamily: "monospace",
+                      fontWeight: 800,
+                      fontSize: "0.65rem",
+                      letterSpacing: "0.04em",
+                      color: showSubtitles ? "var(--lf-teal)" : "rgba(255,255,255,0.25)",
+                      border: `1px solid ${showSubtitles ? "rgba(0,201,167,0.4)" : "rgba(255,255,255,0.1)"}`,
+                      borderRadius: 4,
+                      lineHeight: 1,
+                      padding: "0.25rem 0.4rem",
+                    }}
+                  >
+                    CC
+                  </button>
 
                   {/* Text panel toggle */}
                   <button
@@ -1138,7 +1136,7 @@ function StoryViewer({
                       color: showTextPanel ? "var(--lf-teal)" : "rgba(255,255,255,0.35)",
                       border: `1px solid ${showTextPanel ? "rgba(0,201,167,0.35)" : "rgba(255,255,255,0.1)"}`,
                     }}
-                    title="Toggle story text"
+                    title="Toggle full story text"
                   >
                     📖
                   </button>
