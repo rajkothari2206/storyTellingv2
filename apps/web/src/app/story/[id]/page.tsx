@@ -920,6 +920,7 @@ function StoryViewer({
                     alt={`Scene ${currentScene + 1}`}
                     fill
                     className="object-cover"
+                    style={{ objectPosition: "center 20%" }}
                     priority
                   />
                   {/* Shimmer sweep — diagonal glint that crosses the image periodically */}
@@ -1008,7 +1009,7 @@ function StoryViewer({
               {cleanSubtitle && (
                 <div
                   className="absolute left-0 right-0 bottom-0 flex flex-col items-center gap-1 px-3 pb-2"
-                  style={{ background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, transparent 100%)", paddingTop: "2.5rem" }}
+                  style={{ background: "linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 100%)", paddingTop: "3rem" }}
                 >
                   {/* Speaker badge */}
                   {speaker && (
@@ -1021,29 +1022,30 @@ function StoryViewer({
                         textTransform: "uppercase",
                         fontSize: "0.65rem",
                         letterSpacing: "0.08em",
+                        opacity: 0.92,
                       }}
                     >
                       {speaker.name}
                     </span>
                   )}
-                  {/* Subtitle text */}
+                  {/* Subtitle text — semi-transparent pill, readable via text shadow */}
                   <div
                     key={subtitleText}
                     className="subtitle-line px-4 py-1.5 rounded-xl text-center"
                     style={{
-                      background: "rgba(0,0,0,0.58)",
-                      backdropFilter: "blur(8px)",
-                      border: speaker ? `1.5px solid ${speaker.color}60` : "1.5px solid rgba(255,255,255,0.12)",
-                      maxWidth: "90%",
+                      background: "rgba(0,0,0,0.32)",
+                      backdropFilter: "blur(10px)",
+                      border: speaker ? `1px solid ${speaker.color}40` : "1px solid rgba(255,255,255,0.08)",
+                      maxWidth: "92%",
                     }}
                   >
                     <p className="subtitle-text" style={{
                       fontFamily: speaker ? "'Baloo 2', sans-serif" : "'Nunito', sans-serif",
-                      fontWeight: speaker ? 700 : 500,
+                      fontWeight: speaker ? 700 : 600,
                       fontStyle: speaker ? "normal" : "italic",
                       lineHeight: 1.45,
-                      color: speaker ? speaker.color : "rgba(255,255,255,0.88)",
-                      textShadow: "0 1px 6px rgba(0,0,0,0.9)",
+                      color: speaker ? speaker.color : "#fff",
+                      textShadow: "0 1px 8px rgba(0,0,0,1), 0 2px 16px rgba(0,0,0,0.8)",
                       margin: 0,
                     }}>
                       {cleanSubtitle}
