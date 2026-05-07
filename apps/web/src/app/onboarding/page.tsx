@@ -740,15 +740,6 @@ function OnboardingForm() {
                       Skip for now →
                     </button>
                   )}
-                  {step === 4 && !loading && (
-                    <button
-                      type="button"
-                      onClick={doSubmit}
-                      style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.85rem", color: "rgba(255,255,255,0.25)", background: "none", border: "none", cursor: "pointer", padding: "4px", textAlign: "center" }}
-                    >
-                      Skip &amp; finish →
-                    </button>
-                  )}
                 </div>
               </div>
 
