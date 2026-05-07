@@ -14,7 +14,7 @@ import { CTASection } from "@/components/sections/CTASection";
 const BASE = "https://www.lallifafa.com";
 
 export const metadata: Metadata = {
-  alternates: { canonical: BASE },
+  alternates: { canonical: `${BASE}/` },
 };
 
 /* ── JSON-LD structured data ─────────────────────────────────────
