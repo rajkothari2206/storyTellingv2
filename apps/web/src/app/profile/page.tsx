@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -289,33 +289,39 @@ export default function ProfilePage() {
   const { isAuthenticated } = useConvexAuth();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const profile          = useQuery(api.userProfiles.getProfile,    isAuthenticated ? {} : "skip");
-  const credits          = useQuery(api.credit.list,                isAuthenticated ? {} : "skip");
-  const stories          = useQuery(api.stories.list,               isAuthenticated ? {} : "skip");
-  const achievementsData = useQuery(api.userProfiles.getAchievements, isAuthenticated ? {} : "skip");
-  const updateProfile    = useMutation(api.userProfiles.updateProfile);
+  const profile          = useQuery(api.userProfiles.getProfile,        isAuthenticated ? {} : "skip");
+  const credits          = useQuery(api.credit.list,                    isAuthenticated ? {} : "skip");
+  const stories          = useQuery(api.stories.list,                   isAuthenticated ? {} : "skip");
+  const achievementsData = useQuery(api.userProfiles.getAchievements,   isAuthenticated ? {} : "skip");
+  const profilePhotoUrl  = useQuery(api.userProfiles.getProfilePhotoUrl, isAuthenticated ? {} : "skip");
+  const updateProfile     = useMutation(api.userProfiles.updateProfile);
+  const generateUploadUrl = useMutation(api.userProfiles.generateProfilePictureUploadUrl);
+  const setProfilePic     = useMutation(api.userProfiles.setProfilePicture);
 
-  const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
-  const [editOpen, setEditOpen]   = useState(false);
+  const [editOpen, setEditOpen]     = useState(false);
+  const [uploading, setUploading]   = useState(false);
 
-  // Load avatar from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem("lf_avatar");
-    if (stored) setAvatarSrc(stored);
-  }, []);
-
-  function handleAvatarFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleAvatarFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { toast.error("Image must be under 2 MB"); return; }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const b64 = ev.target?.result as string;
-      setAvatarSrc(b64);
-      localStorage.setItem("lf_avatar", b64);
+    if (file.size > 5 * 1024 * 1024) { toast.error("Image must be under 5 MB"); return; }
+    setUploading(true);
+    try {
+      const uploadUrl = await generateUploadUrl();
+      const res = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      const { storageId } = await res.json();
+      await setProfilePic({ storageId });
       toast.success("Profile picture updated!");
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      toast.error("Failed to upload photo. Please try again.");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
   }
 
   const handleSaveProfile = useCallback(async (form: ProfileFields) => {
@@ -495,15 +501,17 @@ export default function ProfilePage() {
                           className="relative rounded-full overflow-hidden flex items-center justify-center"
                           style={{
                             width: 100, height: 100,
-                            background: avatarSrc ? "transparent" : avatarGrad(p.favoriteColor),
+                            background: profilePhotoUrl ? "transparent" : avatarGrad(p.favoriteColor),
                             border: `3px solid ${accentClr(p.favoriteColor)}60`,
                             boxShadow: `0 0 0 2px rgba(255,255,255,0.08), 0 8px 32px rgba(0,0,0,0.5)`,
                             fontSize: "2.6rem", fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, color: "#fff",
                           }}
                         >
-                          {avatarSrc ? <img src={avatarSrc} alt="Profile" className="w-full h-full object-cover" /> : initial}
+                          {profilePhotoUrl
+                            ? <img src={profilePhotoUrl} alt="Profile" className="w-full h-full object-cover" />
+                            : initial}
                           <div className="absolute inset-0 rounded-full flex flex-col items-center justify-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: "rgba(0,0,0,0.65)" }}>
-                            <Camera size={22} style={{ color: "#fff" }} />
+                            {uploading ? <Loader2 size={22} className="animate-spin" style={{ color: "#fff" }} /> : <Camera size={22} style={{ color: "#fff" }} />}
                             <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.52rem", color: "#fff", fontWeight: 800, letterSpacing: "0.06em" }}>CHANGE</span>
                           </div>
                         </div>
