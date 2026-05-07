@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -28,6 +28,7 @@ import {
   X,
   SlidersHorizontal,
   Clock,
+  Heart,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -104,6 +105,31 @@ export default function LibraryPage() {
   const [search, setSearch] = useState("");
   const [filterTheme, setFilterTheme] = useState("All");
   const [filterLang, setFilterLang] = useState("All");
+  const [showFavOnly, setShowFavOnly] = useState(false);
+
+  /* Favourites — persisted in localStorage */
+  const [favourites, setFavourites] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const raw = localStorage.getItem("lf-favourites");
+      return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+    } catch { return new Set(); }
+  });
+
+  useEffect(() => {
+    try { localStorage.setItem("lf-favourites", JSON.stringify([...favourites])); }
+    catch { /* quota exceeded */ }
+  }, [favourites]);
+
+  const toggleFav = useCallback((id: string, e: React.MouseEvent) => {
+    e.preventDefault(); // don't navigate to story
+    e.stopPropagation();
+    setFavourites(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
 
   const themes = useMemo(() => {
     const set = new Set<string>();
@@ -114,18 +140,19 @@ export default function LibraryPage() {
   }, [stories]);
 
   const filtered = useMemo(() => {
-    return (stories ?? []).filter((s: { title?: string; params?: { theme?: string; language?: string } }) => {
+    return (stories ?? []).filter((s: { _id: string; title?: string; params?: { theme?: string; language?: string } }) => {
       const matchesSearch =
         !search ||
         (s.title ?? "").toLowerCase().includes(search.toLowerCase()) ||
         (s.params?.theme ?? "").toLowerCase().includes(search.toLowerCase());
       const matchesTheme = filterTheme === "All" || s.params?.theme === filterTheme;
       const matchesLang = filterLang === "All" || s.params?.language === filterLang;
-      return matchesSearch && matchesTheme && matchesLang;
+      const matchesFav = !showFavOnly || favourites.has(s._id);
+      return matchesSearch && matchesTheme && matchesLang && matchesFav;
     });
-  }, [stories, search, filterTheme, filterLang]);
+  }, [stories, search, filterTheme, filterLang, showFavOnly, favourites]);
 
-  const hasActiveFilters = search || filterTheme !== "All" || filterLang !== "All";
+  const hasActiveFilters = search || filterTheme !== "All" || filterLang !== "All" || showFavOnly;
 
   async function handleSignOut() {
     await authClient.signOut();
@@ -364,10 +391,25 @@ export default function LibraryPage() {
                   ))}
                 </div>
 
+                {/* Favourites toggle */}
+                <button
+                  onClick={() => setShowFavOnly(v => !v)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all flex-shrink-0"
+                  style={{
+                    background: showFavOnly ? "rgba(232,64,64,0.15)" : "rgba(255,255,255,0.8)",
+                    color: showFavOnly ? "#e84040" : "rgba(45,45,45,0.7)",
+                    border: `1.5px solid ${showFavOnly ? "rgba(232,64,64,0.35)" : "rgba(0,0,0,0.1)"}`,
+                    fontFamily: "'Nunito', sans-serif",
+                  }}
+                >
+                  <Heart size={11} fill={showFavOnly ? "currentColor" : "none"} />
+                  Favourites {favourites.size > 0 && `(${favourites.size})`}
+                </button>
+
                 {/* Clear filters */}
                 {hasActiveFilters && (
                   <button
-                    onClick={() => { setSearch(""); setFilterTheme("All"); setFilterLang("All"); }}
+                    onClick={() => { setSearch(""); setFilterTheme("All"); setFilterLang("All"); setShowFavOnly(false); }}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all flex-shrink-0"
                     style={{ background: "rgba(232,64,64,0.1)", color: "#e84040", border: "1px solid rgba(232,64,64,0.2)", fontFamily: "'Nunito', sans-serif" }}
                   >
@@ -490,6 +532,24 @@ export default function LibraryPage() {
                             </span>
                           )}
                         </div>
+
+                        {/* Favourite heart — always visible, top-right */}
+                        <button
+                          onClick={(e) => toggleFav(story._id, e)}
+                          className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                          style={{
+                            background: favourites.has(story._id) ? "rgba(232,64,64,0.9)" : "rgba(0,0,0,0.4)",
+                            backdropFilter: "blur(4px)",
+                            border: "1px solid rgba(255,255,255,0.2)",
+                          }}
+                          aria-label={favourites.has(story._id) ? "Remove from favourites" : "Add to favourites"}
+                        >
+                          <Heart
+                            size={14}
+                            fill={favourites.has(story._id) ? "#fff" : "none"}
+                            color="#fff"
+                          />
+                        </button>
 
                         {/* Play button — appears on hover */}
                         <div className="absolute bottom-3 right-3">
