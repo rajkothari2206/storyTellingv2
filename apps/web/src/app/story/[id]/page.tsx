@@ -1230,8 +1230,8 @@ function StoryViewer({
               </div>
             </div>
 
-          </div>{/* end right column */}
-          </div>{/* end two-column wrapper */}
+          </div>
+          </div>
         ) : story.content ? (
           /* Fallback plain text */
           <div className="w-full max-w-2xl px-6 py-8 rounded-3xl" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
