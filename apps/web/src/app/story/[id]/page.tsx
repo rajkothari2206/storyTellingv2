@@ -31,6 +31,7 @@ import {
   X,
   Copy,
   Check,
+  Share2,
 } from "lucide-react";
 
 /* ────────────────────────────────────────────────────────────────
@@ -429,6 +430,8 @@ function StoryViewer({
   const [seeking, setSeeking] = useState(false);
   const [subtitleOffset, setSubtitleOffset] = useState(0); // seconds; + = show subtitles sooner
   const [showTextPanel, setShowTextPanel] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const manualNavRef = useRef(false); // suppress auto-advance briefly after manual nav
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
@@ -572,6 +575,28 @@ function StoryViewer({
     audioRef.current.muted = next;
   };
 
+  /* Share */
+  const storyUrl = typeof window !== "undefined" ? window.location.href : "";
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: story?.title ?? "A Lalli & Fafa story",
+          text: `Check out this personalised story: "${story?.title}"`,
+          url: storyUrl,
+        });
+      } catch { /* user cancelled */ }
+    } else {
+      setShareOpen(true);
+    }
+  };
+  const copyLink = () => {
+    navigator.clipboard.writeText(storyUrl).then(() => {
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    });
+  };
+
   const skip = (secs: number) => {
     if (!audioRef.current) return;
     audioRef.current.currentTime = Math.max(0, Math.min(duration, audioRef.current.currentTime + secs));
@@ -642,6 +667,61 @@ function StoryViewer({
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "#0e0c1a" }}>
 
+      {/* ── Share modal (desktop fallback) ── */}
+      {shareOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)" }}
+          onClick={() => setShareOpen(false)}
+        >
+          <div
+            className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl flex flex-col gap-5 p-6"
+            style={{ background: "#0e0c1a", border: "1px solid rgba(255,255,255,0.1)" }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h2 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "#fff" }}>
+                ✨ Share this story
+              </h2>
+              <button onClick={() => setShareOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10" style={{ color: "rgba(255,255,255,0.5)" }}>
+                <X size={16} />
+              </button>
+            </div>
+
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.88rem", color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
+              Share <strong style={{ color: "rgba(255,255,255,0.85)" }}>"{story?.title}"</strong> with family and friends.
+            </p>
+
+            {/* Copy link row */}
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <p className="flex-1 truncate text-xs" style={{ fontFamily: "monospace", color: "rgba(255,255,255,0.45)" }}>
+                {storyUrl}
+              </p>
+              <button
+                onClick={copyLink}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs flex-shrink-0 transition-all hover:scale-105"
+                style={{ background: shareCopied ? "rgba(0,201,167,0.25)" : "var(--lf-teal)", color: shareCopied ? "var(--lf-teal)" : "#fff", fontFamily: "'Nunito', sans-serif" }}
+              >
+                {shareCopied ? <Check size={13} /> : <Copy size={13} />}
+                {shareCopied ? "Copied!" : "Copy"}
+              </button>
+            </div>
+
+            {/* WhatsApp share */}
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(`Check out this personalised Lalli & Fafa story: "${story?.title}" ${storyUrl}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-sm transition-all hover:scale-105"
+              style={{ background: "#25D366", color: "#fff", fontFamily: "'Nunito', sans-serif" }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12.05 2.095C6.495 2.095 1.984 6.616 1.984 12.178c0 1.768.47 3.431 1.296 4.875L2.013 22l5.087-1.331a9.924 9.924 0 004.95 1.31c5.555 0 10.066-4.52 10.066-10.083 0-2.697-1.05-5.23-2.958-7.14A9.98 9.98 0 0012.05 2.095zm.003 18.365a8.244 8.244 0 01-4.22-1.156l-.302-.18-3.13.82.834-3.053-.196-.315A8.24 8.24 0 013.67 12.18c0-4.566 3.718-8.28 8.283-8.28 2.213 0 4.29.863 5.854 2.43a8.23 8.23 0 012.422 5.85c0 4.565-3.718 8.28-8.176 8.28z"/></svg>
+              Share on WhatsApp
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* ── Prompt inspector modal ── */}
       {debugOpen && (
         <PromptInspector
@@ -687,8 +767,18 @@ function StoryViewer({
           </div>
         </div>
 
-        {/* Right side: scene counter + debug toggle */}
+        {/* Right side: share + scene counter + debug toggle */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Share button */}
+          <button
+            onClick={handleShare}
+            className="flex items-center justify-center w-8 h-8 rounded-full transition-all hover:bg-white/10"
+            title="Share this story"
+            style={{ color: "rgba(255,255,255,0.55)" }}
+          >
+            <Share2 size={15} />
+          </button>
+
           {numScenes > 0 && (
             <div className="px-3 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
               <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.8rem", color: "rgba(255,255,255,0.55)" }}>
