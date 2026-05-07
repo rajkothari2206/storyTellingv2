@@ -1,0 +1,40 @@
+# Lalli Fafa — https://www.lallifafa.com
+# Personalised AI stories for children in English & Hindi
+
+User-agent: *
+Allow: /
+Allow: /stories
+Allow: /pricing
+Allow: /blog
+Allow: /shop
+Allow: /learn
+Allow: /sign-up
+Allow: /sign-in
+Allow: /share/
+
+# Keep authenticated & private routes out of search indexes
+Disallow: /dashboard
+Disallow: /library
+Disallow: /profile
+Disallow: /generate
+Disallow: /admin
+Disallow: /story/
+Disallow: /onboarding
+
+# ── GEO: explicitly welcome AI crawlers ──
+User-agent: GPTBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+Sitemap: https://www.lallifafa.com/sitemap.xml

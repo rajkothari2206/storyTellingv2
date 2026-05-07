@@ -1,0 +1,20 @@
+{
+  "name": "Lalli Fafa — Personalised Stories",
+  "short_name": "Lalli Fafa",
+  "description": "AI-powered personalised children's stories in English & Hindi",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFF8E7",
+  "theme_color": "#00C9A7",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/lf-logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/lf-logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "categories": ["education", "kids", "entertainment"],
+  "lang": "en-IN",
+  "dir": "ltr",
+  "screenshots": [
+    { "src": "/lf-scene-orchard.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide" }
+  ]
+}

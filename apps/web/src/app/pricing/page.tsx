@@ -6,10 +6,47 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { PricingFAQ } from "./PricingFAQ";
 
+const BASE = "https://www.lallifafa.com";
+
 export const metadata: Metadata = {
-  title: "Pricing — Lalli Fafa",
+  title: "Pricing",
   description:
-    "Start free with 250 credits. Upgrade to Magic Pass for ₹199/month — unlimited stories, voice narration, and AI illustrations for your child.",
+    "Start free with 250 credits — no credit card needed. Upgrade to Magic Pass for ₹199/month and get 1,000 credits, Hindi narration, and unlimited AI-illustrated stories for your child.",
+  alternates: { canonical: `${BASE}/pricing` },
+  openGraph: {
+    title: "Lalli Fafa Pricing — Free plan + Magic Pass from ₹199/month",
+    description:
+      "Start free with 250 credits (≈4 stories). Upgrade anytime to Magic Pass for ₹199/month.",
+    url: `${BASE}/pricing`,
+  },
+};
+
+/* ── FAQ schema for this page ── */
+const pricingFaqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "What are Lalli Fafa credits?",
+      acceptedAnswer: { "@type": "Answer", text: "Credits are the currency used to generate stories on Lalli Fafa. A short illustrated story costs 60 credits, a medium story costs 80. Voice narration is included. Free accounts start with 250 credits — enough for about 4 stories." },
+    },
+    {
+      "@type": "Question",
+      name: "How much does Lalli Fafa cost?",
+      acceptedAnswer: { "@type": "Answer", text: "Lalli Fafa has a free plan with 250 credits and no credit card required. The paid Magic Pass plan costs ₹199 per month and includes 1,000 credits per month, Hindi narration, and priority story generation." },
+    },
+    {
+      "@type": "Question",
+      name: "Can I try Lalli Fafa for free?",
+      acceptedAnswer: { "@type": "Answer", text: "Yes. Sign up for free and receive 250 credits instantly — no credit card needed. That gives you approximately 4 fully illustrated and narrated stories to try." },
+    },
+    {
+      "@type": "Question",
+      name: "Can I cancel my Lalli Fafa subscription anytime?",
+      acceptedAnswer: { "@type": "Answer", text: "Yes. Cancel anytime from your dashboard. You keep all features until the end of your current billing period. No hidden fees or long-term commitments." },
+    },
+  ],
 };
 
 /* ── Plan definitions ── */
@@ -109,6 +146,10 @@ const trustItems = [
 export default function PricingPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingFaqSchema) }}
+      />
       <SiteHeader />
       <main>
 

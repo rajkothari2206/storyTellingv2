@@ -1,0 +1,57 @@
+# Lalli Fafa
+
+> AI-powered personalised children's stories in English and Hindi, featuring Lalli & Fafa — two best friends who make every child the hero of their own adventure.
+
+Lalli Fafa is a web application that generates personalised storybooks for children aged 2–10. Parents enter their child's name and choose a theme (adventure, friendship, kindness, space, Indian mythology, etc.) and the platform creates a unique illustrated story with professional voice narration in English or Hindi. Stories feature two recurring characters — Lalli (age 6, curious and brave) and Fafa (age 3, imaginative and funny) — alongside the child as the third hero.
+
+## Product
+
+- Website: https://www.lallifafa.com
+- Category: EdTech, Children's Media, AI-generated content
+- Target audience: Families with children aged 2–10, primarily in India
+- Languages supported: English, Hindi
+- Platforms: Web (mobile-optimised), progressive web app
+
+## Key features
+
+- Personalised story generation using AI (text + illustrations + voice narration)
+- English and Hindi narration with native-quality voices
+- 10+ story themes: adventure, friendship, courage, kindness, bedtime, space, nature, Indian culture, mythology, animals, games, travel
+- Story library where all generated stories are saved
+- Share stories with family via WhatsApp, Facebook, or link
+- Parental controls — safe, ad-free, no third-party data sharing with children
+- Credits-based system: free plan (250 credits ≈ 4 stories), Magic Pass subscription (₹199/month, 1,000 credits/month)
+
+## Characters
+
+**Lalli** — A curious 6-year-old girl who loves exploring, drawing, and looking after her little brother. The leader of the duo.
+
+**Fafa** — Lalli's 3-year-old brother who carries his stuffed bunny everywhere and sees magic in ordinary things. The heart of the duo.
+
+The child using the platform becomes the "third hero" who joins Lalli and Fafa in every adventure.
+
+## Pricing
+
+- Free plan: 250 credits (≈ 4 illustrated stories), no credit card required
+- Magic Pass: ₹199/month — 1,000 credits/month, Hindi narration, priority generation
+- All payments via Razorpay (India's leading payment gateway)
+
+## Company
+
+- Founded: 2024
+- Country: India
+- Contact: contact@lallifafa.com
+- Social: Instagram @lallifafa, Facebook /lallifafa
+
+## Content policy
+
+All stories are age-appropriate, culturally inclusive, and free from violence, advertising, and third-party data collection. Stories celebrate Indian culture, values, and multilingual identity.
+
+## Pages
+
+- / — Homepage with hero, characters, how it works, pricing overview, testimonials
+- /stories — Story themes browser
+- /pricing — Full pricing and plan comparison
+- /blog — Articles on parenting, storytelling, early childhood development
+- /learn — Learning outcomes and curriculum alignment
+- /sign-up — Free registration

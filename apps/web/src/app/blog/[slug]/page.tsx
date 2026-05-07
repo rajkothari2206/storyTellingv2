@@ -12,6 +12,8 @@ export function generateStaticParams() {
   return BLOG_POSTS.map((p) => ({ slug: p.slug }));
 }
 
+const BASE = "https://www.lallifafa.com";
+
 /* ── Dynamic metadata ── */
 export async function generateMetadata({
   params,
@@ -22,8 +24,24 @@ export async function generateMetadata({
   const post = getBlogPost(slug);
   if (!post) return { title: "Not found" };
   return {
-    title: `${post.title} — Lalli Fafa Blog`,
+    title: post.title,
     description: post.excerpt,
+    alternates: { canonical: `${BASE}/blog/${slug}` },
+    openGraph: {
+      type: "article",
+      title: post.title,
+      description: post.excerpt,
+      url: `${BASE}/blog/${slug}`,
+      images: [{ url: post.image, width: 1200, height: 630, alt: post.title }],
+      publishedTime: post.date,
+      authors: ["Lalli Fafa"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.excerpt,
+      images: [post.image],
+    },
   };
 }
 
@@ -39,8 +57,29 @@ export default async function BlogPostPage({
 
   const related = getRecentPosts(slug, 3);
 
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description: post.excerpt,
+    image: `${BASE}${post.image}`,
+    datePublished: post.date,
+    dateModified: post.date,
+    author: { "@type": "Organization", name: "Lalli Fafa", url: BASE },
+    publisher: {
+      "@type": "Organization",
+      name: "Lalli Fafa",
+      logo: { "@type": "ImageObject", url: `${BASE}/lf-logo.png` },
+    },
+    mainEntityOfPage: { "@type": "WebPage", "@id": `${BASE}/blog/${slug}` },
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
       <SiteHeader />
       <main style={{ background: "linear-gradient(160deg,#FFF8E7 0%,#E6FAF6 50%,#F3EEFF 100%)" }}>
 

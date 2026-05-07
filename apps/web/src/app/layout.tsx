@@ -18,40 +18,104 @@ const nunito = Nunito({
   display: "swap",
 });
 
+const BASE = "https://www.lallifafa.com";
+
 export const metadata: Metadata = {
+  /* ── Core ── */
+  metadataBase: new URL(BASE),
   title: {
-    default: "Lalli Fafa — Stories for Giggle & Grow",
+    default: "Lalli Fafa — Personalised Stories for Kids in English & Hindi",
     template: "%s | Lalli Fafa",
   },
   description:
-    "AI-powered personalised stories in English & Hindi for children. Your child is the hero. Featuring Lalli & Fafa — magical characters who make every bedtime an adventure.",
+    "AI-powered personalised children's stories where your child is the hero. Featuring Lalli & Fafa — magical characters who make every bedtime an adventure. English & Hindi narration. Safe, ad-free, loved by 10,000+ families.",
   keywords: [
-    "children stories",
-    "kids stories hindi english",
-    "ai stories for kids",
-    "personalised bedtime stories",
+    "personalised stories for kids",
+    "ai children stories",
+    "bedtime stories in hindi",
+    "kids stories english hindi",
     "lalli fafa",
-    "stories for children india",
-    "kids storytelling app",
+    "children storytelling app india",
+    "personalised bedtime stories",
+    "stories for kids india",
+    "ai story generator for children",
+    "hindi stories for kids",
+    "bilingual children stories",
+    "children audio books india",
+    "stories with child as hero",
+    "interactive stories for toddlers",
   ],
-  authors: [{ name: "Lalli Fafa" }],
+  authors: [{ name: "Lalli Fafa", url: BASE }],
+  creator: "Lalli Fafa",
+  publisher: "Lalli Fafa",
+  category: "Education",
+
+  /* ── Canonical / alternate ── */
+  alternates: {
+    canonical: BASE,
+    languages: {
+      "en-IN": BASE,
+      "hi-IN": `${BASE}/hi`,
+    },
+  },
+
+  /* ── Open Graph ── */
   openGraph: {
     type: "website",
     locale: "en_IN",
-    url: "https://www.lallifafa.com",
+    alternateLocale: ["hi_IN"],
+    url: BASE,
     siteName: "Lalli Fafa",
-    title: "Lalli Fafa — Stories for Giggle & Grow",
+    title: "Lalli Fafa — Personalised Stories for Kids in English & Hindi",
     description:
-      "AI-powered personalised stories in English & Hindi for children. Your child is the hero!",
+      "AI-powered personalised children's stories where your child is the hero alongside Lalli & Fafa. English & Hindi. Safe, ad-free, loved by families across India.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Lalli Fafa — Personalised children's stories in English & Hindi",
+        type: "image/png",
+      },
+    ],
   },
+
+  /* ── Twitter / X ── */
   twitter: {
     card: "summary_large_image",
-    title: "Lalli Fafa — Stories for Giggle & Grow",
-    description: "AI-powered personalised stories for children in English & Hindi.",
+    site: "@lallifafa",
+    creator: "@lallifafa",
+    title: "Lalli Fafa — Personalised Stories for Kids",
+    description:
+      "AI-powered personalised children's stories in English & Hindi. Your child is the hero!",
+    images: ["/og-image.png"],
   },
+
+  /* ── Icons & manifest ── */
+  icons: {
+    icon: "/lf-logo.png",
+    shortcut: "/lf-logo.png",
+    apple: "/lf-logo.png",
+  },
+  manifest: "/site.webmanifest",
+
+  /* ── Crawlers ── */
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+
+  /* ── Verification (add your codes here once verified) ── */
+  verification: {
+    google: "add-your-google-search-console-token-here",
+    // yandex: "...",
   },
 };
 
@@ -62,9 +126,14 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="en-IN"
       className={`${baloo2.variable} ${nunito.variable} h-full`}
     >
+      <head>
+        {/* Preconnect to font origin for faster load */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
       <body className="min-h-full flex flex-col antialiased">
         <ConvexAuthProvider>
           {children}

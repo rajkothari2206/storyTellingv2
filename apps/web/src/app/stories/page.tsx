@@ -5,9 +5,15 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 
 export const metadata: Metadata = {
-  title: "Stories",
+  title: "Story Themes — Adventure, Friendship, Space & More",
   description:
-    "Browse personalised story themes — adventure, friendship, courage, kindness and more. Your child is the hero alongside Lalli & Fafa.",
+    "Choose from 10+ story themes — adventure, friendship, courage, kindness, space, Indian mythology and more. Every story is personalised with your child as the hero alongside Lalli & Fafa.",
+  alternates: { canonical: "https://www.lallifafa.com/stories" },
+  openGraph: {
+    title: "Lalli Fafa Story Themes — Personalised for your child",
+    description: "10+ story themes. Your child is always the hero.",
+    url: "https://www.lallifafa.com/stories",
+  },
 };
 
 const themes = [
