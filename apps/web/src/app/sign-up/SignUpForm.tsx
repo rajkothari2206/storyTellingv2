@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import { trackSignUp } from "@/lib/analytics";
 
 export function SignUpForm() {
   const router = useRouter();
@@ -20,6 +21,8 @@ export function SignUpForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [verifyEmailSent, setVerifyEmailSent] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -31,7 +34,21 @@ export function SignUpForm() {
     await authClient.signUp.email(
       { name, email, password },
       {
-        onSuccess: () => router.push("/onboarding"),
+        onSuccess: async () => {
+          trackSignUp("email");
+          // Send verification email; if it fails we still proceed to onboarding
+          try {
+            await authClient.sendVerificationEmail({
+              email,
+              callbackURL: "/onboarding",
+            });
+            setVerifyEmailSent(true);
+          } catch {
+            // Verification email failed — just go to onboarding
+            router.push("/onboarding");
+          }
+          setLoading(false);
+        },
         onError: (ctx) => {
           console.error("[sign-up] full error object:", JSON.stringify(ctx.error));
           console.error("[sign-up] error message:", ctx.error?.message);
@@ -41,6 +58,18 @@ export function SignUpForm() {
         },
       }
     );
+  }
+
+  async function handleResendVerification() {
+    setResendLoading(true);
+    try {
+      await authClient.sendVerificationEmail({ email, callbackURL: "/onboarding" });
+      toast.success("Verification email resent!");
+    } catch {
+      toast.error("Couldn't resend — please try again.");
+    } finally {
+      setResendLoading(false);
+    }
   }
 
   async function handleGoogle() {
@@ -62,7 +91,8 @@ export function SignUpForm() {
       });
       const data = await res.json();
       if (data.url) {
-        window.location.href = data.url;
+        trackSignUp("google");
+      window.location.href = data.url;
       } else {
         throw new Error("No redirect URL from auth server");
       }
@@ -80,6 +110,65 @@ export function SignUpForm() {
     color: "var(--lf-dark)",
     fontFamily: "'Nunito', sans-serif",
   };
+
+  if (verifyEmailSent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6" style={{ background: "var(--lf-cream)" }}>
+        <div className="w-full text-center" style={{ maxWidth: 460 }}>
+          <div style={{ fontSize: "4rem", marginBottom: "1rem" }}>📬</div>
+          <h1
+            style={{
+              fontFamily: "'Baloo 2', sans-serif",
+              fontSize: "clamp(1.7rem, 3vw, 2.2rem)",
+              fontWeight: 800,
+              color: "var(--lf-dark)",
+              lineHeight: 1.2,
+              marginBottom: "0.75rem",
+            }}
+          >
+            Check your inbox!
+          </h1>
+          <p style={{ color: "rgba(45,45,45,0.6)", fontSize: "1rem", lineHeight: 1.6, marginBottom: "2rem" }}>
+            We've sent a verification link to <strong style={{ color: "var(--lf-dark)" }}>{email}</strong>.
+            Click the link in your email to activate your account.
+          </p>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={handleResendVerification}
+              disabled={resendLoading}
+              className="btn-primary"
+              style={{ width: "100%", justifyContent: "center", fontSize: "0.95rem" }}
+            >
+              {resendLoading ? <Loader2 size={16} className="animate-spin" /> : null}
+              {resendLoading ? "Sending…" : "Resend verification email"}
+            </button>
+            <button
+              onClick={() => router.push("/onboarding")}
+              style={{
+                background: "none",
+                border: "none",
+                color: "rgba(45,45,45,0.45)",
+                fontSize: "0.85rem",
+                cursor: "pointer",
+                padding: "0.5rem",
+              }}
+            >
+              Skip for now →
+            </button>
+          </div>
+          <p style={{ color: "rgba(45,45,45,0.35)", fontSize: "0.78rem", marginTop: "2rem", lineHeight: 1.5 }}>
+            Didn't get it? Check your spam folder, or try a different email address by{" "}
+            <button
+              onClick={() => setVerifyEmailSent(false)}
+              style={{ background: "none", border: "none", color: "var(--lf-teal)", cursor: "pointer", fontWeight: 600, padding: 0, fontSize: "inherit" }}
+            >
+              going back
+            </button>.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex" style={{ background: "var(--lf-cream)" }}>

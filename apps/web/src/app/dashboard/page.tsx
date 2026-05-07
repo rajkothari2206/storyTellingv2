@@ -166,6 +166,25 @@ function DashboardContent({
 }) {
   const router = useRouter();
 
+  const { data: session } = authClient.useSession();
+  const isEmailVerified = session?.user?.emailVerified ?? true; // default true so banner doesn't flash on load
+  const userEmail = session?.user?.email ?? "";
+  const [verifyBannerDismissed, setVerifyBannerDismissed] = useState(false);
+  const [resendingVerify, setResendingVerify] = useState(false);
+
+  async function handleResendVerification() {
+    if (!userEmail) return;
+    setResendingVerify(true);
+    try {
+      await authClient.sendVerificationEmail({ email: userEmail, callbackURL: "/dashboard" });
+      toast.success("Verification email sent! Check your inbox.");
+    } catch {
+      toast.error("Couldn't send verification email. Please try again.");
+    } finally {
+      setResendingVerify(false);
+    }
+  }
+
   const profile = useQuery(api.userProfiles.getProfile, isAuthenticated ? {} : "skip");
   const hasProfile = useQuery(api.userProfiles.hasProfile, isAuthenticated ? {} : "skip");
   const stories = useQuery(api.stories.list, isAuthenticated ? {} : "skip");
@@ -252,6 +271,37 @@ function DashboardContent({
 
       {/* Redirect to onboarding if no profile */}
       {hasProfile === false && <OnboardingRedirect />}
+
+      {/* Email verification banner */}
+      {!isEmailVerified && !verifyBannerDismissed && session && (
+        <div
+          className="flex items-center justify-between gap-3 px-5 py-3"
+          style={{ background: "linear-gradient(90deg,#fff8e1,#fffde7)", borderBottom: "1.5px solid rgba(249,199,0,0.4)" }}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <span style={{ fontSize: "1rem", flexShrink: 0 }}>📧</span>
+            <p style={{ fontSize: "0.85rem", color: "#7a5800", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              Please verify your email address to secure your account.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={handleResendVerification}
+              disabled={resendingVerify}
+              style={{ background: "#f9c700", border: "none", color: "#1a1a2e", fontSize: "0.8rem", fontWeight: 700, padding: "0.35rem 1rem", borderRadius: 50, cursor: "pointer" }}
+            >
+              {resendingVerify ? "Sending…" : "Resend email"}
+            </button>
+            <button
+              onClick={() => setVerifyBannerDismissed(true)}
+              style={{ background: "none", border: "none", color: "rgba(122,88,0,0.5)", cursor: "pointer", padding: "0.25rem", fontSize: "1rem", lineHeight: 1 }}
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-6xl mx-auto px-5 py-8 flex flex-col gap-8">
 

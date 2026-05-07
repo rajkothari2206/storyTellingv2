@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Baloo_2, Nunito } from "next/font/google";
 import { Toaster } from "sonner";
 import { ConvexAuthProvider } from "@/providers/ConvexAuthProvider";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import "./globals.css";
 
 const baloo2 = Baloo_2({
@@ -136,6 +137,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className="min-h-full flex flex-col antialiased">
+        <GoogleAnalytics />
         <ConvexAuthProvider>
           {children}
           <Toaster richColors position="top-right" />

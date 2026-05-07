@@ -45,4 +45,36 @@
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
+
+  <!-- Blog posts -->
+  <url>
+    <loc>https://www.lallifafa.com/blog/why-personalised-stories-build-confidence</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.lallifafa.com/blog/bedtime-routine-that-actually-works</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.lallifafa.com/blog/hindi-storytelling-bilingual-families</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.lallifafa.com/blog/how-we-use-ai-to-create-stories-that-feel-human</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.lallifafa.com/blog/teaching-kindness-through-storytelling</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.lallifafa.com/blog/science-behind-audio-stories-and-childrens-memory</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
 </urlset>

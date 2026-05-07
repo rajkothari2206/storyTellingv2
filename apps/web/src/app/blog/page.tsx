@@ -7,9 +7,17 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { BLOG_POSTS, getFeaturedPost } from "@/lib/blog-data";
 
 export const metadata: Metadata = {
-  title: "Blog — Lalli Fafa",
+  title: "Blog — Stories for Parents",
   description:
     "Tips, insights, and honest conversations about raising curious, creative, and kind children. Stories for parents, not just kids.",
+  alternates: { canonical: "https://www.lallifafa.com/blog" },
+  openGraph: {
+    type: "website",
+    url: "https://www.lallifafa.com/blog",
+    title: "Blog — Lalli Fafa",
+    description: "Tips, insights, and honest conversations about raising curious, creative, and kind children.",
+    images: [{ url: "https://www.lallifafa.com/opengraph-image", width: 1200, height: 630 }],
+  },
 };
 
 export default function BlogPage() {
