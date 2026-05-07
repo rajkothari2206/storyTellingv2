@@ -291,9 +291,9 @@
 .animate-float-delay { animation: float 3s ease-in-out 1.2s infinite; }
 .animate-wiggle      { animation: wiggle 2s ease-in-out infinite; }
 
-/* Story viewer — responsive image panel aspect ratio */
-.story-image-panel { aspect-ratio: 4/3; }
-@media (min-width: 640px) { .story-image-panel { aspect-ratio: 16/9; } }
+/* Story viewer — square panel matches Gemini's 1:1 output (no cropping) */
+.story-image-panel { aspect-ratio: 1/1; }
+@media (min-width: 640px) { .story-image-panel { aspect-ratio: 1/1; } }
 
 /* Subtitle text — larger on mobile for readability */
 .subtitle-text { font-size: 0.82rem; }

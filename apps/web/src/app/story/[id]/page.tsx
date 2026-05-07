@@ -919,8 +919,7 @@ function StoryViewer({
                     src={sceneImageUrl}
                     alt={`Scene ${currentScene + 1}`}
                     fill
-                    className="object-cover"
-                    style={{ objectPosition: "center 20%" }}
+                    className="object-contain"
                     priority
                   />
                   {/* Shimmer sweep — diagonal glint that crosses the image periodically */}
