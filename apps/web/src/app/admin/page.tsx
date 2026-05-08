@@ -215,15 +215,13 @@ function StoriesTab({ isAdmin }: { isAdmin: boolean }) {
 
 // ─── Tab: Users ───────────────────────────────────────────────────────────────
 
-function CreditAdjustRow({ userId, creditMap }: { userId: string; creditMap: Map<string, any> }) {
-  const adjustCredits = useMutation((api as any).credit.adminAdjustCredits);
+function CreditAdjustRow({ userId }: { userId: string }) {
+  // Uses existing _addCredits mutation (already deployed):
+  // positive amount = add credits, negative amount = deduct from available
+  const addCredits = useMutation((api as any).credit._addCredits);
   const [amount, setAmount] = useState("");
   const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState<"success" | "error" | null>(null);
-
-  const credit = creditMap.get(userId);
-  const available = credit?.availableCredits ?? null;
-  const total = credit?.totalCredits ?? null;
+  const [result, setResult] = useState<"added" | "removed" | "error" | null>(null);
 
   async function handleAdjust(sign: 1 | -1) {
     const n = parseInt(amount, 10);
@@ -231,10 +229,10 @@ function CreditAdjustRow({ userId, creditMap }: { userId: string; creditMap: Map
     setSaving(true);
     setResult(null);
     try {
-      await adjustCredits({ userId, amount: sign * n });
+      await addCredits({ userId, credits: sign * n });
       setAmount("");
-      setResult("success");
-      setTimeout(() => setResult(null), 2000);
+      setResult(sign === 1 ? "added" : "removed");
+      setTimeout(() => setResult(null), 2500);
     } catch {
       setResult("error");
       setTimeout(() => setResult(null), 3000);
@@ -245,26 +243,14 @@ function CreditAdjustRow({ userId, creditMap }: { userId: string; creditMap: Map
 
   return (
     <td style={{ ...TD_STYLE, whiteSpace: "nowrap" }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        {/* Balance display */}
-        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-          <span
-            style={{
-              fontFamily: "'Baloo 2', sans-serif",
-              fontWeight: 700,
-              fontSize: "0.88rem",
-              color: available !== null ? (available < 50 ? "#dc2626" : "var(--lf-teal)") : "rgba(45,45,45,0.4)",
-            }}
-          >
-            {available !== null ? available : "—"}
-          </span>
-          {total !== null && (
-            <span style={{ fontSize: "0.75rem", color: "rgba(45,45,45,0.4)" }}>
-              / {total} total
-            </span>
+      <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+        {/* Status message */}
+        <div style={{ minHeight: 18 }}>
+          {result === "added" && (
+            <span style={{ fontSize: "0.75rem", color: "#16a34a", fontWeight: 700 }}>✓ Credits added</span>
           )}
-          {result === "success" && (
-            <span style={{ fontSize: "0.75rem", color: "#16a34a", fontWeight: 700 }}>✓ Saved</span>
+          {result === "removed" && (
+            <span style={{ fontSize: "0.75rem", color: "#d97706", fontWeight: 700 }}>✓ Credits removed</span>
           )}
           {result === "error" && (
             <span style={{ fontSize: "0.75rem", color: "#dc2626", fontWeight: 700 }}>✗ Failed</span>
@@ -277,10 +263,10 @@ function CreditAdjustRow({ userId, creditMap }: { userId: string; creditMap: Map
             min={1}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder="amt"
+            placeholder="amount"
             style={{
-              width: 60,
-              padding: "3px 6px",
+              width: 68,
+              padding: "4px 6px",
               borderRadius: "0.4rem",
               border: "1.5px solid rgba(0,0,0,0.12)",
               fontFamily: "'Nunito', sans-serif",
@@ -295,36 +281,36 @@ function CreditAdjustRow({ userId, creditMap }: { userId: string; creditMap: Map
             disabled={saving || !amount}
             title="Add credits"
             style={{
-              padding: "3px 8px",
+              padding: "4px 10px",
               borderRadius: "0.4rem",
               border: "none",
               background: "rgba(0,184,166,0.12)",
               color: "#0d7a6e",
               fontWeight: 700,
-              fontSize: "0.82rem",
+              fontSize: "0.85rem",
               cursor: saving || !amount ? "not-allowed" : "pointer",
               opacity: saving || !amount ? 0.5 : 1,
             }}
           >
-            +
+            {saving ? "…" : "+"}
           </button>
           <button
             onClick={() => handleAdjust(-1)}
             disabled={saving || !amount}
             title="Remove credits"
             style={{
-              padding: "3px 8px",
+              padding: "4px 10px",
               borderRadius: "0.4rem",
               border: "none",
               background: "rgba(220,38,38,0.1)",
               color: "#b91c1c",
               fontWeight: 700,
-              fontSize: "0.82rem",
+              fontSize: "0.85rem",
               cursor: saving || !amount ? "not-allowed" : "pointer",
               opacity: saving || !amount ? 0.5 : 1,
             }}
           >
-            −
+            {saving ? "…" : "−"}
           </button>
         </div>
       </div>
@@ -334,14 +320,6 @@ function CreditAdjustRow({ userId, creditMap }: { userId: string; creditMap: Map
 
 function UsersTab({ isAdmin }: { isAdmin: boolean }) {
   const users = useQuery(api.auth.listAllUsers, isAdmin ? {} : "skip") as any[] | undefined;
-  const allCredits = useQuery((api as any).credit.adminListAllCredits, isAdmin ? {} : "skip") as any[] | undefined;
-
-  // Build a map of userId → credit record
-  const creditMap = useMemo(() => {
-    const map = new Map<string, any>();
-    (allCredits ?? []).forEach((c: any) => map.set(c.userId, c));
-    return map;
-  }, [allCredits]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -363,7 +341,7 @@ function UsersTab({ isAdmin }: { isAdmin: boolean }) {
                 <th style={TH_STYLE}>Child Name</th>
                 <th style={TH_STYLE}>Child Age</th>
                 <th style={TH_STYLE}>Joined</th>
-                <th style={TH_STYLE}>Credits</th>
+                <th style={TH_STYLE}>Adjust Credits</th>
               </tr>
             </thead>
             <tbody>
@@ -381,7 +359,7 @@ function UsersTab({ isAdmin }: { isAdmin: boolean }) {
                     <td style={TD_STYLE}>{u.profile?.childName ?? "—"}</td>
                     <td style={TD_STYLE}>{u.profile?.childAge ?? "—"}</td>
                     <td style={{ ...TD_STYLE, whiteSpace: "nowrap" }}>{formatDate(u.createdAt)}</td>
-                    <CreditAdjustRow userId={u.id} creditMap={creditMap} />
+                    <CreditAdjustRow userId={u.id} />
                   </tr>
                 ))
               )}
