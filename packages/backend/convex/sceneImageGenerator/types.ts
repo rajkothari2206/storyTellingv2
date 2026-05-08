@@ -1,16 +1,33 @@
-export type Gender = "male" | "female" | "other";
+﻿/**
+ * Type definitions for scene image generation
+ */
 
 export interface ChildInfo {
   name: string;
-  age: number | string;
-  gender: Gender;
-  avatarFilePath?: string;
+  gender: "male" | "female" | "other";
+  age: number;
 }
 
 export interface SceneMetadata {
   sceneNumber: number;
   description: string;
-  filePath?: string;
+  filePath: string;
+}
+
+export interface ImageGenerationResult {
+  imageBase64?: string;
+  error?: string;
+}
+
+export interface AvatarGenerationResult {
+  avatarStorageId?: string;
+  error?: string;
+}
+
+export interface SceneGenerationResult {
+  sceneNumber: number;
+  success: boolean;
+  error?: string;
 }
 
 export interface PromptReferences {
