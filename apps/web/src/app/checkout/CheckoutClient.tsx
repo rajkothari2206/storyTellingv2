@@ -3,8 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Loader2, Sparkles } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
-import { useAction, useQuery } from "convex/react";
+import { useConvexAuth, useAction, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 
 export function CheckoutClient() {
@@ -12,8 +11,9 @@ export function CheckoutClient() {
   const router = useRouter();
   const plan = searchParams.get("plan") as "monthly" | "yearly" | null;
 
-  const { data: session, isPending: authLoading } = authClient.useSession();
-  const isLoggedIn = !!session;
+  // useConvexAuth is already hydrated by ConvexProviderWithAuth — resolves
+  // synchronously from the in-memory token, no network round-trip needed.
+  const { isLoading: authLoading, isAuthenticated } = useConvexAuth();
 
   const plans = useQuery(api.subscription.getPlans);
   const initiateSubscription = useAction(api.subscription.initiateSubscription);
@@ -31,16 +31,15 @@ export function CheckoutClient() {
       return;
     }
 
-    // Not logged in → sign in with return URL (must encode the redirect so
-    // the nested ?plan= doesn't get parsed as a separate query param)
-    if (!isLoggedIn) {
+    // Not authenticated → sign in with encoded return URL
+    if (!isAuthenticated) {
       const encodedRedirect = encodeURIComponent(`/checkout?plan=${plan}`);
       router.replace(`/sign-in?redirect=${encodedRedirect}`);
       return;
     }
 
-    // Wait for plans to load
-    if (!plans) return;
+    // Wait for plans to load from Convex
+    if (plans === undefined) return;
 
     // Prevent double-fire (React strict mode / re-renders)
     if (initiated.current) return;
@@ -59,7 +58,7 @@ export function CheckoutClient() {
       .catch((err: any) => {
         setError(err?.message ?? "Something went wrong. Please try again.");
       });
-  }, [authLoading, isLoggedIn, plans, plan]);
+  }, [authLoading, isAuthenticated, plans, plan]);
 
   if (error) {
     return (

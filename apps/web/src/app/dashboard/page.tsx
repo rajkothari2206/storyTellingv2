@@ -252,7 +252,7 @@ function DashboardContent({
           <Link href="/profile" className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-black/5" style={{ color: "var(--lf-dark)", fontFamily: "'Nunito', sans-serif" }}>
             <User size={15} /> Profile
           </Link>
-          <Link href="/pricing" className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-black/5" style={{ color: "var(--lf-dark)", fontFamily: "'Nunito', sans-serif" }}>
+          <Link href="/checkout?plan=monthly" className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-black/5" style={{ color: "var(--lf-dark)", fontFamily: "'Nunito', sans-serif" }}>
             <Zap size={15} /> Upgrade
           </Link>
         </nav>
@@ -395,7 +395,7 @@ function DashboardContent({
                 Only {availableCredits} credits left — top up to keep the magic going!
               </p>
             </div>
-            <Link href="/pricing" className="btn-primary" style={{ padding: "0.5rem 1.2rem", fontSize: "0.85rem", flexShrink: 0 }}>
+            <Link href="/checkout?plan=monthly" className="btn-primary" style={{ padding: "0.5rem 1.2rem", fontSize: "0.85rem", flexShrink: 0 }}>
               Top up
             </Link>
           </div>
@@ -765,7 +765,7 @@ function StoryDrawer({
             </span>
           </div>
           {availableCredits < 80 && (
-            <Link href="/pricing" onClick={onClose} className="text-xs font-bold" style={{ color: "var(--lf-teal)" }}>
+            <Link href="/checkout?plan=monthly" onClick={onClose} className="text-xs font-bold" style={{ color: "var(--lf-teal)" }}>
               Top up →
             </Link>
           )}
@@ -939,8 +939,8 @@ function StoryDrawer({
               <p style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 600, color: "#b83030", textAlign: "center", fontSize: "0.9rem" }}>
                 You&apos;re out of credits. Top up to generate stories!
               </p>
-              <Link href="/pricing" onClick={onClose} className="btn-primary" style={{ justifyContent: "center", padding: "0.6rem 1.4rem" }}>
-                <Zap size={15} /> View plans
+              <Link href="/checkout?plan=monthly" onClick={onClose} className="btn-primary" style={{ justifyContent: "center", padding: "0.6rem 1.4rem" }}>
+                <Zap size={15} /> Get Magic Pass
               </Link>
             </div>
           ) : (
@@ -948,7 +948,7 @@ function StoryDrawer({
               {!canAfford && (
                 <p className="text-sm text-center" style={{ color: "#b83030", fontFamily: "'Nunito', sans-serif" }}>
                   Not enough credits ({availableCredits} available, {creditCost} needed).{" "}
-                  <Link href="/pricing" onClick={onClose} style={{ color: "var(--lf-teal)", fontWeight: 700 }}>Top up →</Link>
+                  <Link href="/checkout?plan=monthly" onClick={onClose} style={{ color: "var(--lf-teal)", fontWeight: 700 }}>Top up →</Link>
                 </p>
               )}
               <button
