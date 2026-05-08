@@ -5,6 +5,7 @@ import { Check, Sparkles, Star, Zap, Shield, HelpCircle, X } from "lucide-react"
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { PricingFAQ } from "./PricingFAQ";
+import { PricingCTAButton } from "@/components/pricing/PricingCTAButton";
 
 const BASE = "https://www.lallifafa.com";
 
@@ -68,8 +69,9 @@ const plans = [
       { text: "1 child profile" },
     ],
     locked: ["Voice narration", "AI illustrations", "Long stories", "Priority generation"],
-    cta: "Start free — no card needed",
-    href: "/sign-up",
+    ctaGuest: "Start free — no card needed",
+    ctaLoggedIn: "Go to Storyboard",
+    planInterval: "free" as const,
     highlight: false,
   },
   {
@@ -91,11 +93,11 @@ const plans = [
       { text: "AI scene illustrations" },
       { text: "Priority generation" },
       { text: "Unlimited retries" },
-      { text: "7-day free trial" },
       { text: "Cancel anytime" },
     ],
-    cta: "Start 7-day free trial",
-    href: "/sign-up?plan=monthly",
+    ctaGuest: "Subscribe — ₹199/mo",
+    ctaLoggedIn: "Get Magic Pass",
+    planInterval: "monthly" as const,
     highlight: true,
   },
   {
@@ -119,8 +121,9 @@ const plans = [
       { text: "Early feature access" },
       { text: "Highest credit value" },
     ],
-    cta: "Go yearly & save 20%",
-    href: "/sign-up?plan=yearly",
+    ctaGuest: "Go yearly & save 20%",
+    ctaLoggedIn: "Get Yearly Plan",
+    planInterval: "yearly" as const,
     highlight: false,
   },
 ];
@@ -140,7 +143,7 @@ const trustItems = [
   { icon: <Shield size={20} />, label: "Secure payments", sub: "via Razorpay", color: "#00c9a7" },
   { icon: <Zap size={20} />, label: "Instant access", sub: "stories in 2 min", color: "#f9c700" },
   { icon: <Check size={20} />, label: "Cancel anytime", sub: "no questions asked", color: "#a855f7" },
-  { icon: <Star size={20} fill="currentColor" />, label: "7-day free trial", sub: "on paid plans", color: "#ff6b35" },
+  { icon: <Star size={20} fill="currentColor" />, label: "250 free credits", sub: "no card needed", color: "#ff6b35" },
 ];
 
 export default function PricingPage() {
@@ -332,9 +335,11 @@ export default function PricingPage() {
                     </ul>
 
                     {/* CTA button */}
-                    <Link
-                      href={plan.href}
-                      className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl font-bold transition-all hover:scale-105 active:scale-95"
+                    <PricingCTAButton
+                      planInterval={plan.planInterval}
+                      ctaGuest={plan.ctaGuest}
+                      ctaLoggedIn={plan.ctaLoggedIn}
+                      className="py-3.5 rounded-2xl font-bold transition-all hover:scale-105 active:scale-95"
                       style={
                         plan.highlight
                           ? {
@@ -343,6 +348,7 @@ export default function PricingPage() {
                               fontFamily: "'Baloo 2', sans-serif",
                               fontSize: "0.95rem",
                               boxShadow: "0 6px 24px rgba(249,199,0,0.45)",
+                              border: "none",
                             }
                           : plan.id === "yearly"
                           ? {
@@ -351,6 +357,7 @@ export default function PricingPage() {
                               fontFamily: "'Baloo 2', sans-serif",
                               fontSize: "0.92rem",
                               boxShadow: "0 4px 16px rgba(168,85,247,0.35)",
+                              border: "none",
                             }
                           : {
                               background: "linear-gradient(135deg,var(--lf-teal),#00a38d)",
@@ -358,19 +365,17 @@ export default function PricingPage() {
                               fontFamily: "'Baloo 2', sans-serif",
                               fontSize: "0.92rem",
                               boxShadow: "0 4px 16px rgba(0,201,167,0.35)",
+                              border: "none",
                             }
                       }
-                    >
-                      {plan.id !== "free" && <Sparkles size={15} />}
-                      {plan.cta}
-                    </Link>
+                    />
                   </div>
                 </div>
               ))}
             </div>
 
             <p className="text-center mt-8" style={{ color: "rgba(45,45,45,0.4)", fontSize: "0.82rem", fontFamily: "'Nunito', sans-serif" }}>
-              7-day free trial on paid plans · Secure payments via Razorpay · Cancel anytime
+              Secure payments via Razorpay · Cancel anytime · No hidden fees
             </p>
           </div>
         </section>

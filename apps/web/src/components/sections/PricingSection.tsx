@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { Check, Star, Sparkles } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
+import { Check, Star } from "lucide-react";
+import { PricingCTAButton } from "@/components/pricing/PricingCTAButton";
 
 const plans = [
   {
@@ -19,10 +18,9 @@ const plans = [
       "1 child profile",
     ],
     locked: ["5-min stories", "Voice narration", "AI illustrations"],
-    cta: "Start free",
+    ctaGuest: "Start free",
     ctaLoggedIn: "Go to Storyboard",
-    href: "/sign-up",
-    hrefLoggedIn: "/dashboard",
+    planInterval: "free" as const,
     style: "ghost",
   },
   {
@@ -41,10 +39,9 @@ const plans = [
       "Unlimited retries",
       "Cancel anytime",
     ],
-    cta: "Start Magic Pass",
+    ctaGuest: "Subscribe — ₹199/mo",
     ctaLoggedIn: "Get Magic Pass",
-    href: "/sign-up?plan=monthly",
-    hrefLoggedIn: "/pricing",
+    planInterval: "monthly" as const,
     style: "primary",
     highlight: true,
   },
@@ -62,17 +59,14 @@ const plans = [
       "Multiple child profiles",
       "Highest credit value",
     ],
-    cta: "Go yearly",
-    ctaLoggedIn: "Get yearly plan",
-    href: "/sign-up?plan=yearly",
-    hrefLoggedIn: "/pricing",
+    ctaGuest: "Go yearly & save 20%",
+    ctaLoggedIn: "Get Yearly Plan",
+    planInterval: "yearly" as const,
     style: "secondary",
   },
 ];
 
 export function PricingSection() {
-  const { data: session } = authClient.useSession();
-  const isLoggedIn = !!session;
 
   return (
     <section
@@ -206,21 +200,17 @@ export function PricingSection() {
 
                 {/* CTA */}
                 <div className="mt-auto pt-2">
-                  <Link
-                    href={isLoggedIn ? plan.hrefLoggedIn : plan.href}
+                  <PricingCTAButton
+                    planInterval={plan.planInterval}
+                    ctaGuest={plan.ctaGuest}
+                    ctaLoggedIn={plan.ctaLoggedIn}
                     className={plan.style === "primary" ? "btn-primary" : plan.style === "secondary" ? "btn-secondary" : "btn-ghost"}
-                    style={{
-                      display: "flex",
-                      width: "100%",
-                      justifyContent: "center",
-                      ...(plan.style === "ghost" && plan.highlight
+                    style={
+                      plan.style === "ghost" && plan.highlight
                         ? { borderColor: "rgba(255,255,255,0.3)", color: "#fff" }
-                        : {}),
-                    }}
-                  >
-                    {plan.id !== "free" && <Sparkles size={15} />}
-                    {isLoggedIn ? plan.ctaLoggedIn : plan.cta}
-                  </Link>
+                        : {}
+                    }
+                  />
                 </div>
               </div>
             </div>
@@ -231,7 +221,7 @@ export function PricingSection() {
           className="text-center mt-8"
           style={{ color: "rgba(45,45,45,0.45)", fontSize: "0.85rem" }}
         >
-          All plans include a 7-day free trial · Secure payments via Razorpay · Cancel anytime
+          Secure payments via Razorpay · Cancel anytime · No hidden fees
         </p>
       </div>
     </section>
