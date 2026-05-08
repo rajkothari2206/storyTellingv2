@@ -66,8 +66,8 @@ export const resetToDefaults = mutation({
 			{ name: "Narrator",       voiceId: "iWNf11sz1GrUE4ppxTOL" },
 			{ name: "Lalli",          voiceId: "S2uC1CO2xXot4UtzYX68" },
 			{ name: "Fafa",           voiceId: "d7G4zsIoYxHBAwkKbqs5" },
-			{ name: "GirlChild",      voiceId: "WUyjxM8OTY6l8LhTmdkq" },
-			{ name: "BoyChild",       voiceId: "VyTe5Cy1ZXnpHrKVrxwk" },
+			{ name: "GirlChild",      voiceId: "A2VREc2wjqtSZloENLHe" },
+			{ name: "BoyChild",       voiceId: "S7IsvAvEoDfui6GSZK3A" },
 			{ name: "HindiNarrator",  voiceId: "KSsyodh37PbfWy29kPtx" },
 			{ name: "HindiLalli",     voiceId: "S2uC1CO2xXot4UtzYX68" },
 			{ name: "HindiFafa",      voiceId: "d7G4zsIoYxHBAwkKbqs5" },
@@ -114,11 +114,11 @@ export const seedDefaults = mutation({
 			},
 			{
 				name: "GirlChild",
-				voiceId: "WUyjxM8OTY6l8LhTmdkq",
+				voiceId: "A2VREc2wjqtSZloENLHe",
 			},
 			{
 				name: "BoyChild",
-				voiceId: "VyTe5Cy1ZXnpHrKVrxwk",
+				voiceId: "S7IsvAvEoDfui6GSZK3A",
 			},
 			{
 				name: "HindiNarrator",
