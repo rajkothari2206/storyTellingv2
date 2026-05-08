@@ -2,13 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { Sparkles } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
 
 interface PricingCTAButtonProps {
   planInterval: "monthly" | "yearly" | "free";
-  /** Text shown when logged out */
+  /** Text shown always (we no longer differentiate logged-in/out here) */
   ctaGuest: string;
-  /** Text shown when logged in */
   ctaLoggedIn: string;
   className?: string;
   style?: React.CSSProperties;
@@ -24,25 +22,16 @@ export function PricingCTAButton({
   showIcon = true,
 }: PricingCTAButtonProps) {
   const router = useRouter();
-  const { data: session } = authClient.useSession();
-  const isLoggedIn = !!session;
 
   const handleClick = () => {
     if (planInterval === "free") {
-      router.push(isLoggedIn ? "/dashboard" : "/sign-up");
+      router.push("/sign-up");
       return;
     }
-
-    if (isLoggedIn) {
-      // Logged in: go directly to checkout page which auto-initiates Razorpay
-      router.push(`/checkout?plan=${planInterval}`);
-    } else {
-      // Not logged in: sign in, then come back to checkout
-      router.push(`/sign-in?redirect=/checkout?plan=${planInterval}`);
-    }
+    // Always go to /checkout — the checkout page resolves auth and redirects to
+    // Razorpay (logged in) or to sign-in with redirect back here (logged out).
+    router.push(`/checkout?plan=${planInterval}`);
   };
-
-  const label = isLoggedIn ? ctaLoggedIn : ctaGuest;
 
   return (
     <button
@@ -59,7 +48,7 @@ export function PricingCTAButton({
       }}
     >
       {showIcon && planInterval !== "free" && <Sparkles size={15} />}
-      {label}
+      {ctaGuest}
     </button>
   );
 }

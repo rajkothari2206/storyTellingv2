@@ -31,9 +31,11 @@ export function CheckoutClient() {
       return;
     }
 
-    // Not logged in → sign in with return URL
+    // Not logged in → sign in with return URL (must encode the redirect so
+    // the nested ?plan= doesn't get parsed as a separate query param)
     if (!isLoggedIn) {
-      router.replace(`/sign-in?redirect=/checkout?plan=${plan}`);
+      const encodedRedirect = encodeURIComponent(`/checkout?plan=${plan}`);
+      router.replace(`/sign-in?redirect=${encodedRedirect}`);
       return;
     }
 
