@@ -67,7 +67,6 @@ const plans = [
 ];
 
 export function PricingSection() {
-
   return (
     <section
       id="pricing"
@@ -95,7 +94,7 @@ export function PricingSection() {
             <span className="text-gradient-sunshine">Magic Pass</span>
           </h2>
           <p style={{ color: "rgba(45,45,45,0.65)", fontSize: "1.05rem", maxWidth: 480 }}>
-            Start free and upgrade when you see your child's eyes light up.
+            Start free and upgrade when you see your child&apos;s eyes light up.
           </p>
         </div>
 
@@ -176,7 +175,7 @@ export function PricingSection() {
                       <Check
                         size={16}
                         className="flex-shrink-0 mt-0.5"
-                        style={{ color: plan.highlight ? "var(--lf-teal)" : "var(--lf-teal)" }}
+                        style={{ color: "var(--lf-teal)" }}
                       />
                       <span
                         style={{

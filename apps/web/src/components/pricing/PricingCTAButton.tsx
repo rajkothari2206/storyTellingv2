@@ -55,7 +55,7 @@ export function PricingCTAButton({
     setError(null);
 
     try {
-      const plan = plans?.find((p) => p.interval === planInterval);
+      const plan = plans?.find((p: any) => p.interval === planInterval);
       if (!plan) throw new Error("Plan not available. Please try again.");
 
       const { checkoutUrl } = await initiateSubscription({ planId: plan.planId });

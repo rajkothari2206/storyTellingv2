@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { Check, Sparkles, Star, Zap, Shield, HelpCircle, X } from "lucide-react";
+import { Check, Star, Zap, Shield, HelpCircle, X } from "lucide-react";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { PricingFAQ } from "./PricingFAQ";
@@ -199,7 +199,7 @@ export default function PricingPage() {
               {/* Right: character + trust pills */}
               <div className="flex items-center gap-4 flex-shrink-0">
                 <div className="hidden sm:flex flex-col gap-1.5">
-                  {["No credit card", "7-day free trial", "Cancel anytime"].map((t) => (
+                  {["No credit card", "250 free credits", "Cancel anytime"].map((t) => (
                     <span key={t} className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: "rgba(45,45,45,0.55)", fontFamily: "'Nunito', sans-serif" }}>
                       <Check size={13} style={{ color: "var(--lf-teal)" }} /> {t}
                     </span>
