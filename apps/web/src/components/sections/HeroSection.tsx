@@ -118,7 +118,7 @@ export function HeroSection() {
                   style={{ fontSize: "1.05rem", padding: "0.9rem 2.25rem" }}
                 >
                   <LayoutDashboard size={17} />
-                  Go to Dashboard
+                  Go to Storyboard
                 </Link>
               ) : (
                 <Link

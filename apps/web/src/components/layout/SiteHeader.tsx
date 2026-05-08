@@ -156,7 +156,7 @@ export function SiteHeader() {
                 style={{ fontSize: 14, padding: "0.5rem 1.25rem" }}
               >
                 <LayoutDashboard size={14} />
-                Dashboard
+                Storyboard
               </Link>
               <UserPill variant="light" />
             </div>
@@ -228,7 +228,7 @@ export function SiteHeader() {
                     className="btn-primary w-full text-center"
                   >
                     <LayoutDashboard size={16} />
-                    Dashboard
+                    Storyboard
                   </Link>
                   <div className="flex justify-center pt-1">
                     <UserPill variant="light" />

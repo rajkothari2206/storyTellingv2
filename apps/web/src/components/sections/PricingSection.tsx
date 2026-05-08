@@ -20,7 +20,7 @@ const plans = [
     ],
     locked: ["5-min stories", "Voice narration", "AI illustrations"],
     cta: "Start free",
-    ctaLoggedIn: "Go to Dashboard",
+    ctaLoggedIn: "Go to Storyboard",
     href: "/sign-up",
     hrefLoggedIn: "/dashboard",
     style: "ghost",

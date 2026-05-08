@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Sparkles, Play, Star, BookOpen } from "lucide-react";
+import { Star, BookOpen } from "lucide-react";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { HeroCTA, ThemeCTA, BottomCTA } from "./StoryCTA";
 
 export const metadata: Metadata = {
   title: "Story Themes — Adventure, Friendship, Space & More",
@@ -126,9 +127,7 @@ export default function StoriesPage() {
             </p>
 
             <div className="flex flex-wrap gap-3 justify-center mt-8">
-              <Link href="/sign-up" className="btn-primary" style={{ fontSize: "1rem" }}>
-                <Sparkles size={18} /> Create a story free
-              </Link>
+              <HeroCTA />
               <Link href="#themes" className="btn-ghost" style={{ fontSize: "1rem" }}>
                 Browse themes
               </Link>
@@ -247,13 +246,7 @@ export default function StoriesPage() {
                   </div>
 
                   <div className="px-6 pb-6">
-                    <Link
-                      href="/sign-up"
-                      className="btn-primary w-full justify-center"
-                      style={{ fontSize: "0.9rem" }}
-                    >
-                      <Play size={14} /> Create this story
-                    </Link>
+                    <ThemeCTA />
                   </div>
                 </div>
               ))}
@@ -346,9 +339,7 @@ export default function StoriesPage() {
             <p className="mt-4 mb-8" style={{ color: "rgba(255,255,255,0.6)", fontSize: "1rem", lineHeight: 1.7 }}>
               250 free credits. No credit card. Your child&apos;s name in a story in under 2 minutes.
             </p>
-            <Link href="/sign-up" className="btn-primary" style={{ fontSize: "1rem", padding: "0.85rem 2.2rem" }}>
-              <Sparkles size={18} /> Start free today
-            </Link>
+            <BottomCTA />
           </div>
         </section>
       </main>
