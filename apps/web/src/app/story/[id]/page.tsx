@@ -315,6 +315,7 @@ interface StoryShape {
   content?: string;            // full narrative text (all scenes combined)
   sceneMetadata?: SceneMeta[];
   params?: { theme?: string; language?: string; lesson?: string; childName?: string };
+  audioDurationSeconds?: number; // stored at generation time; used when audio can't report duration
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -425,6 +426,18 @@ function StoryViewer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+
+  // Seed duration from stored value as soon as story data arrives.
+  // Convex storage has no Accept-Ranges support so the audio element reports
+  // duration = Infinity (streaming mode). The stored value (calculated from
+  // byteSize / bitrate at generation time) gives an accurate fallback.
+  useEffect(() => {
+    const stored = story?.audioDurationSeconds;
+    if (stored && stored > 0) {
+      setDuration(prev => (prev > 0 && isFinite(prev) ? prev : stored));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [story?.audioDurationSeconds]);
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
   const [seeking, setSeeking] = useState(false);
@@ -531,8 +544,18 @@ function StoryViewer({
   const onTimeUpdate = () => {
     if (audioRef.current && !seeking) setCurrentTime(audioRef.current.currentTime);
   };
+  // Accept a finite duration from the audio element; ignore Infinity (no Accept-Ranges on Convex).
+  // The stored audioDurationSeconds (seeded above) already shows a sensible value.
   const onLoadedMetadata = () => {
-    if (audioRef.current) setDuration(audioRef.current.duration);
+    if (!audioRef.current) return;
+    const d = audioRef.current.duration;
+    if (isFinite(d) && d > 0) setDuration(d);
+  };
+  // durationchange fires later as the browser buffers more — catch it too.
+  const onDurationChange = () => {
+    if (!audioRef.current) return;
+    const d = audioRef.current.duration;
+    if (isFinite(d) && d > 0) setDuration(d);
   };
   const onEnded = () => setIsPlaying(false);
 
@@ -1001,7 +1024,7 @@ function StoryViewer({
 
               {/* Hidden audio elements */}
               {narrationUrl && (
-                <audio ref={audioRef} src={narrationUrl} onTimeUpdate={onTimeUpdate} onLoadedMetadata={onLoadedMetadata} onEnded={onEnded} preload="auto" />
+                <audio ref={audioRef} src={narrationUrl} onTimeUpdate={onTimeUpdate} onLoadedMetadata={onLoadedMetadata} onDurationChange={onDurationChange} onEnded={onEnded} preload="auto" />
               )}
               <audio ref={bgAudioRef} src={bgPlaylist[bgTrackIdx]} preload="auto" onEnded={() => setBgTrackIdx(i => (i + 1) % bgPlaylist.length)} />
 
