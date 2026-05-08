@@ -81,3 +81,90 @@ export const _addCredits = mutation({
         return { success: true };
     },
 });
+export const adminGetUserCredits = query({
+    args: { userId: v.string() },
+    handler: async (ctx, { userId }) => {
+        // Verify caller is admin
+        const user = await authComponent.getAuthUser(ctx);
+        if (!user) throw new Error("Not authenticated");
+        const callerIdentifier = String((user as any).userId || (user as any)._id);
+        const callerRole = await ctx.db
+            .query("user_roles")
+            .withIndex("by_user", (q) => q.eq("userId", callerIdentifier))
+            .first();
+        if (callerRole?.role !== "admin") throw new Error("Admin access required");
+
+        const credit = await ctx.db
+            .query("user_credits")
+            .withIndex("by_user", (q) => q.eq("userId", userId))
+            .order("desc")
+            .first();
+        return credit ?? null;
+    },
+});
+
+export const adminAdjustCredits = mutation({
+    args: {
+        userId: v.string(),
+        amount: v.number(), // positive = add, negative = remove
+        reason: v.optional(v.string()),
+    },
+    handler: async (ctx, { userId, amount, reason }) => {
+        // Verify caller is admin
+        const user = await authComponent.getAuthUser(ctx);
+        if (!user) throw new Error("Not authenticated");
+        const callerIdentifier = String((user as any).userId || (user as any)._id);
+        const callerRole = await ctx.db
+            .query("user_roles")
+            .withIndex("by_user", (q) => q.eq("userId", callerIdentifier))
+            .first();
+        if (callerRole?.role !== "admin") throw new Error("Admin access required");
+
+        const userCredit = await ctx.db
+            .query("user_credits")
+            .withIndex("by_user", (q) => q.eq("userId", userId))
+            .order("desc")
+            .first();
+
+        if (!userCredit) {
+            if (amount <= 0) throw new Error("No credit record found for this user");
+            // Create credit record
+            await ctx.db.insert("user_credits", {
+                userId,
+                totalCredits: amount,
+                usedCredits: 0,
+                availableCredits: amount,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+            });
+        } else {
+            const newAvailable = Math.max(0, userCredit.availableCredits + amount);
+            const newTotal = amount > 0
+                ? userCredit.totalCredits + amount  // adding credits increases total
+                : userCredit.totalCredits;           // removing credits doesn't change total earned
+            await ctx.db.patch(userCredit._id, {
+                totalCredits: newTotal,
+                availableCredits: newAvailable,
+                updatedAt: Date.now(),
+            });
+        }
+        return { success: true };
+    },
+});
+
+export const adminListAllCredits = query({
+    args: {},
+    handler: async (ctx) => {
+        // Verify caller is admin
+        const user = await authComponent.getAuthUser(ctx);
+        if (!user) throw new Error("Not authenticated");
+        const callerIdentifier = String((user as any).userId || (user as any)._id);
+        const callerRole = await ctx.db
+            .query("user_roles")
+            .withIndex("by_user", (q) => q.eq("userId", callerIdentifier))
+            .first();
+        if (callerRole?.role !== "admin") throw new Error("Admin access required");
+
+        return await ctx.db.query("user_credits").collect();
+    },
+});
