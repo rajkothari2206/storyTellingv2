@@ -215,8 +215,133 @@ function StoriesTab({ isAdmin }: { isAdmin: boolean }) {
 
 // ─── Tab: Users ───────────────────────────────────────────────────────────────
 
+function CreditAdjustRow({ userId, creditMap }: { userId: string; creditMap: Map<string, any> }) {
+  const adjustCredits = useMutation((api as any).credit.adminAdjustCredits);
+  const [amount, setAmount] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState<"success" | "error" | null>(null);
+
+  const credit = creditMap.get(userId);
+  const available = credit?.availableCredits ?? null;
+  const total = credit?.totalCredits ?? null;
+
+  async function handleAdjust(sign: 1 | -1) {
+    const n = parseInt(amount, 10);
+    if (!n || n <= 0) return;
+    setSaving(true);
+    setResult(null);
+    try {
+      await adjustCredits({ userId, amount: sign * n });
+      setAmount("");
+      setResult("success");
+      setTimeout(() => setResult(null), 2000);
+    } catch {
+      setResult("error");
+      setTimeout(() => setResult(null), 3000);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <td style={{ ...TD_STYLE, whiteSpace: "nowrap" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {/* Balance display */}
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <span
+            style={{
+              fontFamily: "'Baloo 2', sans-serif",
+              fontWeight: 700,
+              fontSize: "0.88rem",
+              color: available !== null ? (available < 50 ? "#dc2626" : "var(--lf-teal)") : "rgba(45,45,45,0.4)",
+            }}
+          >
+            {available !== null ? available : "—"}
+          </span>
+          {total !== null && (
+            <span style={{ fontSize: "0.75rem", color: "rgba(45,45,45,0.4)" }}>
+              / {total} total
+            </span>
+          )}
+          {result === "success" && (
+            <span style={{ fontSize: "0.75rem", color: "#16a34a", fontWeight: 700 }}>✓ Saved</span>
+          )}
+          {result === "error" && (
+            <span style={{ fontSize: "0.75rem", color: "#dc2626", fontWeight: 700 }}>✗ Failed</span>
+          )}
+        </div>
+        {/* Adjust controls */}
+        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+          <input
+            type="number"
+            min={1}
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="amt"
+            style={{
+              width: 60,
+              padding: "3px 6px",
+              borderRadius: "0.4rem",
+              border: "1.5px solid rgba(0,0,0,0.12)",
+              fontFamily: "'Nunito', sans-serif",
+              fontSize: "0.82rem",
+              color: "var(--lf-dark)",
+              background: "#fff",
+              outline: "none",
+            }}
+          />
+          <button
+            onClick={() => handleAdjust(1)}
+            disabled={saving || !amount}
+            title="Add credits"
+            style={{
+              padding: "3px 8px",
+              borderRadius: "0.4rem",
+              border: "none",
+              background: "rgba(0,184,166,0.12)",
+              color: "#0d7a6e",
+              fontWeight: 700,
+              fontSize: "0.82rem",
+              cursor: saving || !amount ? "not-allowed" : "pointer",
+              opacity: saving || !amount ? 0.5 : 1,
+            }}
+          >
+            +
+          </button>
+          <button
+            onClick={() => handleAdjust(-1)}
+            disabled={saving || !amount}
+            title="Remove credits"
+            style={{
+              padding: "3px 8px",
+              borderRadius: "0.4rem",
+              border: "none",
+              background: "rgba(220,38,38,0.1)",
+              color: "#b91c1c",
+              fontWeight: 700,
+              fontSize: "0.82rem",
+              cursor: saving || !amount ? "not-allowed" : "pointer",
+              opacity: saving || !amount ? 0.5 : 1,
+            }}
+          >
+            −
+          </button>
+        </div>
+      </div>
+    </td>
+  );
+}
+
 function UsersTab({ isAdmin }: { isAdmin: boolean }) {
   const users = useQuery(api.auth.listAllUsers, isAdmin ? {} : "skip") as any[] | undefined;
+  const allCredits = useQuery((api as any).credit.adminListAllCredits, isAdmin ? {} : "skip") as any[] | undefined;
+
+  // Build a map of userId → credit record
+  const creditMap = useMemo(() => {
+    const map = new Map<string, any>();
+    (allCredits ?? []).forEach((c: any) => map.set(c.userId, c));
+    return map;
+  }, [allCredits]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -238,12 +363,13 @@ function UsersTab({ isAdmin }: { isAdmin: boolean }) {
                 <th style={TH_STYLE}>Child Name</th>
                 <th style={TH_STYLE}>Child Age</th>
                 <th style={TH_STYLE}>Joined</th>
+                <th style={TH_STYLE}>Credits</th>
               </tr>
             </thead>
             <tbody>
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ ...TD_STYLE, textAlign: "center", color: "rgba(45,45,45,0.4)", padding: 32 }}>
+                  <td colSpan={6} style={{ ...TD_STYLE, textAlign: "center", color: "rgba(45,45,45,0.4)", padding: 32 }}>
                     No users found
                   </td>
                 </tr>
@@ -255,6 +381,7 @@ function UsersTab({ isAdmin }: { isAdmin: boolean }) {
                     <td style={TD_STYLE}>{u.profile?.childName ?? "—"}</td>
                     <td style={TD_STYLE}>{u.profile?.childAge ?? "—"}</td>
                     <td style={{ ...TD_STYLE, whiteSpace: "nowrap" }}>{formatDate(u.createdAt)}</td>
+                    <CreditAdjustRow userId={u.id} creditMap={creditMap} />
                   </tr>
                 ))
               )}
