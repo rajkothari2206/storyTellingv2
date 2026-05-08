@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Sparkles, Loader2 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useAction, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { api } from "../../../convex/_generated/api";
 
 interface PricingCTAButtonProps {
   planInterval: "monthly" | "yearly" | "free";
