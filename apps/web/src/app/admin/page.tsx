@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { authClient } from "@/lib/auth-client";
+import { BLOG_POSTS } from "@/lib/blog-data";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -188,12 +189,159 @@ class TabErrorBoundary extends Component<
   }
 }
 
+// ─── Story Modal ──────────────────────────────────────────────────────────────
+
+function StoryModal({ story, users, onClose }: { story: any; users: any[] | undefined; onClose: () => void }) {
+  const sceneUrls = useQuery(
+    (api as any).stories.getSceneImageUrls,
+    story?.sceneMetadata?.length > 0 ? { storyId: story._id } : "skip"
+  ) as any[] | undefined;
+
+  // Correlate userId → user info
+  const user = users?.find((u: any) => u.id === story.userId);
+
+  const paragraphs = (story.content ?? "").split(/\n+/).filter(Boolean);
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100 }} />
+      <div
+        style={{
+          position: "fixed", inset: "5vh 5vw",
+          background: "#fffef9", borderRadius: "1.2rem",
+          zIndex: 101, overflowY: "auto",
+          boxShadow: "0 24px 80px rgba(0,0,0,0.25)",
+          display: "flex", flexDirection: "column",
+        }}
+      >
+        {/* Header */}
+        <div style={{ background: "var(--lf-dark)", padding: "20px 28px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderRadius: "1.2rem 1.2rem 0 0", flexShrink: 0 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1.25rem", color: "#fff", margin: "0 0 6px", lineHeight: 1.3 }}>
+              {story.title ?? "Untitled"}
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+              <StatusBadge status={story.status} />
+              {story.params?.theme && (
+                <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.08)", padding: "2px 10px", borderRadius: "999px" }}>
+                  {story.params.theme}
+                </span>
+              )}
+              <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.75rem", color: "rgba(255,255,255,0.4)" }}>
+                {formatDate(story.createdAt)}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "rgba(255,255,255,0.8)", borderRadius: "0.5rem", padding: "6px 14px", cursor: "pointer", fontFamily: "'Nunito', sans-serif", fontWeight: 700, marginLeft: 16, flexShrink: 0 }}
+          >
+            ✕ Close
+          </button>
+        </div>
+
+        <div style={{ padding: "24px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
+          {/* User + params */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 12 }}>
+            <InfoCard label="User" value={user ? `${user.name ?? "—"} (${user.email})` : story.userId} />
+            <InfoCard label="Child" value={user?.profile ? `${user.profile.childName}, age ${user.profile.childAge}` : "—"} />
+            <InfoCard label="Theme" value={story.params?.theme ?? "—"} />
+            <InfoCard label="Lesson" value={story.params?.lesson ?? "—"} />
+            <InfoCard label="Length" value={story.params?.length ?? "—"} />
+            <InfoCard label="Language" value={story.params?.language ?? "EN"} />
+            <InfoCard label="Voice narration" value={story.narrationFilePath ? "Yes" : "No"} />
+            <InfoCard label="Scenes" value={String(story.sceneMetadata?.length ?? 0)} />
+          </div>
+
+          {/* Scene images */}
+          {sceneUrls && sceneUrls.length > 0 && (
+            <div>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.82rem", color: "rgba(45,45,45,0.5)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 10px" }}>
+                Scene Images
+              </p>
+              <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }}>
+                {sceneUrls.map((sc: any) => (
+                  <div key={sc.sceneNumber} style={{ flexShrink: 0, display: "flex", flexDirection: "column", gap: 4, alignItems: "center" }}>
+                    {sc.url ? (
+                      <img src={sc.url} alt={`Scene ${sc.sceneNumber}`} style={{ width: 120, height: 90, objectFit: "cover", borderRadius: "0.5rem", border: "1.5px solid rgba(0,0,0,0.08)" }} />
+                    ) : (
+                      <div style={{ width: 120, height: 90, background: "rgba(0,0,0,0.06)", borderRadius: "0.5rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <span style={{ fontSize: "0.7rem", color: "rgba(45,45,45,0.4)" }}>No image</span>
+                      </div>
+                    )}
+                    <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.7rem", color: "rgba(45,45,45,0.5)" }}>Scene {sc.sceneNumber}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Story content */}
+          {paragraphs.length > 0 && (
+            <div>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.82rem", color: "rgba(45,45,45,0.5)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 12px" }}>
+                Story Content
+              </p>
+              <div
+                style={{
+                  background: "#fff",
+                  border: "1.5px solid rgba(0,0,0,0.06)",
+                  borderRadius: "1rem",
+                  padding: "20px 24px",
+                  maxHeight: 400,
+                  overflowY: "auto",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 12,
+                }}
+              >
+                {paragraphs.map((p: string, i: number) => (
+                  <p key={i} style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.92rem", lineHeight: 1.7, color: "var(--lf-dark)", margin: 0 }}>
+                    {p}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Scene descriptions */}
+          {story.sceneMetadata && story.sceneMetadata.length > 0 && (
+            <div>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.82rem", color: "rgba(45,45,45,0.5)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 10px" }}>
+                Scene Descriptions
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {story.sceneMetadata.map((sc: any) => (
+                  <div key={sc.sceneNumber} style={{ display: "flex", gap: 12, alignItems: "flex-start", background: "#fff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "0.6rem", padding: "10px 14px" }}>
+                    <span style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "0.8rem", color: "var(--lf-teal)", flexShrink: 0, marginTop: 2 }}>S{sc.sceneNumber}</span>
+                    <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.85rem", color: "rgba(45,45,45,0.7)", lineHeight: 1.5 }}>{sc.description}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function InfoCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ background: "#fff", border: "1.5px solid rgba(0,0,0,0.06)", borderRadius: "0.7rem", padding: "10px 14px" }}>
+      <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.7rem", fontWeight: 700, color: "rgba(45,45,45,0.45)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 3px" }}>{label}</p>
+      <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.88rem", fontWeight: 600, color: "var(--lf-dark)", margin: 0 }}>{value}</p>
+    </div>
+  );
+}
+
 // ─── Tab: Stories ─────────────────────────────────────────────────────────────
 
-function StoriesTab({ isAdmin }: { isAdmin: boolean }) {
+function StoriesTab({ isAdmin, users }: { isAdmin: boolean; users: any[] | undefined }) {
   const stories = useQuery(api.stories.listAll, isAdmin ? {} : "skip") as any[] | undefined;
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedStory, setSelectedStory] = useState<any | null>(null);
 
   const filtered = useMemo(() => {
     const list = stories ?? [];
@@ -205,231 +353,472 @@ function StoriesTab({ isAdmin }: { isAdmin: boolean }) {
   }, [stories, search, statusFilter]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-        <input
-          placeholder="Search by title…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ ...InputStyle(), maxWidth: 280 }}
-        />
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          style={{ ...InputStyle(), width: "auto" }}
-        >
-          <option value="all">All statuses</option>
-          <option value="ready">Complete</option>
-          <option value="generating">Generating</option>
-          <option value="queued">Queued</option>
-          <option value="text_ready">Text ready</option>
-          <option value="images_ready">Images ready</option>
-          <option value="voice_ready">Voice ready</option>
-          <option value="error">Failed</option>
-        </select>
-        <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.85rem", color: "rgba(45,45,45,0.5)", marginLeft: "auto" }}>
-          {filtered.length} stories
-        </span>
-      </div>
-
-      {stories === undefined ? (
-        <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><Spinner /></div>
-      ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table style={TABLE_STYLE}>
-            <thead>
-              <tr>
-                <th style={TH_STYLE}>Title</th>
-                <th style={TH_STYLE}>Theme</th>
-                <th style={TH_STYLE}>Language</th>
-                <th style={TH_STYLE}>Status</th>
-                <th style={TH_STYLE}>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={5} style={{ ...TD_STYLE, textAlign: "center", color: "rgba(45,45,45,0.4)", padding: 32 }}>
-                    No stories found
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((s: any, i: number) => (
-                  <tr key={s._id} style={{ background: i % 2 === 0 ? "#fff" : "rgba(0,0,0,0.02)" }}>
-                    <td style={TD_STYLE}>
-                      <span style={{ fontWeight: 600 }}>{s.title ?? "Untitled"}</span>
-                    </td>
-                    <td style={TD_STYLE}>{s.params?.theme ?? "—"}</td>
-                    <td style={TD_STYLE}>{s.params?.language ?? "—"}</td>
-                    <td style={TD_STYLE}><StatusBadge status={s.status} /></td>
-                    <td style={{ ...TD_STYLE, whiteSpace: "nowrap" }}>{formatDate(s.createdAt)}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+    <>
+      {selectedStory && (
+        <StoryModal story={selectedStory} users={users} onClose={() => setSelectedStory(null)} />
       )}
-    </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <input
+            placeholder="Search by title…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ ...InputStyle(), maxWidth: 280 }}
+          />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            style={{ ...InputStyle(), width: "auto" }}
+          >
+            <option value="all">All statuses</option>
+            <option value="ready">Complete</option>
+            <option value="generating">Generating</option>
+            <option value="queued">Queued</option>
+            <option value="text_ready">Text ready</option>
+            <option value="images_ready">Images ready</option>
+            <option value="voice_ready">Voice ready</option>
+            <option value="error">Failed</option>
+          </select>
+          <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.85rem", color: "rgba(45,45,45,0.5)", marginLeft: "auto" }}>
+            {filtered.length} stories
+          </span>
+        </div>
+
+        {stories === undefined ? (
+          <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><Spinner /></div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={TABLE_STYLE}>
+              <thead>
+                <tr>
+                  <th style={TH_STYLE}>Title</th>
+                  <th style={TH_STYLE}>User · Child</th>
+                  <th style={TH_STYLE}>Theme</th>
+                  <th style={TH_STYLE}>Length</th>
+                  <th style={TH_STYLE}>Language</th>
+                  <th style={TH_STYLE}>Status</th>
+                  <th style={TH_STYLE}>Date</th>
+                  <th style={{ ...TH_STYLE, textAlign: "right" }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} style={{ ...TD_STYLE, textAlign: "center", color: "rgba(45,45,45,0.4)", padding: 32 }}>
+                      No stories found
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((s: any, i: number) => {
+                    const user = users?.find((u: any) => u.id === s.userId);
+                    return (
+                      <tr
+                        key={s._id}
+                        style={{ background: i % 2 === 0 ? "#fff" : "rgba(0,0,0,0.02)", cursor: "pointer" }}
+                        onClick={() => setSelectedStory(s)}
+                      >
+                        <td style={{ ...TD_STYLE, fontWeight: 600, maxWidth: 220 }}>
+                          {s.title ?? "Untitled"}
+                        </td>
+                        <td style={TD_STYLE}>
+                          {user ? (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                              <span style={{ fontSize: "0.83rem", fontWeight: 600 }}>{user.name ?? user.email}</span>
+                              <span style={{ fontSize: "0.75rem", color: "rgba(45,45,45,0.5)" }}>{user.profile?.childName}</span>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: "0.75rem", color: "rgba(45,45,45,0.4)", fontFamily: "monospace" }}>
+                              {s.userId?.slice(-8)}
+                            </span>
+                          )}
+                        </td>
+                        <td style={TD_STYLE}>{s.params?.theme ?? "—"}</td>
+                        <td style={TD_STYLE}>{s.params?.length ?? "—"}</td>
+                        <td style={TD_STYLE}>{s.params?.language ?? "EN"}</td>
+                        <td style={TD_STYLE}><StatusBadge status={s.status} /></td>
+                        <td style={{ ...TD_STYLE, whiteSpace: "nowrap", fontSize: "0.82rem" }}>{formatDate(s.createdAt)}</td>
+                        <td style={{ ...TD_STYLE, textAlign: "right" }}>
+                          <button
+                            onClick={e => { e.stopPropagation(); setSelectedStory(s); }}
+                            style={{ background: "rgba(0,184,166,0.1)", border: "none", color: "var(--lf-teal)", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.8rem", padding: "4px 12px", borderRadius: "0.5rem", cursor: "pointer", whiteSpace: "nowrap" }}
+                          >
+                            View →
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
 // ─── Tab: Users ───────────────────────────────────────────────────────────────
 
-type AdjustFn = (args: { userId: string; credits: number }) => Promise<unknown>;
+function SubscriptionBadge({ subscription }: { subscription: any }) {
+  if (!subscription || subscription.status !== "active") {
+    return (
+      <span style={{ display: "inline-block", padding: "2px 10px", borderRadius: "999px", background: "rgba(0,0,0,0.06)", color: "rgba(45,45,45,0.5)", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.75rem" }}>
+        Free
+      </span>
+    );
+  }
+  const isYearly = subscription.interval === "yearly";
+  return (
+    <span style={{ display: "inline-block", padding: "2px 10px", borderRadius: "999px", background: isYearly ? "rgba(0,184,166,0.12)" : "rgba(249,199,0,0.18)", color: isYearly ? "#0d7a6e" : "#8a6900", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.75rem" }}>
+      {isYearly ? "✦ Yearly" : "✦ Monthly"}
+    </span>
+  );
+}
 
-function CreditAdjustRow({ userId, onAdjust }: { userId: string; onAdjust: AdjustFn }) {
+function DrawerSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div style={{ background: "#fff", border: "1.5px solid rgba(0,0,0,0.06)", borderRadius: "1rem", padding: "18px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
+      <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "0.78rem", color: "rgba(45,45,45,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 4px" }}>{title}</p>
+      {children}
+    </div>
+  );
+}
+
+function DrawerRow({ label, value, children }: { label: string; value?: string | number | null; children?: ReactNode }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+      <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.82rem", color: "rgba(45,45,45,0.5)", flexShrink: 0 }}>{label}</span>
+      {children ?? (
+        <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.88rem", color: value != null ? "var(--lf-dark)" : "rgba(45,45,45,0.3)", fontWeight: 500, textAlign: "right" }}>
+          {value ?? "—"}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function UserDrawer({ user, onClose }: { user: any; onClose: () => void }) {
+  const adminAddCredits = useMutation((api as any).auth.adminAddCredits);
   const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
+  const [sendEmail, setSendEmail] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState<"added" | "removed" | "error" | null>(null);
+  const [adjustResult, setAdjustResult] = useState<{ ok: boolean; balance?: number; msg?: string } | null>(null);
+  const [liveCredits, setLiveCredits] = useState<number | null>(null);
 
   async function handleAdjust(sign: 1 | -1) {
     const n = parseInt(amount, 10);
     if (!n || n <= 0) return;
     setSaving(true);
-    setResult(null);
+    setAdjustResult(null);
     try {
-      await onAdjust({ userId, credits: sign * n });
+      const result: any = await adminAddCredits({
+        userId: user.id,
+        userEmail: user.email,
+        credits: sign * n,
+        note: note || undefined,
+        sendEmail,
+      });
       setAmount("");
-      setResult(sign === 1 ? "added" : "removed");
-      setTimeout(() => setResult(null), 2500);
-    } catch {
-      setResult("error");
-      setTimeout(() => setResult(null), 3000);
+      setNote("");
+      setLiveCredits(result.newBalance);
+      setAdjustResult({ ok: true, balance: result.newBalance });
+      setTimeout(() => setAdjustResult(null), 5000);
+    } catch (e: any) {
+      setAdjustResult({ ok: false, msg: e?.message ?? "Failed" });
+      setTimeout(() => setAdjustResult(null), 4000);
     } finally {
       setSaving(false);
     }
   }
 
+  const availableCredits = liveCredits ?? user.credits?.available ?? null;
+
   return (
-    <td style={{ ...TD_STYLE, whiteSpace: "nowrap" }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-        {/* Status message */}
-        <div style={{ minHeight: 18 }}>
-          {result === "added" && (
-            <span style={{ fontSize: "0.75rem", color: "#16a34a", fontWeight: 700 }}>✓ Credits added</span>
-          )}
-          {result === "removed" && (
-            <span style={{ fontSize: "0.75rem", color: "#d97706", fontWeight: 700 }}>✓ Credits removed</span>
-          )}
-          {result === "error" && (
-            <span style={{ fontSize: "0.75rem", color: "#dc2626", fontWeight: 700 }}>✗ Failed</span>
-          )}
+    <>
+      <div
+        onClick={onClose}
+        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 100 }}
+      />
+      <div
+        style={{
+          position: "fixed", top: 0, right: 0, bottom: 0,
+          width: "min(520px,100vw)", background: "#fffef9",
+          zIndex: 101, overflowY: "auto",
+          boxShadow: "-8px 0 48px rgba(0,0,0,0.18)",
+          display: "flex", flexDirection: "column",
+        }}
+      >
+        {/* Header */}
+        <div style={{ background: "var(--lf-dark)", padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0 }}>
+          <div>
+            <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "#fff", margin: 0 }}>
+              {user.name ?? user.email}
+            </p>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.82rem", color: "rgba(255,255,255,0.5)", margin: "3px 0 0" }}>
+              {user.email}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "rgba(255,255,255,0.8)", borderRadius: "0.5rem", padding: "6px 14px", cursor: "pointer", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.85rem" }}
+          >
+            ✕
+          </button>
         </div>
-        {/* Adjust controls */}
-        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-          <input
-            type="number"
-            min={1}
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="amount"
-            style={{
-              width: 68,
-              padding: "4px 6px",
-              borderRadius: "0.4rem",
-              border: "1.5px solid rgba(0,0,0,0.12)",
-              fontFamily: "'Nunito', sans-serif",
-              fontSize: "0.82rem",
-              color: "var(--lf-dark)",
-              background: "#fff",
-              outline: "none",
-            }}
-          />
-          <button
-            onClick={() => handleAdjust(1)}
-            disabled={saving || !amount}
-            title="Add credits"
-            style={{
-              padding: "4px 10px",
-              borderRadius: "0.4rem",
-              border: "none",
-              background: "rgba(0,184,166,0.12)",
-              color: "#0d7a6e",
-              fontWeight: 700,
-              fontSize: "0.85rem",
-              cursor: saving || !amount ? "not-allowed" : "pointer",
-              opacity: saving || !amount ? 0.5 : 1,
-            }}
-          >
-            {saving ? "…" : "+"}
-          </button>
-          <button
-            onClick={() => handleAdjust(-1)}
-            disabled={saving || !amount}
-            title="Remove credits"
-            style={{
-              padding: "4px 10px",
-              borderRadius: "0.4rem",
-              border: "none",
-              background: "rgba(220,38,38,0.1)",
-              color: "#b91c1c",
-              fontWeight: 700,
-              fontSize: "0.85rem",
-              cursor: saving || !amount ? "not-allowed" : "pointer",
-              opacity: saving || !amount ? 0.5 : 1,
-            }}
-          >
-            {saving ? "…" : "−"}
-          </button>
+
+        <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16, flex: 1 }}>
+
+          {/* Account overview */}
+          <DrawerSection title="Account">
+            <DrawerRow label="Email" value={user.email} />
+            <DrawerRow label="Joined" value={formatDate(user.createdAt)} />
+            <DrawerRow label="Plan">
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <SubscriptionBadge subscription={user.subscription} />
+                {user.subscription?.createdAt && (
+                  <span style={{ fontSize: "0.75rem", color: "rgba(45,45,45,0.4)" }}>
+                    since {formatDate(user.subscription.createdAt)}
+                  </span>
+                )}
+              </div>
+            </DrawerRow>
+          </DrawerSection>
+
+          {/* Credits */}
+          <DrawerSection title="Credits">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 14 }}>
+              {[
+                { label: "Available", val: availableCredits, accent: true },
+                { label: "Total Given", val: user.credits?.total ?? "—" },
+                { label: "Used", val: user.credits?.used ?? "—" },
+              ].map(({ label, val, accent }) => (
+                <div key={label} style={{ background: accent ? "rgba(0,184,166,0.08)" : "rgba(0,0,0,0.04)", borderRadius: "0.7rem", padding: "12px 14px" }}>
+                  <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.7rem", fontWeight: 700, color: "rgba(45,45,45,0.5)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 4px" }}>{label}</p>
+                  <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1.6rem", color: accent ? "var(--lf-teal)" : "var(--lf-dark)", margin: 0, lineHeight: 1 }}>
+                    {val ?? "—"}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {adjustResult && (
+              <div style={{ padding: "10px 14px", borderRadius: "0.6rem", marginBottom: 10, background: adjustResult.ok ? "rgba(0,184,166,0.1)" : "rgba(220,38,38,0.08)", border: `1px solid ${adjustResult.ok ? "rgba(0,184,166,0.2)" : "rgba(220,38,38,0.15)"}` }}>
+                <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.85rem", color: adjustResult.ok ? "#0d7a6e" : "#b91c1c" }}>
+                  {adjustResult.ok
+                    ? `✓ Done! New balance: ${adjustResult.balance} credits`
+                    : `✗ ${adjustResult.msg}`}
+                </span>
+              </div>
+            )}
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <input
+                type="number"
+                min={1}
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                placeholder="Number of credits"
+                style={InputStyle()}
+              />
+              <input
+                value={note}
+                onChange={e => setNote(e.target.value)}
+                placeholder="Note for user (e.g. bonus for early access)"
+                style={InputStyle()}
+              />
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontFamily: "'Nunito', sans-serif", fontSize: "0.85rem", color: "rgba(45,45,45,0.65)" }}>
+                <input
+                  type="checkbox"
+                  checked={sendEmail}
+                  onChange={e => setSendEmail(e.target.checked)}
+                  style={{ width: 15, height: 15, cursor: "pointer" }}
+                />
+                Email user about this change
+              </label>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  onClick={() => handleAdjust(1)}
+                  disabled={saving || !amount}
+                  style={{ flex: 1, padding: "10px", borderRadius: "0.7rem", border: "none", background: "rgba(0,184,166,0.12)", color: "#0d7a6e", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.88rem", cursor: saving || !amount ? "not-allowed" : "pointer", opacity: saving || !amount ? 0.5 : 1 }}
+                >
+                  {saving ? "…" : "+ Add Credits"}
+                </button>
+                <button
+                  onClick={() => handleAdjust(-1)}
+                  disabled={saving || !amount}
+                  style={{ flex: 1, padding: "10px", borderRadius: "0.7rem", border: "none", background: "rgba(220,38,38,0.08)", color: "#b91c1c", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.88rem", cursor: saving || !amount ? "not-allowed" : "pointer", opacity: saving || !amount ? 0.5 : 1 }}
+                >
+                  {saving ? "…" : "− Remove Credits"}
+                </button>
+              </div>
+            </div>
+          </DrawerSection>
+
+          {/* Story stats */}
+          <DrawerSection title="Story Activity">
+            <DrawerRow label="Total stories" value={user.storyCount ?? 0} />
+            <DrawerRow label="Last story" value={formatDate(user.lastStoryAt)} />
+            <DrawerRow label="Current streak" value={`${user.profile?.currentStreak ?? 0} days 🔥`} />
+            <DrawerRow label="Longest streak" value={`${user.profile?.longestStreak ?? 0} days`} />
+          </DrawerSection>
+
+          {/* Child 1 */}
+          {user.profile && (
+            <DrawerSection title={user.profile.child2Name ? "Child 1" : "Child Profile"}>
+              <DrawerRow label="Name" value={user.profile.childName} />
+              {user.profile.childNickName && <DrawerRow label="Nickname" value={user.profile.childNickName} />}
+              <DrawerRow label="Age" value={user.profile.childAge != null ? `${user.profile.childAge} yrs` : null} />
+              <DrawerRow label="Gender" value={user.profile.childGender} />
+              {user.profile.favoriteColor && <DrawerRow label="Fav colour" value={user.profile.favoriteColor} />}
+              {user.profile.favoriteAnimal && <DrawerRow label="Fav animal" value={user.profile.favoriteAnimal} />}
+            </DrawerSection>
+          )}
+
+          {/* Child 2 */}
+          {user.profile?.child2Name && (
+            <DrawerSection title="Child 2">
+              <DrawerRow label="Name" value={user.profile.child2Name} />
+              {user.profile.child2NickName && <DrawerRow label="Nickname" value={user.profile.child2NickName} />}
+              <DrawerRow label="Age" value={user.profile.child2Age != null ? `${user.profile.child2Age} yrs` : null} />
+              <DrawerRow label="Gender" value={user.profile.child2Gender} />
+              {user.profile.child2FavoriteColor && <DrawerRow label="Fav colour" value={user.profile.child2FavoriteColor} />}
+              {user.profile.child2FavoriteAnimal && <DrawerRow label="Fav animal" value={user.profile.child2FavoriteAnimal} />}
+            </DrawerSection>
+          )}
         </div>
       </div>
-    </td>
+    </>
   );
 }
 
 function UsersTabInner({ isAdmin }: { isAdmin: boolean }) {
   const users = useQuery(api.auth.listAllUsers, isAdmin ? {} : "skip") as any[] | undefined;
-  // Single useMutation call hoisted to parent — NOT one per row
-  const addCredits = useMutation((api as any).credit._addCredits) as AdjustFn;
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    if (!users) return [];
+    if (!search.trim()) return users;
+    const q = search.toLowerCase();
+    return users.filter((u: any) =>
+      (u.name ?? "").toLowerCase().includes(q) ||
+      (u.email ?? "").toLowerCase().includes(q) ||
+      (u.profile?.childName ?? "").toLowerCase().includes(q)
+    );
+  }, [users, search]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.85rem", color: "rgba(45,45,45,0.5)" }}>
-          {users === undefined ? "Loading…" : `${users.length} users`}
-        </span>
-      </div>
-
-      {users === undefined ? (
-        <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><Spinner /></div>
-      ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table style={TABLE_STYLE}>
-            <thead>
-              <tr>
-                <th style={TH_STYLE}>Parent Name</th>
-                <th style={TH_STYLE}>Email</th>
-                <th style={TH_STYLE}>Child Name</th>
-                <th style={TH_STYLE}>Child Age</th>
-                <th style={TH_STYLE}>Joined</th>
-                <th style={TH_STYLE}>Adjust Credits</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.length === 0 ? (
-                <tr>
-                  <td colSpan={6} style={{ ...TD_STYLE, textAlign: "center", color: "rgba(45,45,45,0.4)", padding: 32 }}>
-                    No users found
-                  </td>
-                </tr>
-              ) : (
-                users.map((u: any, i: number) => (
-                  <tr key={u.id} style={{ background: i % 2 === 0 ? "#fff" : "rgba(0,0,0,0.02)" }}>
-                    <td style={{ ...TD_STYLE, fontWeight: 600 }}>{u.name ?? "—"}</td>
-                    <td style={TD_STYLE}>{u.email ?? "—"}</td>
-                    <td style={TD_STYLE}>{u.profile?.childName ?? "—"}</td>
-                    <td style={TD_STYLE}>{u.profile?.childAge ?? "—"}</td>
-                    <td style={{ ...TD_STYLE, whiteSpace: "nowrap" }}>{formatDate(u.createdAt)}</td>
-                    <CreditAdjustRow userId={u.id} onAdjust={addCredits} />
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+    <>
+      {selectedUser && (
+        <UserDrawer user={selectedUser} onClose={() => setSelectedUser(null)} />
       )}
-    </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <input
+            placeholder="Search by name, email, child…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ ...InputStyle(), maxWidth: 300 }}
+          />
+          <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.85rem", color: "rgba(45,45,45,0.5)", marginLeft: "auto" }}>
+            {users === undefined ? "Loading…" : `${filtered.length} users`}
+          </span>
+        </div>
+
+        {users === undefined ? (
+          <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><Spinner /></div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={TABLE_STYLE}>
+              <thead>
+                <tr>
+                  <th style={TH_STYLE}>User</th>
+                  <th style={TH_STYLE}>Child</th>
+                  <th style={TH_STYLE}>Joined</th>
+                  <th style={TH_STYLE}>Credits</th>
+                  <th style={TH_STYLE}>Plan</th>
+                  <th style={TH_STYLE}>Stories</th>
+                  <th style={TH_STYLE}>Last Story</th>
+                  <th style={TH_STYLE}>Streak</th>
+                  <th style={{ ...TH_STYLE, textAlign: "right" }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} style={{ ...TD_STYLE, textAlign: "center", color: "rgba(45,45,45,0.4)", padding: 32 }}>
+                      No users found
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((u: any, i: number) => (
+                    <tr
+                      key={u.id}
+                      style={{ background: i % 2 === 0 ? "#fff" : "rgba(0,0,0,0.02)", cursor: "pointer" }}
+                      onClick={() => setSelectedUser(u)}
+                    >
+                      <td style={TD_STYLE}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                          <span style={{ fontWeight: 700 }}>{u.name ?? "—"}</span>
+                          <span style={{ fontSize: "0.78rem", color: "rgba(45,45,45,0.5)" }}>{u.email}</span>
+                        </div>
+                      </td>
+                      <td style={TD_STYLE}>
+                        {u.profile ? (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                            <span style={{ fontWeight: 600 }}>{u.profile.childName}</span>
+                            <span style={{ fontSize: "0.78rem", color: "rgba(45,45,45,0.5)" }}>
+                              Age {u.profile.childAge}
+                              {u.profile.child2Name && ` + ${u.profile.child2Name}`}
+                            </span>
+                          </div>
+                        ) : <span style={{ color: "rgba(45,45,45,0.3)" }}>—</span>}
+                      </td>
+                      <td style={{ ...TD_STYLE, whiteSpace: "nowrap", fontSize: "0.83rem" }}>
+                        {formatDate(u.createdAt)}
+                      </td>
+                      <td style={TD_STYLE}>
+                        {u.credits ? (
+                          <div>
+                            <span style={{ fontWeight: 700, color: "var(--lf-teal)" }}>{u.credits.available}</span>
+                            <span style={{ fontSize: "0.74rem", color: "rgba(45,45,45,0.4)" }}> / {u.credits.total}</span>
+                          </div>
+                        ) : (
+                          <span style={{ color: "rgba(45,45,45,0.3)", fontSize: "0.82rem" }}>—</span>
+                        )}
+                      </td>
+                      <td style={TD_STYLE}>
+                        <SubscriptionBadge subscription={u.subscription} />
+                      </td>
+                      <td style={{ ...TD_STYLE, fontWeight: 700 }}>{u.storyCount ?? 0}</td>
+                      <td style={{ ...TD_STYLE, whiteSpace: "nowrap", fontSize: "0.82rem" }}>
+                        {formatDate(u.lastStoryAt)}
+                      </td>
+                      <td style={TD_STYLE}>
+                        <span style={{ fontWeight: 600 }}>{u.profile?.currentStreak ?? 0}</span>
+                        <span style={{ fontSize: "0.74rem", color: "rgba(45,45,45,0.4)" }}>
+                          {" "}/ {u.profile?.longestStreak ?? 0}
+                        </span>
+                      </td>
+                      <td style={{ ...TD_STYLE, textAlign: "right" }}>
+                        <button
+                          onClick={e => { e.stopPropagation(); setSelectedUser(u); }}
+                          style={{ background: "rgba(0,184,166,0.1)", border: "none", color: "var(--lf-teal)", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.8rem", padding: "4px 12px", borderRadius: "0.5rem", cursor: "pointer", whiteSpace: "nowrap" }}
+                        >
+                          Details →
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -442,6 +831,53 @@ function UsersTab({ isAdmin }: { isAdmin: boolean }) {
 }
 
 // ─── Tab: Blog ────────────────────────────────────────────────────────────────
+
+// Displays static blog posts (from blog-data.ts) as read-only cards
+function StaticBlogList() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {BLOG_POSTS.map((post) => (
+        <div
+          key={post.slug}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            padding: "12px 16px",
+            background: "#fff",
+            border: "1.5px solid rgba(0,0,0,0.06)",
+            borderRadius: "0.8rem",
+          }}
+        >
+          <span style={{ fontSize: "1.3rem", flexShrink: 0 }}>{post.emoji}</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.92rem", color: "var(--lf-dark)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {post.title}
+            </p>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.78rem", color: "rgba(45,45,45,0.5)", margin: "2px 0 0" }}>
+              {post.date} · {post.readTime} · <span style={{ color: post.tagColor, fontWeight: 700 }}>{post.tag}</span>
+            </p>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            <span style={{ background: "rgba(0,184,166,0.1)", color: "#0d7a6e", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.72rem", padding: "2px 8px", borderRadius: "999px" }}>
+              Published
+            </span>
+            <span style={{ background: "rgba(0,0,0,0.06)", color: "rgba(45,45,45,0.5)", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.72rem", padding: "2px 8px", borderRadius: "999px" }}>
+              📄 Static
+            </span>
+            <Link
+              href={`/blog/${post.slug}`}
+              target="_blank"
+              style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.82rem", color: "var(--lf-teal)", textDecoration: "none" }}
+            >
+              View ↗
+            </Link>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 type BlogFormData = {
   title: string;
@@ -629,62 +1065,92 @@ function BlogTab({ isAdmin }: { isAdmin: boolean }) {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        <button onClick={openNew} style={{ padding: "9px 20px", borderRadius: "0.7rem", background: "var(--lf-teal)", border: "none", color: "#fff", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer" }}>
-          + New Post
-        </button>
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+
+      {/* ── Static blog posts (from codebase) ── */}
+      <div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <div>
+            <h3 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1rem", color: "var(--lf-dark)", margin: 0 }}>
+              Static Posts ({BLOG_POSTS.length})
+            </h3>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.78rem", color: "rgba(45,45,45,0.45)", margin: "2px 0 0" }}>
+              Hardcoded in codebase — edit via <code style={{ background: "rgba(0,0,0,0.05)", padding: "1px 5px", borderRadius: "0.3rem" }}>src/lib/blog-data.ts</code>
+            </p>
+          </div>
+        </div>
+        <StaticBlogList />
       </div>
 
-      {blogs === undefined ? (
-        <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><Spinner /></div>
-      ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table style={TABLE_STYLE}>
-            <thead>
-              <tr>
-                <th style={TH_STYLE}>Title</th>
-                <th style={TH_STYLE}>Slug</th>
-                <th style={TH_STYLE}>Status</th>
-                <th style={TH_STYLE}>Date</th>
-                <th style={{ ...TH_STYLE, textAlign: "right" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {blogs.length === 0 ? (
+      {/* ── Divider ── */}
+      <div style={{ height: 1, background: "rgba(0,0,0,0.07)" }} />
+
+      {/* ── CMS blog posts (from Convex) ── */}
+      <div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <div>
+            <h3 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1rem", color: "var(--lf-dark)", margin: 0 }}>
+              CMS Posts {blogs !== undefined ? `(${blogs.length})` : ""}
+            </h3>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.78rem", color: "rgba(45,45,45,0.45)", margin: "2px 0 0" }}>
+              Managed via Convex database — create, edit, publish here
+            </p>
+          </div>
+          <button onClick={openNew} style={{ padding: "9px 20px", borderRadius: "0.7rem", background: "var(--lf-teal)", border: "none", color: "#fff", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer" }}>
+            + New Post
+          </button>
+        </div>
+
+        {blogs === undefined ? (
+          <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><Spinner /></div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={TABLE_STYLE}>
+              <thead>
                 <tr>
-                  <td colSpan={5} style={{ ...TD_STYLE, textAlign: "center", color: "rgba(45,45,45,0.4)", padding: 32 }}>
-                    No posts yet
-                  </td>
+                  <th style={TH_STYLE}>Title</th>
+                  <th style={TH_STYLE}>Slug</th>
+                  <th style={TH_STYLE}>Status</th>
+                  <th style={TH_STYLE}>Date</th>
+                  <th style={{ ...TH_STYLE, textAlign: "right" }}>Actions</th>
                 </tr>
-              ) : (
-                blogs.map((b: any, i: number) => (
-                  <tr key={b._id} style={{ background: i % 2 === 0 ? "#fff" : "rgba(0,0,0,0.02)" }}>
-                    <td style={{ ...TD_STYLE, fontWeight: 600 }}>{b.title ?? "Untitled"}</td>
-                    <td style={{ ...TD_STYLE, color: "rgba(45,45,45,0.5)", fontFamily: "monospace", fontSize: "0.82rem" }}>{b.slug}</td>
-                    <td style={TD_STYLE}><StatusBadge status={b.status} /></td>
-                    <td style={{ ...TD_STYLE, whiteSpace: "nowrap" }}>{formatDate(b.createdAt)}</td>
-                    <td style={{ ...TD_STYLE, textAlign: "right", whiteSpace: "nowrap" }}>
-                      <button
-                        onClick={() => openEdit(b)}
-                        style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.85rem", color: "var(--lf-teal)", marginRight: 12 }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(b._id)}
-                        style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.85rem", color: "#dc2626" }}
-                      >
-                        Delete
-                      </button>
+              </thead>
+              <tbody>
+                {blogs.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ ...TD_STYLE, textAlign: "center", color: "rgba(45,45,45,0.4)", padding: 32 }}>
+                      No CMS posts yet — create one above
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+                ) : (
+                  blogs.map((b: any, i: number) => (
+                    <tr key={b._id} style={{ background: i % 2 === 0 ? "#fff" : "rgba(0,0,0,0.02)" }}>
+                      <td style={{ ...TD_STYLE, fontWeight: 600 }}>{b.title ?? "Untitled"}</td>
+                      <td style={{ ...TD_STYLE, color: "rgba(45,45,45,0.5)", fontFamily: "monospace", fontSize: "0.82rem" }}>{b.slug}</td>
+                      <td style={TD_STYLE}><StatusBadge status={b.status} /></td>
+                      <td style={{ ...TD_STYLE, whiteSpace: "nowrap" }}>{formatDate(b.createdAt)}</td>
+                      <td style={{ ...TD_STYLE, textAlign: "right", whiteSpace: "nowrap" }}>
+                        <button
+                          onClick={() => openEdit(b)}
+                          style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.85rem", color: "var(--lf-teal)", marginRight: 12 }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(b._id)}
+                          style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.85rem", color: "#dc2626" }}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -1164,6 +1630,8 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("stories");
 
   const isAdmin = role === "admin";
+  // Hoist users query so Stories tab can correlate userId → user info
+  const allUsers = useQuery(api.auth.listAllUsers, isAdmin ? {} : "skip") as any[] | undefined;
 
   // Redirect if not authenticated (once auth is resolved)
   useEffect(() => {
@@ -1390,7 +1858,7 @@ export default function AdminPage() {
 
         {/* Tab content */}
         <div>
-          {activeTab === "stories" && <StoriesTab isAdmin={isAdmin} />}
+          {activeTab === "stories" && <StoriesTab isAdmin={isAdmin} users={allUsers} />}
           {activeTab === "users" && <UsersTab isAdmin={isAdmin} />}
           {activeTab === "blog" && <BlogTab isAdmin={isAdmin} />}
           {activeTab === "assets" && <AssetsTab isAdmin={isAdmin} />}
