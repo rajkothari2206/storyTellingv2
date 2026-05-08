@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Component } from "react";
+import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQuery, useMutation, useConvexAuth } from "convex/react";
@@ -127,6 +128,66 @@ function Spinner() {
   );
 }
 
+// ─── Error Boundary ───────────────────────────────────────────────────────────
+
+class TabErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; message: string }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, message: "" };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, message: error?.message ?? "Unknown error" };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div
+          style={{
+            padding: "40px 24px",
+            textAlign: "center",
+            background: "#fff",
+            border: "1.5px solid rgba(220,38,38,0.15)",
+            borderRadius: "1rem",
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+            alignItems: "center",
+          }}
+        >
+          <span style={{ fontSize: "2rem" }}>⚠️</span>
+          <p style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, color: "#b91c1c", margin: 0 }}>
+            Tab failed to load
+          </p>
+          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.82rem", color: "rgba(45,45,45,0.55)", margin: 0, maxWidth: 380 }}>
+            {this.state.message}
+          </p>
+          <button
+            onClick={() => this.setState({ hasError: false, message: "" })}
+            style={{
+              marginTop: 4,
+              padding: "7px 18px",
+              borderRadius: "0.6rem",
+              background: "var(--lf-teal)",
+              border: "none",
+              color: "#fff",
+              fontFamily: "'Nunito', sans-serif",
+              fontWeight: 700,
+              fontSize: "0.85rem",
+              cursor: "pointer",
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // ─── Tab: Stories ─────────────────────────────────────────────────────────────
 
 function StoriesTab({ isAdmin }: { isAdmin: boolean }) {
@@ -215,10 +276,9 @@ function StoriesTab({ isAdmin }: { isAdmin: boolean }) {
 
 // ─── Tab: Users ───────────────────────────────────────────────────────────────
 
-function CreditAdjustRow({ userId }: { userId: string }) {
-  // Uses existing _addCredits mutation (already deployed):
-  // positive amount = add credits, negative amount = deduct from available
-  const addCredits = useMutation((api as any).credit._addCredits);
+type AdjustFn = (args: { userId: string; credits: number }) => Promise<unknown>;
+
+function CreditAdjustRow({ userId, onAdjust }: { userId: string; onAdjust: AdjustFn }) {
   const [amount, setAmount] = useState("");
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<"added" | "removed" | "error" | null>(null);
@@ -229,7 +289,7 @@ function CreditAdjustRow({ userId }: { userId: string }) {
     setSaving(true);
     setResult(null);
     try {
-      await addCredits({ userId, credits: sign * n });
+      await onAdjust({ userId, credits: sign * n });
       setAmount("");
       setResult(sign === 1 ? "added" : "removed");
       setTimeout(() => setResult(null), 2500);
@@ -318,8 +378,10 @@ function CreditAdjustRow({ userId }: { userId: string }) {
   );
 }
 
-function UsersTab({ isAdmin }: { isAdmin: boolean }) {
+function UsersTabInner({ isAdmin }: { isAdmin: boolean }) {
   const users = useQuery(api.auth.listAllUsers, isAdmin ? {} : "skip") as any[] | undefined;
+  // Single useMutation call hoisted to parent — NOT one per row
+  const addCredits = useMutation((api as any).credit._addCredits) as AdjustFn;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -359,7 +421,7 @@ function UsersTab({ isAdmin }: { isAdmin: boolean }) {
                     <td style={TD_STYLE}>{u.profile?.childName ?? "—"}</td>
                     <td style={TD_STYLE}>{u.profile?.childAge ?? "—"}</td>
                     <td style={{ ...TD_STYLE, whiteSpace: "nowrap" }}>{formatDate(u.createdAt)}</td>
-                    <CreditAdjustRow userId={u.id} />
+                    <CreditAdjustRow userId={u.id} onAdjust={addCredits} />
                   </tr>
                 ))
               )}
@@ -368,6 +430,14 @@ function UsersTab({ isAdmin }: { isAdmin: boolean }) {
         </div>
       )}
     </div>
+  );
+}
+
+function UsersTab({ isAdmin }: { isAdmin: boolean }) {
+  return (
+    <TabErrorBoundary>
+      <UsersTabInner isAdmin={isAdmin} />
+    </TabErrorBoundary>
   );
 }
 
