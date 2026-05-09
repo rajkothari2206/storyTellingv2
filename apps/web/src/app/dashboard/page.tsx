@@ -340,7 +340,7 @@ function DashboardContent({
                 Lalli &amp; Fafa are ready to tell a brand new tale — crafted just for your little one. 🌟
               </p>
               <button
-                onClick={() => setDrawerOpen(true)}
+                onClick={() => router.push('/generate')}
                 className="flex items-center gap-2 self-start px-7 py-3.5 rounded-2xl font-bold transition-all hover:scale-105 active:scale-95"
                 style={{
                   background: "linear-gradient(135deg,var(--lf-teal),#00a38d)",
@@ -430,7 +430,7 @@ function DashboardContent({
         {/* ── Quick actions ── */}
         <section className="grid sm:grid-cols-3 gap-4">
           <button
-            onClick={() => setDrawerOpen(true)}
+            onClick={() => router.push('/generate')}
             className="flex flex-col items-start gap-3 p-5 rounded-2xl text-left transition-all hover:-translate-y-1 hover:shadow-lg active:scale-98"
             style={{ background: "linear-gradient(135deg,rgba(0,201,167,0.12),rgba(0,201,167,0.06))", border: "1.5px solid rgba(0,201,167,0.35)" }}
           >
@@ -510,7 +510,7 @@ function DashboardContent({
                 </p>
               </div>
               <button
-                onClick={() => setDrawerOpen(true)}
+                onClick={() => router.push('/generate')}
                 className="btn-primary"
                 style={{ padding: "0.7rem 1.6rem" }}
               >
@@ -625,7 +625,7 @@ function DashboardContent({
               </p>
             </div>
             <button
-              onClick={() => setDrawerOpen(true)}
+              onClick={() => router.push('/generate')}
               className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold flex-shrink-0 transition-all hover:scale-105"
               style={{ background: "var(--lf-sunshine)", color: "#131020", fontFamily: "'Baloo 2', sans-serif", fontSize: "0.9rem" }}
             >

@@ -1,7 +1,7 @@
 import { action } from "./_generated/server";
 import { v } from "convex/values";
 import { authComponent } from "./auth";
-import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 import { api, internal } from "./_generated/api";
 import { formatStoryPrompt } from "./storyPromptFormatter";
 
@@ -81,7 +81,7 @@ export const generateStoryText: ReturnType<typeof action> = action({
       status: "generating",
     });
 
-    const client = new OpenAI({ apiKey: process.env.OPEN_AI_API! });
+    const gemini = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
     const formattedPrompt = formatStoryPrompt(
       { name: name || "", gender, age },
@@ -105,39 +105,41 @@ export const generateStoryText: ReturnType<typeof action> = action({
     }
 
     const makeStoryRequest = async (temperature: number) =>
-      client.chat.completions.create({
-        model: "gpt-4o",
-        temperature,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: formattedPrompt },
-        ],
+      gemini.models.generateContent({
+        model: "gemini-2.5-flash",
+        config: {
+          temperature,
+          systemInstruction: system,
+        },
+        contents: [{ role: "user", parts: [{ text: formattedPrompt }] }],
       });
 
     let resp = await makeStoryRequest(0.4);
-    let content = resp.choices?.[0]?.message?.content?.toString().trim() || "";
+    let content = resp.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
 
-    // Detect structured error responses (e.g. "RULE_CONFLICT") from the model
-    // and retry once at higher temperature with an explicit override instruction.
+    // Retry if model returned a non-story response
     const isNonStory = !content || content.length < 200 || /^[A-Z_]+$/.test(content);
     if (isNonStory) {
       console.warn("AI returned non-story response, retrying:", content.slice(0, 80));
-      const retryResp = await client.chat.completions.create({
-        model: "gpt-4o",
-        temperature: 0.7,
-        messages: [
-          { role: "system", content: system },
+      const retryResp = await gemini.models.generateContent({
+        model: "gemini-2.5-flash",
+        config: {
+          temperature: 0.7,
+          systemInstruction: system,
+        },
+        contents: [
           {
             role: "user",
-            content:
-              formattedPrompt +
-              "\n\nIMPORTANT: Generate the story now. " +
-              "Keep all structural labels (SCENE METADATA, Scene 1:, Scene 2:, Lalli:, Fafa:) in English. " +
-              "Only the story prose and dialogue text should be in the requested language.",
+            parts: [{
+              text: formattedPrompt +
+                "\n\nReminder: write the story now. Keep all structural labels " +
+                "(SCENE METADATA, Scene 1:, Scene 2:, Lalli:, Fafa:) in English. " +
+                "Only the story prose and dialogue should be in the requested language.",
+            }],
           },
         ],
       });
-      content = retryResp.choices?.[0]?.message?.content?.toString().trim() || "";
+      content = retryResp.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
     }
 
     if (!content) {

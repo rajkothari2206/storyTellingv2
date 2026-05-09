@@ -425,12 +425,14 @@ function StoryViewer({
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  // `duration` = what we show on the progress bar (may use stored estimate as fallback)
   const [duration, setDuration] = useState(0);
+  // `reliableDuration` = only set when the audio element itself reports a finite value.
+  // Scene auto-advance ONLY uses this — never the stored estimate — to prevent iOS/Safari
+  // from racing through all scenes when the stored audioDurationSeconds is stale/wrong.
+  const [reliableDuration, setReliableDuration] = useState(0);
 
-  // Seed duration from stored value as soon as story data arrives.
-  // Convex storage has no Accept-Ranges support so the audio element reports
-  // duration = Infinity (streaming mode). The stored value (calculated from
-  // byteSize / bitrate at generation time) gives an accurate fallback.
+  // Seed display duration from stored value when audio element can't report it (Safari/Convex streaming).
   useEffect(() => {
     const stored = story?.audioDurationSeconds;
     if (stored && stored > 0) {
@@ -475,15 +477,18 @@ function StoryViewer({
     }
   }, [isPlaying]);
 
-  /* Seek audio to scene's start position using character-weighted timeline */
+  /* Seek audio to scene's start position using character-weighted timeline.
+     Uses reliableDuration (audio element's actual value) for accurate seeking;
+     falls back to display duration if reliable value not yet available. */
   const seekToScene = useCallback(
     (idx: number, titleOffset: number, sceneTimeline: Array<{ startFrac: number; endFrac: number }>) => {
-      if (!audioRef.current || !duration || numScenes === 0) return;
-      const contentDuration = Math.max(1, duration - titleOffset);
+      const seekDur = reliableDuration || duration;
+      if (!audioRef.current || !seekDur || numScenes === 0) return;
+      const contentDuration = Math.max(1, seekDur - titleOffset);
       const startFrac = sceneTimeline[idx]?.startFrac ?? (idx / numScenes);
       audioRef.current.currentTime = titleOffset + startFrac * contentDuration;
     },
-    [duration, numScenes]
+    [reliableDuration, duration, numScenes]
   );
 
   const setCurrentScene = useCallback(
@@ -499,14 +504,17 @@ function StoryViewer({
     [numScenes, seekToScene]
   );
 
-  /* Auto-advance scene as audio plays — uses character-weighted scene timeline */
+  /* Auto-advance scene as audio plays — uses character-weighted scene timeline.
+     IMPORTANT: only runs when reliableDuration is set (audio element reported a finite
+     value). Never uses the stored audioDurationSeconds estimate, which can be stale/wrong
+     and would cause all scenes to flash through instantly on iOS/Safari. */
   useEffect(() => {
-    if (manualNavRef.current || numScenes === 0 || !duration || !story?.content) return;
+    if (manualNavRef.current || numScenes === 0 || !reliableDuration || !story?.content) return;
     const titleChars = (story?.title ?? "").length;
     const contentCharsFlat = (story.content ?? "").replace(/\s*\n\s*/g, "").length;
     const totalChars = titleChars + contentCharsFlat;
-    const titleOff = totalChars > 0 ? (titleChars / totalChars) * duration : 0;
-    const contentDur = Math.max(1, duration - titleOff);
+    const titleOff = totalChars > 0 ? (titleChars / totalChars) * reliableDuration : 0;
+    const contentDur = Math.max(1, reliableDuration - titleOff);
     const contentProgress = Math.max(0, currentTime - titleOff) / contentDur; // 0..1
 
     const timeline = buildSceneTimeline(story.content, numScenes);
@@ -516,7 +524,7 @@ function StoryViewer({
     if (clamped !== currentScene) {
       setCurrentSceneRaw(clamped);
     }
-  }, [currentTime, duration, numScenes, currentScene, story?.title, story?.content]);
+  }, [currentTime, reliableDuration, numScenes, currentScene, story?.title, story?.content]);
 
   /* Keyboard shortcuts: Space = play/pause, ← = prev scene, → = next scene */
   useEffect(() => {
@@ -545,17 +553,16 @@ function StoryViewer({
     if (audioRef.current && !seeking) setCurrentTime(audioRef.current.currentTime);
   };
   // Accept a finite duration from the audio element; ignore Infinity (no Accept-Ranges on Convex).
-  // The stored audioDurationSeconds (seeded above) already shows a sensible value.
   const onLoadedMetadata = () => {
     if (!audioRef.current) return;
     const d = audioRef.current.duration;
-    if (isFinite(d) && d > 0) setDuration(d);
+    if (isFinite(d) && d > 0) { setDuration(d); setReliableDuration(d); }
   };
   // durationchange fires later as the browser buffers more — catch it too.
   const onDurationChange = () => {
     if (!audioRef.current) return;
     const d = audioRef.current.duration;
-    if (isFinite(d) && d > 0) setDuration(d);
+    if (isFinite(d) && d > 0) { setDuration(d); setReliableDuration(d); }
   };
   const onEnded = () => setIsPlaying(false);
 

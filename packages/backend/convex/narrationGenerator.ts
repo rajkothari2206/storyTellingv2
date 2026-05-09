@@ -6,12 +6,19 @@ import { Id } from "./_generated/dataModel";
 type Gender = "male" | "female" | "other";
 
 /**
- * Returns true if the language should use the Hindi TTS voice group.
- * This covers Hindi and all 5 regional Indian languages that share the same voice IDs.
+ * Returns true if the language is Hindi (uses Hindi-specific trained voice IDs).
  */
-function isHindiVoiceGroup(language: string): boolean {
-  const hindiGroup = ["hindi", "bengali", "gujarati", "tamil", "marathi", "telugu"];
-  return hindiGroup.includes(language.toLowerCase());
+function isHindiLanguage(language: string): boolean {
+  return language.toLowerCase() === "hindi";
+}
+
+/**
+ * Returns true if the language needs the ElevenLabs multilingual model.
+ * English uses eleven_turbo_v2_5 (English-only, faster/cheaper).
+ * All other languages use eleven_multilingual_v2.
+ */
+function isMultilingualLanguage(language: string): boolean {
+  return language.toLowerCase() !== "english";
 }
 
 type VoiceMap = {
@@ -39,7 +46,7 @@ async function loadVoiceMap(ctx: ActionCtx): Promise<VoiceMap> {
 }
 
 function resolveChildVoice(voiceMap: VoiceMap, gender: Gender, language: string): string {
-  const useHindi = isHindiVoiceGroup(language);
+  const useHindi = isHindiLanguage(language);
   if (gender === "male") {
     return useHindi
       ? (voiceMap.HindiBoyChild || voiceMap.BoyChild || "")
@@ -63,7 +70,7 @@ function pickVoiceForSpeaker(
   language: string
 ): string {
   const s = speaker.trim().toLowerCase();
-  const useHindi = isHindiVoiceGroup(language);
+  const useHindi = isHindiLanguage(language);
   if (s === "narrator") {
     return useHindi
       ? (voiceMap.HindiNarrator || voiceMap.Narrator || "")
@@ -88,9 +95,14 @@ function pickVoiceForSpeaker(
 }
 
 function parseStoryToSpeakerLines(title: string, content: string, childName: string) {
+  // Strip scene metadata block — everything from "SCENE METADATA" onwards is for image
+  // generation only and must not be narrated.
+  const metadataIdx = content.search(/^SCENE METADATA/mi);
+  const storyOnly = metadataIdx !== -1 ? content.slice(0, metadataIdx) : content;
+
   // Filter out empty/undefined title so it doesn't become a dead narration line
   const titleLines = title ? [title] : [];
-  const lines = [...titleLines, ...content.split("\n").map(l => l.trim()).filter(Boolean)];
+  const lines = [...titleLines, ...storyOnly.split("\n").map(l => l.trim()).filter(Boolean)];
   const childLabel = (childName || "").trim().toLowerCase();
 
   const out: Array<{ order: number; speaker: string; text: string }> = [];
@@ -113,16 +125,22 @@ function parseStoryToSpeakerLines(title: string, content: string, childName: str
   return out;
 }
 
-async function ttsArrayBuffer(voiceId: string, text: string): Promise<ArrayBuffer> {
+async function ttsArrayBuffer(voiceId: string, text: string, language: string): Promise<ArrayBuffer> {
   const apiKey = process.env.ELEVEN_LABS_API_KEY;
   if (!apiKey) throw new Error("ELEVENLABS_API_KEY missing");
 
   const client = new ElevenLabsClient({ apiKey });
 
+  // eleven_turbo_v2_5 is English-only (cheaper/faster).
+  // eleven_multilingual_v2 supports all Indian languages — use it for any non-English story.
+  const modelId = isMultilingualLanguage(language)
+    ? "eleven_multilingual_v2"
+    : "eleven_turbo_v2_5";
+
   const resp = await client.textToSpeech.convert(voiceId, {
     text,
-    modelId: "eleven_turbo_v2_5",
-    outputFormat: "mp3_22050_32", 
+    modelId,
+    outputFormat: "mp3_22050_32",
     voiceSettings: { stability: 0.5, speed: 0.9 },
   });
 
@@ -151,29 +169,43 @@ function concatMp3(buffers: ArrayBuffer[]): ArrayBuffer {
   return out.buffer;
 }
 
-// concurrency limiter
+// concurrency limiter — errors are logged and that line is skipped (not swallowed silently)
 async function mapWithConcurrencyLimit<T, R>(
   array: T[],
   limit: number,
-  fn: (item: T) => Promise<R>
-): Promise<R[]> {
-  const results: R[] = [];
-  const executing = new Set<Promise<void>>();
+  fn: (item: T, index: number) => Promise<R>
+): Promise<(R | null)[]> {
+  const results: (R | null)[] = new Array(array.length).fill(null);
+  let activeCount = 0;
+  let nextIndex = 0;
 
-  for (const item of array) {
-    const p = (async () => {
-      const res = await fn(item);
-      results.push(res);
-    })();
-
-    executing.add(p);
-    p.finally(() => executing.delete(p));
-    if (executing.size >= limit) {
-      await Promise.race(executing);
+  await new Promise<void>((resolve, reject) => {
+    function startNext() {
+      while (activeCount < limit && nextIndex < array.length) {
+        const idx = nextIndex++;
+        activeCount++;
+        fn(array[idx], idx)
+          .then(res => {
+            results[idx] = res;
+          })
+          .catch(err => {
+            console.error(`[TTS] Line ${idx} failed:`, err?.message ?? err);
+            results[idx] = null; // skip this line rather than crashing everything
+          })
+          .finally(() => {
+            activeCount--;
+            if (nextIndex < array.length) {
+              startNext();
+            } else if (activeCount === 0) {
+              resolve();
+            }
+          });
+      }
+      if (nextIndex >= array.length && activeCount === 0) resolve();
     }
-  }
+    startNext();
+  });
 
-  await Promise.all(Array.from(executing));
   return results;
 }
 
@@ -198,21 +230,24 @@ export async function generateMergedNarration(
   }
 
   const lines = parseStoryToSpeakerLines(title, content, childName);
-  console.log("Parsed Lines:", lines);
+  console.log(`[Narration] ${lines.length} lines to TTS. Language: ${language}. First 3:`, lines.slice(0, 3).map(l => `${l.speaker}: ${l.text.slice(0, 40)}`));
 
-  // Limit concurrency to 3 TTS calls at a time
-  const results = await mapWithConcurrencyLimit(lines, 2, async (l) => {
+  // Limit concurrency to 2 TTS calls at a time
+  const results = await mapWithConcurrencyLimit(lines, 2, async (l, _idx) => {
     const voiceId = pickVoiceForSpeaker(voiceMap, l.speaker, childName, childGender, language);
     if (!voiceId) {
-      throw new Error(`Voice not found for speaker: ${l.speaker}`);
+      console.error(`[TTS] No voice ID for speaker: ${l.speaker}`);
+      return null;
     }
-    const ab = await ttsArrayBuffer(voiceId, l.text);
+    const ab = await ttsArrayBuffer(voiceId, l.text, language);
     return { order: l.order, ab };
   });
 
-  // sort and merge
-  results.sort((a, b) => a.order - b.order);
-  const merged = concatMp3(results.map(r => r.ab));
+  // Filter out failed lines and merge in order
+  const successful = results.filter((r): r is { order: number; ab: ArrayBuffer } => r !== null);
+  console.log(`[Narration] ${successful.length}/${lines.length} lines succeeded.`);
+  successful.sort((a, b) => a.order - b.order);
+  const merged = concatMp3(successful.map(r => r.ab));
 
   const mergedBlob = new Blob([merged], { type: "audio/mpeg" });
   const storageId = await ctx.storage.store(mergedBlob);
