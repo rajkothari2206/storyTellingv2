@@ -56,8 +56,8 @@ function GenerateForm({ isAuthenticated }: { isAuthenticated: boolean }) {
   const credits = useQuery(api.credit.list, isAuthenticated ? {} : "skip");
   const themes = useQuery(api["migration/theme"].list, isAuthenticated ? {} : "skip");
   const lessons = useQuery(api["migration/lesson"].list, isAuthenticated ? {} : "skip");
-  // NOTE: story_types and languages are always served from hardcoded fallbacks.
-  // Using useQuery on these functions was crashing the component before fallback logic ran.
+  // Languages come from DB so the admin panel toggle (isActive) controls what users see.
+  const dbLanguages = useQuery((api as any)["migration/languages"].list, isAuthenticated ? {} : "skip");
 
   const generateStory = useAction(api.generateStory.generateStoryText);
 
@@ -109,6 +109,8 @@ function GenerateForm({ isAuthenticated }: { isAuthenticated: boolean }) {
   const FALLBACK_LANGUAGES = [
     { code: "en", name: "English", nativeName: "English", flag: "🇬🇧" },
     { code: "hi", name: "Hindi", nativeName: "हिंदी", flag: "🇮🇳" },
+    // Regional languages hidden until proper voice IDs are configured per language.
+    // Re-enable from Admin → Languages when ready.
     { code: "bn", name: "Bengali", nativeName: "বাংলা", flag: "🇧🇩" },
     { code: "gu", name: "Gujarati", nativeName: "ગુજરાતી", flag: "🇮🇳" },
     { code: "ta", name: "Tamil", nativeName: "தமிழ்", flag: "🇮🇳" },
@@ -117,7 +119,10 @@ function GenerateForm({ isAuthenticated }: { isAuthenticated: boolean }) {
   ];
 
   const resolvedStoryTypes = FALLBACK_STORY_TYPES;
-  const resolvedLanguages = FALLBACK_LANGUAGES;
+  // Use DB list (respects isActive toggle from admin panel); fall back to EN+HI only if DB is empty or loading.
+  const resolvedLanguages = (dbLanguages && dbLanguages.length > 0)
+    ? dbLanguages
+    : FALLBACK_LANGUAGES.filter((l: any) => l.code === "en" || l.code === "hi");
 
   const isLoading =
     profile === undefined ||

@@ -95,6 +95,32 @@ export const listAll = query({
   },
 });
 
+/** One-click toggle — called directly from admin panel without opening edit form */
+export const toggleActive = mutation({
+  args: { id: v.id("languages"), isActive: v.boolean() },
+  handler: async (ctx, { id, isActive }) => {
+    await ctx.db.patch(id, { isActive, updatedAt: Date.now() });
+    return { ok: true };
+  },
+});
+
+/** Bulk-disable all regional languages (everything except en + hi) */
+export const disableRegional = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const regional = ["bn", "gu", "ta", "mr", "te"];
+    const all = await ctx.db.query("languages").collect();
+    let count = 0;
+    for (const lang of all) {
+      if (regional.includes(lang.code) && lang.isActive) {
+        await ctx.db.patch(lang._id, { isActive: false, updatedAt: Date.now() });
+        count++;
+      }
+    }
+    return { disabled: count };
+  },
+});
+
 export const update = mutation({
   args: {
     id: v.id("languages"),

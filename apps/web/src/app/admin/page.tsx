@@ -1744,7 +1744,9 @@ function StoryTypesTab({ isAdmin }: { isAdmin: boolean }) {
 function LanguagesTab({ isAdmin }: { isAdmin: boolean }) {
   const languages = useQuery((api as any)["migration/languages"].listAll, isAdmin ? {} : "skip") as any[] | undefined;
   const updateLanguage = useMutation((api as any)["migration/languages"].update);
+  const toggleLanguage = useMutation((api as any)["migration/languages"].toggleActive);
   const seedLanguages = useMutation((api as any)["migration/languages"].seed);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ name: "", nativeName: "", flag: "", voiceGroup: "", isActive: true, sortOrder: 1 });
@@ -1865,7 +1867,21 @@ function LanguagesTab({ isAdmin }: { isAdmin: boolean }) {
                         </span>
                       </td>
                       <td style={{ ...TD_STYLE, textAlign: "right" }}>
-                        <button onClick={() => startEdit(lang)} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.82rem", color: "var(--lf-teal)" }}>Edit</button>
+                        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", alignItems: "center" }}>
+                          <button
+                            onClick={async () => {
+                              setTogglingId(lang._id);
+                              try { await toggleLanguage({ id: lang._id, isActive: !lang.isActive }); }
+                              catch (e: any) { alert(e?.message ?? "Failed"); }
+                              finally { setTogglingId(null); }
+                            }}
+                            disabled={togglingId === lang._id}
+                            style={{ padding: "4px 12px", borderRadius: "0.5rem", background: lang.isActive ? "rgba(239,68,68,0.08)" : "rgba(0,184,166,0.1)", border: `1px solid ${lang.isActive ? "rgba(239,68,68,0.25)" : "rgba(0,184,166,0.3)"}`, color: lang.isActive ? "#dc2626" : "#0d7a6e", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.78rem", cursor: "pointer", opacity: togglingId === lang._id ? 0.5 : 1 }}
+                          >
+                            {togglingId === lang._id ? "…" : lang.isActive ? "Disable" : "Enable"}
+                          </button>
+                          <button onClick={() => startEdit(lang)} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.82rem", color: "var(--lf-teal)" }}>Edit</button>
+                        </div>
                       </td>
                     </>
                   )}
