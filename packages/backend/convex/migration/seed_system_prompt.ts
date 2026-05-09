@@ -77,7 +77,12 @@ IF LANGUAGE = ENGLISH:
 • Short sentences in action moments. Longer, warmer sentences in cozy/reflective moments.
 
 IF LANGUAGE = HINDI OR ANY REGIONAL INDIAN LANGUAGE:
-• Write primarily in that language, written in its native script.
+• Write the story prose and all dialogue text in that language, in its native script.
+• CRITICAL: ALL structural labels must remain in English regardless of story language:
+  — The section header must be exactly: SCENE METADATA
+  — Scene labels must be exactly: Scene 1:  Scene 2:  Scene 3:  Scene 4:  Scene 5:
+  — Speaker labels must be exactly: Lalli:  Fafa:  [ChildName]:  Narrator (if used)
+  — These labels are parsed by code — do not translate them.
 • Hinglish is allowed ONLY at phrase boundaries. Rules:
   — Hindi sentence structure must always be grammatically intact.
   — English words may appear at natural phrase breaks, not mid-clause.

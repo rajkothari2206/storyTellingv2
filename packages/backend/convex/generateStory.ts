@@ -104,16 +104,42 @@ export const generateStoryText: ReturnType<typeof action> = action({
       throw new Error("SYSTEM_PROMPT not configured. Set it in Admin → System Prompt or add env var.");
     }
 
-    const resp = await client.chat.completions.create({
-      model: "gpt-4.1",
-      temperature: 0.4,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: formattedPrompt },
-      ],
-    });
+    const makeStoryRequest = async (temperature: number) =>
+      client.chat.completions.create({
+        model: "gpt-4.1",
+        temperature,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: formattedPrompt },
+        ],
+      });
 
-    const content = resp.choices?.[0]?.message?.content?.toString().trim() || "";
+    let resp = await makeStoryRequest(0.4);
+    let content = resp.choices?.[0]?.message?.content?.toString().trim() || "";
+
+    // Detect structured error responses (e.g. "RULE_CONFLICT") from the model
+    // and retry once at higher temperature with an explicit override instruction.
+    const isNonStory = !content || content.length < 200 || /^[A-Z_]+$/.test(content);
+    if (isNonStory) {
+      console.warn("AI returned non-story response, retrying:", content.slice(0, 80));
+      const retryResp = await client.chat.completions.create({
+        model: "gpt-4.1",
+        temperature: 0.7,
+        messages: [
+          { role: "system", content: system },
+          {
+            role: "user",
+            content:
+              formattedPrompt +
+              "\n\nIMPORTANT: Generate the story now. " +
+              "Keep all structural labels (SCENE METADATA, Scene 1:, Scene 2:, Lalli:, Fafa:) in English. " +
+              "Only the story prose and dialogue text should be in the requested language.",
+          },
+        ],
+      });
+      content = retryResp.choices?.[0]?.message?.content?.toString().trim() || "";
+    }
+
     if (!content) {
       await ctx.runMutation(api.stories._markStatus, {
         storyId,
@@ -122,9 +148,9 @@ export const generateStoryText: ReturnType<typeof action> = action({
       });
       throw new Error("Empty response from AI");
     }
-    // Log warning if scene metadata is missing (non-fatal — happens with non-English stories)
+    // Log warning if scene metadata is missing (non-fatal)
     if (!content.includes("SCENE METADATA") && !/Scene \d+:/i.test(content)) {
-      console.warn("Scene metadata missing from AI output — images may not generate. Language:", content.slice(0, 100));
+      console.warn("Scene metadata missing from AI output. Language:", content.slice(0, 100));
     }
 
     await ctx.runMutation(api.stories._setContent, {
