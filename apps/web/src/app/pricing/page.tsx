@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { Check, Star, Zap, Shield, HelpCircle, X } from "lucide-react";
+import { Check, Star, Zap, Shield, HelpCircle, X, Sparkles } from "lucide-react";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { PricingFAQ } from "./PricingFAQ";
