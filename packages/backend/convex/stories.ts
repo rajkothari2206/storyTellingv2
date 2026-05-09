@@ -107,7 +107,8 @@ export const _create = mutation({
 		params: v.object({
 			theme: v.string(),
 			lesson: v.optional(v.string()),
-			length: v.union(v.literal("short"), v.literal("medium"), v.literal("long")),
+			length: v.optional(v.union(v.literal("short"), v.literal("medium"), v.literal("long"))),
+			storyType: v.optional(v.string()),
 			language: v.optional(v.string()),
 			useFavorites: v.optional(v.boolean()),
 			childName: v.optional(v.string()),

@@ -5,6 +5,15 @@ import { Id } from "./_generated/dataModel";
 
 type Gender = "male" | "female" | "other";
 
+/**
+ * Returns true if the language should use the Hindi TTS voice group.
+ * This covers Hindi and all 5 regional Indian languages that share the same voice IDs.
+ */
+function isHindiVoiceGroup(language: string): boolean {
+  const hindiGroup = ["hindi", "bengali", "gujarati", "tamil", "marathi", "telugu"];
+  return hindiGroup.includes(language.toLowerCase());
+}
+
 type VoiceMap = {
   Narrator?: string;
   Lalli?: string;
@@ -30,49 +39,51 @@ async function loadVoiceMap(ctx: ActionCtx): Promise<VoiceMap> {
 }
 
 function resolveChildVoice(voiceMap: VoiceMap, gender: Gender, language: string): string {
+  const useHindi = isHindiVoiceGroup(language);
   if (gender === "male") {
-    return language === "Hindi" 
-      ? (voiceMap.HindiBoyChild || voiceMap.BoyChild || "") 
+    return useHindi
+      ? (voiceMap.HindiBoyChild || voiceMap.BoyChild || "")
       : (voiceMap.BoyChild || "");
   }
   if (gender === "female") {
-    return language === "Hindi" 
-      ? (voiceMap.HindiGirlChild || voiceMap.GirlChild || "") 
+    return useHindi
+      ? (voiceMap.HindiGirlChild || voiceMap.GirlChild || "")
       : (voiceMap.GirlChild || "");
   }
-  return language === "Hindi" 
-    ? (voiceMap.HindiGirlChild || voiceMap.GirlChild || "") 
+  return useHindi
+    ? (voiceMap.HindiGirlChild || voiceMap.GirlChild || "")
     : (voiceMap.GirlChild || "");
 }
 
 function pickVoiceForSpeaker(
   voiceMap: VoiceMap,
-  speaker: string, 
-  childName: string, 
-  gender: Gender, 
+  speaker: string,
+  childName: string,
+  gender: Gender,
   language: string
 ): string {
   const s = speaker.trim().toLowerCase();
+  const useHindi = isHindiVoiceGroup(language);
   if (s === "narrator") {
-    return language === "Hindi" 
-      ? (voiceMap.HindiNarrator || voiceMap.Narrator || "") 
+    return useHindi
+      ? (voiceMap.HindiNarrator || voiceMap.Narrator || "")
       : (voiceMap.Narrator || "");
   }
   if (s === "lalli") {
-    return language === "Hindi" 
-      ? (voiceMap.HindiLalli || voiceMap.Lalli || "") 
+    return useHindi
+      ? (voiceMap.HindiLalli || voiceMap.Lalli || "")
       : (voiceMap.Lalli || "");
   }
   if (s === "fafa") {
-    return language === "Hindi" 
-      ? (voiceMap.HindiFafa || voiceMap.Fafa || "") 
+    return useHindi
+      ? (voiceMap.HindiFafa || voiceMap.Fafa || "")
       : (voiceMap.Fafa || "");
   }
   if (s === "child" || s === "girl child" || s === "boy child" || s === childName.trim().toLowerCase()) {
     return resolveChildVoice(voiceMap, gender, language);
   }
-  return language === "Hindi" 
-    ? (voiceMap.HindiNarrator || voiceMap.Narrator || "") 
+  return useHindi
+    ? (voiceMap.HindiNarrator || voiceMap.Narrator || "")
     : (voiceMap.Narrator || "");
 }
 

@@ -46,7 +46,8 @@ export default defineSchema({
 		params: v.object({
 			theme: v.string(),
 			lesson: v.optional(v.string()),
-			length: v.union(v.literal("short"), v.literal("medium"), v.literal("long")),
+			length: v.optional(v.union(v.literal("short"), v.literal("medium"), v.literal("long"))),
+			storyType: v.optional(v.string()), // "adventure" | "silly" | "cozy"
 			language: v.optional(v.string()),
 			useFavorites: v.optional(v.boolean()),
 			childName: v.optional(v.string()),
@@ -155,19 +156,20 @@ flavor_openings: defineTable({
 	createdAt: v.number(),
   }).index("by_theme_category", ["themeId", "category"]),
 
-  // Per-user story element usage tracking
+  // Per-user story element usage tracking (simplified — flavor codes removed)
   user_story_element_usage: defineTable({
 	userId: v.string(),
-	lastStructureCode: v.optional(v.string()), // Last used structure code (SQ_01, SQ_02, SQ_03)
-	storyCount: v.number(), // Number of stories generated (resets at 10)
-	usedCodes: v.object({
+	lastStructureCode: v.optional(v.string()), // Last used structure code
+	storyCount: v.number(), // Number of stories generated
+	// Legacy flavor codes — kept optional for backward compat, no longer written
+	usedCodes: v.optional(v.object({
 		OP: v.array(v.string()),
 		MT: v.array(v.string()),
 		OB: v.array(v.string()),
 		PY: v.array(v.string()),
 		EN: v.array(v.string()),
 		PT: v.array(v.string()),
-	}),
+	})),
 	createdAt: v.number(),
 	updatedAt: v.number(),
   }).index("by_user", ["userId"]),
@@ -227,6 +229,39 @@ flavor_openings: defineTable({
 		createdAt: v.number(),
 		updatedAt: v.number(),
 	}).index("by_name", ["name"]),
+
+	// Story types (Big Adventure / Silly & Funny / Cozy Bedtime)
+	story_types: defineTable({
+		code: v.string(),          // "adventure" | "silly" | "cozy"
+		name: v.string(),          // "Big Adventure" | "Silly & Funny" | "Cozy Bedtime"
+		emoji: v.string(),         // "🗺️" | "🌀" | "🌙"
+		description: v.string(),   // Short UI description
+		promptHint: v.string(),    // Hint passed to AI
+		isActive: v.boolean(),
+		sortOrder: v.number(),
+		createdAt: v.number(),
+		updatedAt: v.number(),
+	}).index("by_code", ["code"]),
+
+	// Languages supported for story generation
+	languages: defineTable({
+		code: v.string(),          // "en" | "hi" | "bn" | "gu" | "ta" | "mr" | "te"
+		name: v.string(),          // "English" | "Hindi" etc.
+		nativeName: v.string(),    // "English" | "हिंदी" etc.
+		flag: v.string(),          // emoji flag
+		voiceGroup: v.string(),    // "english" | "hindi" — which TTS voices to use
+		isActive: v.boolean(),
+		sortOrder: v.number(),
+		createdAt: v.number(),
+		updatedAt: v.number(),
+	}).index("by_code", ["code"]),
+
+	// Global system configuration (key-value store)
+	system_config: defineTable({
+		key: v.string(),           // "system_prompt" | other future keys
+		value: v.string(),
+		updatedAt: v.number(),
+	}).index("by_key", ["key"]),
 });
 
 

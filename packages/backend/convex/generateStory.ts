@@ -1,8 +1,8 @@
-﻿import { action } from "./_generated/server";
+import { action } from "./_generated/server";
 import { v } from "convex/values";
 import { authComponent } from "./auth";
 import OpenAI from "openai";
-import { api,internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { formatStoryPrompt } from "./storyPromptFormatter";
 
 export const generateStoryText: ReturnType<typeof action> = action({
@@ -10,11 +10,9 @@ export const generateStoryText: ReturnType<typeof action> = action({
     params: v.object({
       theme: v.string(),
       lesson: v.optional(v.string()),
-      length: v.union(v.literal("short"), v.literal("medium"), v.literal("long")),
+      storyType: v.optional(v.string()),   // "adventure" | "silly" | "cozy"
       language: v.optional(v.string()),
-      useFavorites: v.optional(v.boolean()),
       childId: v.optional(v.union(v.literal("1"), v.literal("2"))),
-      textOnly: v.optional(v.boolean()),
     }),
   },
 
@@ -39,19 +37,20 @@ export const generateStoryText: ReturnType<typeof action> = action({
         ? profile.childGender || "male"
         : profile.child2Gender || "male";
 
-    const { childId: _drop, ...cleanParams } = params;
     const avatarStorageId =
       childId === "1"
         ? profile.childAvatarStorageId
         : profile.child2AvatarStorageId;
 
-    const paramsWithChildName = {
-      ...cleanParams,
-      childName: name || undefined,
-    };
+    // Fetch story type details from DB (for name + prompt hint)
+    const storyTypeRecord = params.storyType
+      ? await ctx.runQuery((api as any)["migration/story_types"].getByCode, { code: params.storyType })
+      : null;
 
+    // Select structure element (now simplified — just maps storyType → structureCode)
     const flavor = await ctx.runMutation(api.storyElementSelector.selectStoryElements, {
       themeName: params.theme,
+      storyType: params.storyType,
     });
 
     const structure = await ctx.runQuery(api.migration.structure.getByCode, {
@@ -59,9 +58,18 @@ export const generateStoryText: ReturnType<typeof action> = action({
     });
     if (!structure) throw new Error("Structure not found");
 
+    // Create story record
+    const storyParams = {
+      theme: params.theme,
+      lesson: params.lesson,
+      storyType: params.storyType,
+      language: params.language,
+      childName: name || undefined,
+    };
+
     const storyId = await ctx.runMutation(api.stories._create, {
       title: "",
-      params: paramsWithChildName,
+      params: storyParams,
     });
 
     await ctx.runMutation(api.stories._markStatus, {
@@ -72,33 +80,37 @@ export const generateStoryText: ReturnType<typeof action> = action({
     const client = new OpenAI({ apiKey: process.env.OPEN_AI_API! });
 
     const formattedPrompt = formatStoryPrompt(
-      flavor,
-      { code: structure.code, name: structure.name, pattern: structure.pattern },
       { name: name || "", gender, age },
       {
         theme: params.theme,
         lesson: params.lesson || undefined,
         language: params.language,
-        length: params.length,
+        storyType: params.storyType,
+        storyTypeName: storyTypeRecord?.name,
+        storyTypePromptHint: storyTypeRecord?.promptHint,
       }
     );
 
-    const system = process.env.SYSTEM_PROMPT;
+    // Get system prompt: try DB first, fall back to env var
+    const systemConfig = await ctx.runQuery((api as any).systemConfig.get, {
+      key: "system_prompt",
+    });
+    const system = systemConfig?.value || process.env.SYSTEM_PROMPT;
     if (!system) {
-      throw new Error("SYSTEM_PROMPT environment variable is not set");
+      throw new Error("SYSTEM_PROMPT not configured. Set it in Admin → System Prompt or add env var.");
     }
-    const userPrompt = formattedPrompt;
+
     const resp = await client.chat.completions.create({
       model: "gpt-4.1",
       temperature: 0.4,
       messages: [
         { role: "system", content: system },
-        { role: "user", content: userPrompt },
+        { role: "user", content: formattedPrompt },
       ],
     });
 
     const content = resp.choices?.[0]?.message?.content?.toString().trim() || "";
-    if (!content.includes("SCENE METADATA") && !/Scene \d+:/i.test(content) && !params.textOnly) {
+    if (!content.includes("SCENE METADATA") && !/Scene \d+:/i.test(content)) {
       await ctx.runMutation(api.stories._markStatus, {
         storyId,
         status: "error",
@@ -112,7 +124,7 @@ export const generateStoryText: ReturnType<typeof action> = action({
       content,
     });
 
-    // streak update happens here (small)
+    // Update streak
     await ctx.runMutation(api.userProfiles.updateStreak, {});
 
     await ctx.runMutation(api.stories._markStatus, {
@@ -121,7 +133,7 @@ export const generateStoryText: ReturnType<typeof action> = action({
     });
 
     const childNameForBackground = name || "Child";
-    const creditCost = params.textOnly ? 20 : params.length === "short" ? 60 : params.length === "medium" ? 80 : 0;
+    const creditCost = 60; // Single flat cost
     const userCredit = await ctx.runQuery(api.credit.list, {});
     if (!userCredit || userCredit.length === 0) {
       throw new Error("User doesn't have enough credits");
@@ -130,9 +142,10 @@ export const generateStoryText: ReturnType<typeof action> = action({
       creditId: userCredit[0]._id,
       usedCredits: creditCost,
     });
+
     console.log(content);
-    if (params.textOnly) { return { storyId, content }; }
-    
+
+    // Fire off image + narration generation in parallel
     await ctx.scheduler.runAfter(
       0,
       internal.internal.generateSceneImage.generateImages,
