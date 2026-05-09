@@ -11,7 +11,7 @@ import { BLOG_POSTS } from "@/lib/blog-data";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type TabKey = "stories" | "users" | "blog" | "assets" | "voice" | "settings";
+type TabKey = "stories" | "users" | "blog" | "assets" | "voice" | "settings" | "story-types" | "languages" | "system-prompt";
 type SettingsSubTab = "themes" | "lessons";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -1610,6 +1610,368 @@ function SettingsTab({ isAdmin }: { isAdmin: boolean }) {
   );
 }
 
+// ─── Tab: Story Types ─────────────────────────────────────────────────────────
+
+function StoryTypesTab({ isAdmin }: { isAdmin: boolean }) {
+  const storyTypes = useQuery((api as any)["migration/story_types"].listAll, isAdmin ? {} : "skip") as any[] | undefined;
+  const updateStoryType = useMutation((api as any)["migration/story_types"].update);
+  const seedStoryTypes = useMutation((api as any)["migration/story_types"].seed);
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{ name: string; emoji: string; description: string; promptHint: string; isActive: boolean }>({
+    name: "", emoji: "", description: "", promptHint: "", isActive: true,
+  });
+  const [saving, setSaving] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+  const [seedResult, setSeedResult] = useState<string | null>(null);
+
+  function startEdit(st: any) {
+    setEditingId(st._id);
+    setEditForm({
+      name: st.name ?? "",
+      emoji: st.emoji ?? "",
+      description: st.description ?? "",
+      promptHint: st.promptHint ?? "",
+      isActive: st.isActive ?? true,
+    });
+  }
+
+  async function saveEdit(id: string) {
+    setSaving(true);
+    try {
+      await updateStoryType({ id: id as any, ...editForm });
+      setEditingId(null);
+    } catch (e: any) {
+      alert(e?.message ?? "Failed to save.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSeed() {
+    setSeeding(true);
+    setSeedResult(null);
+    try {
+      const result: any = await seedStoryTypes({});
+      setSeedResult(`Seeded ${result.seeded} story type(s).`);
+      setTimeout(() => setSeedResult(null), 4000);
+    } catch (e: any) {
+      setSeedResult(`Error: ${e?.message}`);
+    } finally {
+      setSeeding(false);
+    }
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <div>
+          <h3 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "var(--lf-dark)", margin: "0 0 4px" }}>Story Types</h3>
+          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.85rem", color: "rgba(45,45,45,0.5)", margin: 0 }}>
+            Configure the 3 story types shown on the generate page.
+          </p>
+        </div>
+        <button
+          onClick={handleSeed}
+          disabled={seeding}
+          style={{ padding: "8px 16px", borderRadius: "0.6rem", background: "rgba(0,0,0,0.06)", border: "none", color: "rgba(45,45,45,0.7)", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.85rem", cursor: seeding ? "not-allowed" : "pointer", whiteSpace: "nowrap", opacity: seeding ? 0.6 : 1 }}
+        >
+          {seeding ? "…" : "Seed defaults"}
+        </button>
+      </div>
+
+      {seedResult && (
+        <div style={{ padding: "10px 16px", background: "rgba(0,184,166,0.1)", border: "1px solid rgba(0,184,166,0.2)", borderRadius: "0.7rem" }}>
+          <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.85rem", color: "#0d7a6e" }}>{seedResult}</span>
+        </div>
+      )}
+
+      {storyTypes === undefined ? (
+        <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><Spinner /></div>
+      ) : storyTypes.length === 0 ? (
+        <div style={{ padding: "40px 24px", textAlign: "center", background: "#fff", border: "1.5px solid rgba(0,0,0,0.06)", borderRadius: "1rem" }}>
+          <p style={{ fontFamily: "'Nunito', sans-serif", color: "rgba(45,45,45,0.4)", margin: "0 0 12px" }}>No story types found. Click &quot;Seed defaults&quot; to add them.</p>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {storyTypes.map((st: any) => (
+            <div key={st._id} style={{ background: "#fff", border: "1.5px solid rgba(0,0,0,0.06)", borderRadius: "1rem", padding: "18px 20px" }}>
+              {editingId === st._id ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <input value={editForm.emoji} onChange={e => setEditForm(f => ({ ...f, emoji: e.target.value }))} placeholder="Emoji" style={{ ...InputStyle(), width: 70 }} />
+                    <input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} placeholder="Name" style={{ ...InputStyle(), flex: 1 }} />
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", fontFamily: "'Nunito', sans-serif", fontSize: "0.85rem" }}>
+                      <input type="checkbox" checked={editForm.isActive} onChange={e => setEditForm(f => ({ ...f, isActive: e.target.checked }))} />
+                      Active
+                    </label>
+                  </div>
+                  <input value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} placeholder="Short description for UI" style={InputStyle()} />
+                  <textarea value={editForm.promptHint} onChange={e => setEditForm(f => ({ ...f, promptHint: e.target.value }))} placeholder="Prompt hint for AI…" rows={4} style={{ ...InputStyle(), resize: "vertical" as const, fontFamily: "monospace", fontSize: "0.82rem" }} />
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button onClick={() => saveEdit(st._id)} disabled={saving} style={{ padding: "8px 20px", borderRadius: "0.6rem", background: "var(--lf-teal)", border: "none", color: "#fff", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.85rem", cursor: "pointer" }}>
+                      {saving ? "…" : "Save"}
+                    </button>
+                    <button onClick={() => setEditingId(null)} style={{ padding: "8px 16px", borderRadius: "0.6rem", background: "none", border: "1.5px solid rgba(0,0,0,0.12)", color: "rgba(45,45,45,0.6)", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.85rem", cursor: "pointer" }}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+                  <span style={{ fontSize: "1.8rem", flexShrink: 0, lineHeight: 1, marginTop: 2 }}>{st.emoji}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1rem", color: "var(--lf-dark)" }}>{st.name}</span>
+                      <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.72rem", fontWeight: 700, padding: "1px 8px", borderRadius: "999px", background: st.isActive ? "rgba(0,184,166,0.1)" : "rgba(0,0,0,0.06)", color: st.isActive ? "#0d7a6e" : "rgba(45,45,45,0.5)" }}>
+                        {st.isActive ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                    <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.83rem", color: "rgba(45,45,45,0.6)", margin: "0 0 6px" }}>{st.description}</p>
+                    <p style={{ fontFamily: "monospace", fontSize: "0.76rem", color: "rgba(45,45,45,0.4)", margin: 0, lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" as const }}>{st.promptHint}</p>
+                  </div>
+                  <button onClick={() => startEdit(st)} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.85rem", color: "var(--lf-teal)", flexShrink: 0 }}>Edit</button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Tab: Languages ───────────────────────────────────────────────────────────
+
+function LanguagesTab({ isAdmin }: { isAdmin: boolean }) {
+  const languages = useQuery((api as any)["migration/languages"].listAll, isAdmin ? {} : "skip") as any[] | undefined;
+  const updateLanguage = useMutation((api as any)["migration/languages"].update);
+  const seedLanguages = useMutation((api as any)["migration/languages"].seed);
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", nativeName: "", flag: "", voiceGroup: "", isActive: true, sortOrder: 1 });
+  const [saving, setSaving] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+  const [seedResult, setSeedResult] = useState<string | null>(null);
+
+  function startEdit(lang: any) {
+    setEditingId(lang._id);
+    setEditForm({ name: lang.name ?? "", nativeName: lang.nativeName ?? "", flag: lang.flag ?? "", voiceGroup: lang.voiceGroup ?? "english", isActive: lang.isActive ?? true, sortOrder: lang.sortOrder ?? 1 });
+  }
+
+  async function saveEdit(id: string) {
+    setSaving(true);
+    try {
+      await updateLanguage({ id: id as any, ...editForm });
+      setEditingId(null);
+    } catch (e: any) {
+      alert(e?.message ?? "Failed to save.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSeed() {
+    setSeeding(true);
+    setSeedResult(null);
+    try {
+      const result: any = await seedLanguages({});
+      setSeedResult(`Seeded ${result.seeded} language(s).`);
+      setTimeout(() => setSeedResult(null), 4000);
+    } catch (e: any) {
+      setSeedResult(`Error: ${e?.message}`);
+    } finally {
+      setSeeding(false);
+    }
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <div>
+          <h3 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "var(--lf-dark)", margin: "0 0 4px" }}>Languages</h3>
+          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.85rem", color: "rgba(45,45,45,0.5)", margin: 0 }}>
+            Manage supported story languages. Voice group controls which TTS voices are used.
+          </p>
+        </div>
+        <button
+          onClick={handleSeed}
+          disabled={seeding}
+          style={{ padding: "8px 16px", borderRadius: "0.6rem", background: "rgba(0,0,0,0.06)", border: "none", color: "rgba(45,45,45,0.7)", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.85rem", cursor: seeding ? "not-allowed" : "pointer", whiteSpace: "nowrap", opacity: seeding ? 0.6 : 1 }}
+        >
+          {seeding ? "…" : "Seed defaults"}
+        </button>
+      </div>
+
+      {seedResult && (
+        <div style={{ padding: "10px 16px", background: "rgba(0,184,166,0.1)", border: "1px solid rgba(0,184,166,0.2)", borderRadius: "0.7rem" }}>
+          <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.85rem", color: "#0d7a6e" }}>{seedResult}</span>
+        </div>
+      )}
+
+      {languages === undefined ? (
+        <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><Spinner /></div>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table style={TABLE_STYLE}>
+            <thead>
+              <tr>
+                <th style={TH_STYLE}>Flag</th>
+                <th style={TH_STYLE}>Name</th>
+                <th style={TH_STYLE}>Native</th>
+                <th style={TH_STYLE}>Code</th>
+                <th style={TH_STYLE}>Voice Group</th>
+                <th style={TH_STYLE}>Order</th>
+                <th style={TH_STYLE}>Status</th>
+                <th style={{ ...TH_STYLE, textAlign: "right" }}>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(languages ?? []).map((lang: any, i: number) => (
+                <tr key={lang._id} style={{ background: i % 2 === 0 ? "#fff" : "rgba(0,0,0,0.02)" }}>
+                  {editingId === lang._id ? (
+                    <td colSpan={8} style={TD_STYLE}>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                        <input value={editForm.flag} onChange={e => setEditForm(f => ({ ...f, flag: e.target.value }))} placeholder="🏳️" style={{ ...InputStyle(), width: 60 }} />
+                        <input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} placeholder="Name" style={{ ...InputStyle(), width: 120 }} />
+                        <input value={editForm.nativeName} onChange={e => setEditForm(f => ({ ...f, nativeName: e.target.value }))} placeholder="Native name" style={{ ...InputStyle(), width: 120 }} />
+                        <select value={editForm.voiceGroup} onChange={e => setEditForm(f => ({ ...f, voiceGroup: e.target.value }))} style={{ ...InputStyle(), width: "auto" }}>
+                          <option value="english">english</option>
+                          <option value="hindi">hindi</option>
+                        </select>
+                        <input type="number" value={editForm.sortOrder} onChange={e => setEditForm(f => ({ ...f, sortOrder: parseInt(e.target.value) || 1 }))} style={{ ...InputStyle(), width: 70 }} />
+                        <label style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: "'Nunito', sans-serif", fontSize: "0.85rem" }}>
+                          <input type="checkbox" checked={editForm.isActive} onChange={e => setEditForm(f => ({ ...f, isActive: e.target.checked }))} /> Active
+                        </label>
+                        <button onClick={() => saveEdit(lang._id)} disabled={saving} style={{ padding: "6px 14px", borderRadius: "0.5rem", background: "var(--lf-teal)", border: "none", color: "#fff", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.82rem", cursor: "pointer" }}>
+                          {saving ? "…" : "Save"}
+                        </button>
+                        <button onClick={() => setEditingId(null)} style={{ padding: "6px 12px", borderRadius: "0.5rem", background: "none", border: "1px solid rgba(0,0,0,0.12)", color: "rgba(45,45,45,0.6)", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.82rem", cursor: "pointer" }}>Cancel</button>
+                      </div>
+                    </td>
+                  ) : (
+                    <>
+                      <td style={TD_STYLE}><span style={{ fontSize: "1.2rem" }}>{lang.flag}</span></td>
+                      <td style={{ ...TD_STYLE, fontWeight: 600 }}>{lang.name}</td>
+                      <td style={TD_STYLE}>{lang.nativeName}</td>
+                      <td style={{ ...TD_STYLE, fontFamily: "monospace", fontSize: "0.82rem", color: "rgba(45,45,45,0.5)" }}>{lang.code}</td>
+                      <td style={TD_STYLE}>
+                        <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.76rem", fontWeight: 700, padding: "2px 8px", borderRadius: "999px", background: lang.voiceGroup === "english" ? "rgba(0,0,0,0.06)" : "rgba(0,184,166,0.1)", color: lang.voiceGroup === "english" ? "rgba(45,45,45,0.6)" : "#0d7a6e" }}>
+                          {lang.voiceGroup}
+                        </span>
+                      </td>
+                      <td style={TD_STYLE}>{lang.sortOrder}</td>
+                      <td style={TD_STYLE}>
+                        <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.76rem", fontWeight: 700, padding: "2px 8px", borderRadius: "999px", background: lang.isActive ? "rgba(0,184,166,0.1)" : "rgba(0,0,0,0.06)", color: lang.isActive ? "#0d7a6e" : "rgba(45,45,45,0.5)" }}>
+                          {lang.isActive ? "Active" : "Off"}
+                        </span>
+                      </td>
+                      <td style={{ ...TD_STYLE, textAlign: "right" }}>
+                        <button onClick={() => startEdit(lang)} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.82rem", color: "var(--lf-teal)" }}>Edit</button>
+                      </td>
+                    </>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Tab: System Prompt ───────────────────────────────────────────────────────
+
+function SystemPromptTab({ isAdmin }: { isAdmin: boolean }) {
+  const config = useQuery((api as any).systemConfig.get, isAdmin ? { key: "system_prompt" } : "skip") as any | undefined;
+  const setConfig = useMutation((api as any).systemConfig.set);
+
+  const [draft, setDraft] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveResult, setSaveResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  const currentValue = config?.value ?? "";
+  const displayValue = draft !== null ? draft : currentValue;
+
+  async function handleSave() {
+    if (draft === null) return;
+    setSaving(true);
+    setSaveResult(null);
+    try {
+      await setConfig({ key: "system_prompt", value: draft });
+      setDraft(null);
+      setSaveResult({ ok: true, msg: "System prompt saved successfully." });
+      setTimeout(() => setSaveResult(null), 5000);
+    } catch (e: any) {
+      setSaveResult({ ok: false, msg: e?.message ?? "Failed to save." });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const isDirty = draft !== null && draft !== currentValue;
+  const charCount = displayValue.length;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 820 }}>
+      <div>
+        <h3 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "var(--lf-dark)", margin: "0 0 4px" }}>System Prompt</h3>
+        <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.85rem", color: "rgba(45,45,45,0.5)", margin: 0 }}>
+          This is the master instruction set sent to GPT-4.1 for every story. Edits take effect immediately on the next generation.
+          {currentValue ? "" : " (Using SYSTEM_PROMPT env var as fallback until saved here.)"}
+        </p>
+      </div>
+
+      {saveResult && (
+        <div style={{ padding: "10px 16px", background: saveResult.ok ? "rgba(0,184,166,0.1)" : "rgba(220,38,38,0.08)", border: `1px solid ${saveResult.ok ? "rgba(0,184,166,0.2)" : "rgba(220,38,38,0.15)"}`, borderRadius: "0.7rem" }}>
+          <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.85rem", color: saveResult.ok ? "#0d7a6e" : "#b91c1c" }}>{saveResult.msg}</span>
+        </div>
+      )}
+
+      {config === undefined ? (
+        <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><Spinner /></div>
+      ) : (
+        <>
+          <textarea
+            value={displayValue}
+            onChange={e => setDraft(e.target.value)}
+            rows={28}
+            style={{
+              ...InputStyle({ fontFamily: "monospace", fontSize: "0.82rem", lineHeight: "1.6", resize: "vertical" as const }),
+              background: isDirty ? "#fffef5" : "#fff",
+              border: isDirty ? "1.5px solid rgba(249,199,0,0.5)" : "1.5px solid rgba(0,0,0,0.12)",
+            }}
+            placeholder="Enter the master system prompt here…"
+          />
+
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.78rem", color: "rgba(45,45,45,0.4)" }}>
+              {charCount.toLocaleString()} chars
+              {isDirty && <span style={{ color: "#8a6900", fontWeight: 700, marginLeft: 8 }}>⚠ Unsaved changes</span>}
+            </span>
+            <div style={{ display: "flex", gap: 10 }}>
+              {isDirty && (
+                <button
+                  onClick={() => setDraft(null)}
+                  style={{ padding: "9px 18px", borderRadius: "0.6rem", background: "none", border: "1.5px solid rgba(0,0,0,0.12)", color: "rgba(45,45,45,0.6)", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.88rem", cursor: "pointer" }}
+                >
+                  Discard
+                </button>
+              )}
+              <button
+                onClick={handleSave}
+                disabled={saving || !isDirty}
+                style={{ padding: "9px 24px", borderRadius: "0.6rem", background: isDirty ? "var(--lf-teal)" : "rgba(0,0,0,0.06)", border: "none", color: isDirty ? "#fff" : "rgba(45,45,45,0.4)", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.88rem", cursor: saving || !isDirty ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1 }}
+              >
+                {saving ? "Saving…" : "Save Prompt"}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 const TABS: { key: TabKey; label: string }[] = [
@@ -1619,6 +1981,9 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "assets", label: "Assets" },
   { key: "voice", label: "Voice" },
   { key: "settings", label: "Settings" },
+  { key: "story-types", label: "Story Types" },
+  { key: "languages", label: "Languages" },
+  { key: "system-prompt", label: "System Prompt" },
 ];
 
 export default function AdminPage() {
@@ -1864,6 +2229,9 @@ export default function AdminPage() {
           {activeTab === "assets" && <AssetsTab isAdmin={isAdmin} />}
           {activeTab === "voice" && <VoiceTab isAdmin={isAdmin} />}
           {activeTab === "settings" && <SettingsTab isAdmin={isAdmin} />}
+          {activeTab === "story-types" && <TabErrorBoundary><StoryTypesTab isAdmin={isAdmin} /></TabErrorBoundary>}
+          {activeTab === "languages" && <TabErrorBoundary><LanguagesTab isAdmin={isAdmin} /></TabErrorBoundary>}
+          {activeTab === "system-prompt" && <TabErrorBoundary><SystemPromptTab isAdmin={isAdmin} /></TabErrorBoundary>}
         </div>
       </main>
     </div>

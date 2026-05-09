@@ -16,26 +16,15 @@ import { api } from "../../../convex/_generated/api";
 import {
   Sparkles,
   ChevronLeft,
-  Library,
   User,
   Zap,
   BookOpen,
   Globe,
-  Ruler,
-  Heart,
-  FileText,
   Loader2,
   Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { UserPill } from "@/components/layout/UserPill";
-
-const LANGUAGES = ["English", "Hindi"] as const;
-const LENGTHS: { value: "short" | "medium" | "long"; label: string; desc: string; credits: number; premium?: boolean }[] = [
-  { value: "short", label: "Short", desc: "~3 min read", credits: 60 },
-  { value: "medium", label: "Medium", desc: "~6 min read", credits: 80 },
-  { value: "long", label: "Long", desc: "~10 min read", credits: 0, premium: true },
-];
 
 export default function GeneratePage() {
   const { isAuthenticated } = useConvexAuth();
@@ -65,41 +54,41 @@ function GenerateForm({ isAuthenticated }: { isAuthenticated: boolean }) {
 
   const profile = useQuery(api.userProfiles.getProfile, isAuthenticated ? {} : "skip");
   const credits = useQuery(api.credit.list, isAuthenticated ? {} : "skip");
-  const subscription = useQuery(api.subscription.getSubscription, isAuthenticated ? {} : "skip");
   const themes = useQuery(api["migration/theme"].list, isAuthenticated ? {} : "skip");
   const lessons = useQuery(api["migration/lesson"].list, isAuthenticated ? {} : "skip");
+  const storyTypes = useQuery((api as any)["migration/story_types"].list, isAuthenticated ? {} : "skip");
+  const languages = useQuery((api as any)["migration/languages"].list, isAuthenticated ? {} : "skip");
 
   const generateStory = useAction(api.generateStory.generateStoryText);
 
   const availableCredits = credits?.[0]?.availableCredits ?? 0;
-  const isPremium = subscription?.status === "active";
   const hasSecondChild = !!(profile as { child2Name?: string } | null | undefined)?.child2Name;
 
   const [childId, setChildId] = useState<"1" | "2">("1");
-  const [length, setLength] = useState<"short" | "medium" | "long">("short");
-  const [language, setLanguage] = useState<"English" | "Hindi">("English");
+  const [storyType, setStoryType] = useState<string>("adventure");
+  const [languageCode, setLanguageCode] = useState<string>("en");
   const [theme, setTheme] = useState("");
   const [lesson, setLesson] = useState("");
-  const [useFavorites, setUseFavorites] = useState(true);
-  const [textOnly, setTextOnly] = useState(false);
   const [generating, setGenerating] = useState(false);
 
-  const creditCost = textOnly ? 20 : length === "short" ? 60 : length === "medium" ? 80 : 0;
-  const canAfford = availableCredits >= creditCost;
+  const CREDIT_COST = 60;
+  const canAfford = availableCredits >= CREDIT_COST;
   const canGenerate = !!theme && canAfford && !generating;
 
   async function handleGenerate() {
     if (!canGenerate) return;
     setGenerating(true);
     try {
+      // Resolve language name from code
+      const langRecord = resolvedLanguages.find((l: any) => l.code === languageCode);
+      const languageName = langRecord?.name ?? "English";
+
       const result = await generateStory({
         params: {
           theme,
           lesson: lesson || undefined,
-          length,
-          language,
-          useFavorites,
-          textOnly,
+          storyType,
+          language: languageName,
           childId: hasSecondChild ? childId : undefined,
         },
       });
@@ -111,7 +100,25 @@ function GenerateForm({ isAuthenticated }: { isAuthenticated: boolean }) {
     }
   }
 
-  const isLoading = profile === undefined || themes === undefined || lessons === undefined || credits === undefined;
+  // Fallback story types if DB not yet seeded
+  const FALLBACK_STORY_TYPES = [
+    { code: "adventure", name: "Big Adventure", emoji: "🗺️", description: "A quest full of discovery, teamwork, and a twist that changes everything." },
+    { code: "silly", name: "Silly & Funny", emoji: "🌀", description: "Chaotic fun where Fafa's impossible ideas somehow save the day." },
+    { code: "cozy", name: "Cozy Bedtime", emoji: "🌙", description: "A gentle, slow story full of warmth — perfect for winding down." },
+  ];
+  const FALLBACK_LANGUAGES = [
+    { code: "en", name: "English", nativeName: "English", flag: "🇬🇧" },
+    { code: "hi", name: "Hindi", nativeName: "हिंदी", flag: "🇮🇳" },
+  ];
+
+  const resolvedStoryTypes = (storyTypes && (storyTypes as any[]).length > 0) ? storyTypes as any[] : FALLBACK_STORY_TYPES;
+  const resolvedLanguages = (languages && (languages as any[]).length > 0) ? languages as any[] : FALLBACK_LANGUAGES;
+
+  const isLoading =
+    profile === undefined ||
+    themes === undefined ||
+    lessons === undefined ||
+    credits === undefined;
 
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(160deg,#FFF8E7 0%,#E6FAF6 60%,#F3EEFF 100%)" }}>
@@ -160,7 +167,7 @@ function GenerateForm({ isAuthenticated }: { isAuthenticated: boolean }) {
               {isLoading ? "—" : availableCredits} credits available
             </span>
           </div>
-          {availableCredits < 80 && (
+          {!isLoading && availableCredits < 120 && (
             <Link href="/pricing" className="text-xs font-semibold" style={{ color: "var(--lf-teal)", fontFamily: "'Nunito', sans-serif" }}>
               Top up →
             </Link>
@@ -191,54 +198,66 @@ function GenerateForm({ isAuthenticated }: { isAuthenticated: boolean }) {
               </Section>
             )}
 
-            {/* Language */}
-            <Section icon={<Globe size={18} />} title="Language">
-              <div className="flex gap-3">
-                {LANGUAGES.map((lang) => (
-                  <OptionButton
-                    key={lang}
-                    selected={language === lang}
-                    onClick={() => setLanguage(lang)}
-                    label={lang === "English" ? "🇬🇧 English" : "🇮🇳 Hindi"}
-                  />
+            {/* Story Type */}
+            <Section icon={<Sparkles size={18} />} title="Story type">
+              <div className="flex flex-col gap-3">
+                {resolvedStoryTypes.map((st: any) => (
+                  <button
+                    key={st.code}
+                    onClick={() => setStoryType(st.code)}
+                    className="flex items-start gap-4 p-4 rounded-2xl text-left transition-all"
+                    style={{
+                      background: storyType === st.code ? "var(--lf-dark)" : "#fff",
+                      border: `2px solid ${storyType === st.code ? "var(--lf-dark)" : "rgba(0,0,0,0.08)"}`,
+                      color: storyType === st.code ? "#fff" : "var(--lf-dark)",
+                    }}
+                  >
+                    <span style={{ fontSize: "1.8rem", flexShrink: 0, lineHeight: 1 }}>{st.emoji}</span>
+                    <div className="flex flex-col gap-0.5 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1rem" }}>
+                          {st.name}
+                        </span>
+                        {storyType === st.code && <Check size={15} style={{ color: "var(--lf-teal)" }} />}
+                      </div>
+                      <span style={{
+                        fontFamily: "'Nunito', sans-serif",
+                        fontSize: "0.83rem",
+                        opacity: storyType === st.code ? 0.75 : 0.55,
+                      }}>
+                        {st.description}
+                      </span>
+                    </div>
+                  </button>
                 ))}
               </div>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.78rem", color: "rgba(45,45,45,0.4)", marginTop: 4 }}>
+                Each story is 430–450 words · 60 credits
+              </p>
             </Section>
 
-            {/* Length */}
-            <Section icon={<Ruler size={18} />} title="Story length">
-              <div className="flex gap-3 flex-wrap">
-                {LENGTHS.map((l) => {
-                  const locked = l.premium && !isPremium;
-                  return (
-                    <button
-                      key={l.value}
-                      onClick={() => !locked && setLength(l.value)}
-                      disabled={locked}
-                      className="flex flex-col gap-0.5 px-5 py-3 rounded-2xl text-left transition-all"
-                      style={{
-                        background: length === l.value ? "var(--lf-teal)" : "#fff",
-                        border: `1.5px solid ${length === l.value ? "var(--lf-teal)" : "rgba(0,0,0,0.08)"}`,
-                        color: length === l.value ? "#fff" : "var(--lf-dark)",
-                        opacity: locked ? 0.5 : 1,
-                        cursor: locked ? "not-allowed" : "pointer",
-                        minWidth: 110,
-                      }}
-                    >
-                      <span style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 700, fontSize: "0.95rem" }}>
-                        {l.label} {locked ? "🔒" : ""}
-                      </span>
-                      <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.78rem", opacity: 0.75 }}>
-                        {l.desc}
-                      </span>
-                      {!l.premium && (
-                        <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.75rem", fontWeight: 600, opacity: 0.85 }}>
-                          {l.credits} credits
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+            {/* Language */}
+            <Section icon={<Globe size={18} />} title="Language">
+              <div className="flex flex-wrap gap-2">
+                {resolvedLanguages.map((lang: any) => (
+                  <button
+                    key={lang.code}
+                    onClick={() => setLanguageCode(lang.code)}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all"
+                    style={{
+                      background: languageCode === lang.code ? "var(--lf-teal)" : "#fff",
+                      border: `1.5px solid ${languageCode === lang.code ? "var(--lf-teal)" : "rgba(0,0,0,0.1)"}`,
+                      color: languageCode === lang.code ? "#fff" : "var(--lf-dark)",
+                      fontFamily: "'Nunito', sans-serif",
+                    }}
+                  >
+                    <span>{lang.flag}</span>
+                    <span>{lang.name}</span>
+                    {lang.nativeName !== lang.name && (
+                      <span style={{ opacity: 0.7, fontSize: "0.78rem" }}>({lang.nativeName})</span>
+                    )}
+                  </button>
+                ))}
               </div>
             </Section>
 
@@ -301,27 +320,6 @@ function GenerateForm({ isAuthenticated }: { isAuthenticated: boolean }) {
               </div>
             </Section>
 
-            {/* Extra options */}
-            <Section icon={<Heart size={18} />} title="Personalisation">
-              <div className="flex flex-col gap-3">
-                <Checkbox
-                  checked={useFavorites}
-                  onChange={setUseFavorites}
-                  label="Personalise with favourites"
-                  desc="Include your child's favourite colour, animal, and interests"
-                />
-                <Checkbox
-                  checked={textOnly}
-                  onChange={(v) => {
-                    setTextOnly(v);
-                    if (v) setLength("short");
-                  }}
-                  label={<span className="flex items-center gap-1.5"><FileText size={14} /> Text only (20 credits)</span>}
-                  desc="Skip AI illustrations — just the story text"
-                />
-              </div>
-            </Section>
-
             {/* Generate button */}
             {availableCredits < 20 ? (
               <div className="flex flex-col gap-3 items-center py-6 px-6 rounded-2xl" style={{ background: "rgba(255,100,60,0.06)", border: "1.5px solid rgba(255,100,60,0.2)" }}>
@@ -336,7 +334,7 @@ function GenerateForm({ isAuthenticated }: { isAuthenticated: boolean }) {
               <div className="flex flex-col gap-2">
                 {!canAfford && (
                   <p className="text-sm text-center" style={{ color: "#b83030", fontFamily: "'Nunito', sans-serif" }}>
-                    Not enough credits ({availableCredits} available, {creditCost} needed).{" "}
+                    Not enough credits ({availableCredits} available, {CREDIT_COST} needed).{" "}
                     <Link href="/pricing" style={{ color: "var(--lf-teal)", fontWeight: 600 }}>Top up →</Link>
                   </p>
                 )}
@@ -359,7 +357,7 @@ function GenerateForm({ isAuthenticated }: { isAuthenticated: boolean }) {
                   ) : (
                     <>
                       <Sparkles size={18} />
-                      Generate story {creditCost > 0 ? `· ${creditCost} credits` : ""}
+                      Generate story · {CREDIT_COST} credits
                     </>
                   )}
                 </button>
@@ -406,41 +404,6 @@ function OptionButton({ selected, onClick, label }: { selected: boolean; onClick
     >
       {selected && <Check size={14} />}
       {label}
-    </button>
-  );
-}
-
-function Checkbox({
-  checked,
-  onChange,
-  label,
-  desc,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  label: React.ReactNode;
-  desc: string;
-}) {
-  return (
-    <button
-      onClick={() => onChange(!checked)}
-      className="flex items-start gap-3 text-left transition-all rounded-xl p-3"
-      style={{ background: checked ? "rgba(0,184,166,0.06)" : "transparent", border: `1.5px solid ${checked ? "var(--lf-teal)" : "rgba(0,0,0,0.06)"}` }}
-    >
-      <div
-        className="flex-shrink-0 w-5 h-5 rounded-md flex items-center justify-center mt-0.5 transition-all"
-        style={{ background: checked ? "var(--lf-teal)" : "#fff", border: `2px solid ${checked ? "var(--lf-teal)" : "rgba(0,0,0,0.2)"}` }}
-      >
-        {checked && <Check size={12} color="#fff" />}
-      </div>
-      <div className="flex flex-col gap-0.5">
-        <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.9rem", color: "var(--lf-dark)" }}>
-          {label}
-        </span>
-        <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.8rem", color: "rgba(45,45,45,0.5)" }}>
-          {desc}
-        </span>
-      </div>
     </button>
   );
 }
