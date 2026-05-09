@@ -45,10 +45,11 @@ export const createRazorpaySubscription = action({
       plan_id: planId,
       customer_notify: 1,
       quantity: 1,
-      total_count: selectedPlan.interval === "monthly" ? 12 : 1, // 1 months for yearly, 12 for monthly
+      total_count: selectedPlan.interval === "monthly" ? 12 : 1,
+      callback_url: `${siteUrl}/dashboard`,
+      callback_method: "get",
       notes: {
         userId: userId,
-        successUrl: redirectUrl, // Store success URL for redirect handling
       },
     }) as RazorpaySubscription;
 

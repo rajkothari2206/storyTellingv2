@@ -88,7 +88,9 @@ function pickVoiceForSpeaker(
 }
 
 function parseStoryToSpeakerLines(title: string, content: string, childName: string) {
-  const lines = [title, ...content.split("\n").map(l => l.trim()).filter(Boolean)];
+  // Filter out empty/undefined title so it doesn't become a dead narration line
+  const titleLines = title ? [title] : [];
+  const lines = [...titleLines, ...content.split("\n").map(l => l.trim()).filter(Boolean)];
   const childLabel = (childName || "").trim().toLowerCase();
 
   const out: Array<{ order: number; speaker: string; text: string }> = [];

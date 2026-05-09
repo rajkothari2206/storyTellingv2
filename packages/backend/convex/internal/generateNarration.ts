@@ -1,4 +1,4 @@
-﻿import { internalAction } from "../_generated/server";
+import { internalAction } from "../_generated/server";
 import { v } from "convex/values";
 import { api } from "../_generated/api";
 import { generateMergedNarration } from "../narrationGenerator";
@@ -21,6 +21,7 @@ export const generateNarration = internalAction({
 
     await generateMergedNarration(ctx, {
       storyId,
+      title: story.title || "",   // was missing — caused runtime crash on first line
       content: story.content,
       childName,
       childGender,
