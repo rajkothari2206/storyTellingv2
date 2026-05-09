@@ -106,7 +106,7 @@ export const generateStoryText: ReturnType<typeof action> = action({
 
     const makeStoryRequest = async (temperature: number) =>
       client.chat.completions.create({
-        model: "gpt-4.1",
+        model: "gpt-4o",
         temperature,
         messages: [
           { role: "system", content: system },
@@ -123,7 +123,7 @@ export const generateStoryText: ReturnType<typeof action> = action({
     if (isNonStory) {
       console.warn("AI returned non-story response, retrying:", content.slice(0, 80));
       const retryResp = await client.chat.completions.create({
-        model: "gpt-4.1",
+        model: "gpt-4o",
         temperature: 0.7,
         messages: [
           { role: "system", content: system },
