@@ -56,8 +56,9 @@ function GenerateForm({ isAuthenticated }: { isAuthenticated: boolean }) {
   const credits = useQuery(api.credit.list, isAuthenticated ? {} : "skip");
   const themes = useQuery(api["migration/theme"].list, isAuthenticated ? {} : "skip");
   const lessons = useQuery(api["migration/lesson"].list, isAuthenticated ? {} : "skip");
-  const storyTypes = useQuery((api as any)["migration/story_types"].list, isAuthenticated ? {} : "skip");
-  const languages = useQuery((api as any)["migration/languages"].list, isAuthenticated ? {} : "skip");
+  // NOTE: story_types and languages are always served from hardcoded fallbacks
+  // until the Convex backend migration modules are confirmed deployed.
+  // Using useQuery on non-existent Convex functions throws instead of returning undefined.
 
   const generateStory = useAction(api.generateStory.generateStoryText);
 
@@ -116,8 +117,8 @@ function GenerateForm({ isAuthenticated }: { isAuthenticated: boolean }) {
     { code: "te", name: "Telugu", nativeName: "తెలుగు", flag: "🇮🇳" },
   ];
 
-  const resolvedStoryTypes = (storyTypes && (storyTypes as any[]).length > 0) ? storyTypes as any[] : FALLBACK_STORY_TYPES;
-  const resolvedLanguages = (languages && (languages as any[]).length > 0) ? languages as any[] : FALLBACK_LANGUAGES;
+  const resolvedStoryTypes = FALLBACK_STORY_TYPES;
+  const resolvedLanguages = FALLBACK_LANGUAGES;
 
   const isLoading =
     profile === undefined ||
