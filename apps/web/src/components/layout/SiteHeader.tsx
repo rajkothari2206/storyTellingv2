@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X, Sparkles, LayoutDashboard } from "lucide-react";
+import { Menu, X, Sparkles, LayoutDashboard, Star } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { UserPill } from "@/components/layout/UserPill";
+import { useConvexAuth, useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 
 const navLinks = [
   { label: "Stories", href: "/stories" },
@@ -54,6 +56,12 @@ export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const session = authClient.useSession();
   const isLoggedIn = !!session.data;
+  const { isAuthenticated } = useConvexAuth();
+  const subscription = useQuery(
+    api.subscription.getSubscription,
+    isAuthenticated ? {} : "skip"
+  );
+  const isSubscriber = subscription?.status === "active";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -150,6 +158,20 @@ export function SiteHeader() {
           {/* Auth + CTA */}
           {isLoggedIn ? (
             <div className="flex items-center gap-2">
+              {isSubscriber && (
+                <span
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold"
+                  style={{
+                    background: "linear-gradient(135deg, #f9c700 0%, #ffb700 100%)",
+                    color: "#1a1a2e",
+                    boxShadow: "0 2px 8px rgba(249,199,0,0.35)",
+                    letterSpacing: "0.03em",
+                  }}
+                >
+                  <Star size={11} fill="currentColor" />
+                  Magic Pass
+                </span>
+              )}
               <Link
                 href="/dashboard"
                 className="btn-primary"
@@ -222,6 +244,21 @@ export function SiteHeader() {
             <div className="flex flex-col gap-2 mt-4">
               {isLoggedIn ? (
                 <>
+                  {isSubscriber && (
+                    <div className="flex justify-center pb-1">
+                      <span
+                        className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-bold"
+                        style={{
+                          background: "linear-gradient(135deg, #f9c700 0%, #ffb700 100%)",
+                          color: "#1a1a2e",
+                          boxShadow: "0 2px 8px rgba(249,199,0,0.35)",
+                        }}
+                      >
+                        <Star size={13} fill="currentColor" />
+                        Magic Pass Member
+                      </span>
+                    </div>
+                  )}
                   <Link
                     href="/dashboard"
                     onClick={() => setMenuOpen(false)}
