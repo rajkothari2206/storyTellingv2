@@ -109,6 +109,11 @@ function GenerateForm({ isAuthenticated }: { isAuthenticated: boolean }) {
   const FALLBACK_LANGUAGES = [
     { code: "en", name: "English", nativeName: "English", flag: "🇬🇧" },
     { code: "hi", name: "Hindi", nativeName: "हिंदी", flag: "🇮🇳" },
+    { code: "bn", name: "Bengali", nativeName: "বাংলা", flag: "🇧🇩" },
+    { code: "gu", name: "Gujarati", nativeName: "ગુજરાતી", flag: "🇮🇳" },
+    { code: "ta", name: "Tamil", nativeName: "தமிழ்", flag: "🇮🇳" },
+    { code: "mr", name: "Marathi", nativeName: "मराठी", flag: "🇮🇳" },
+    { code: "te", name: "Telugu", nativeName: "తెలుగు", flag: "🇮🇳" },
   ];
 
   const resolvedStoryTypes = (storyTypes && (storyTypes as any[]).length > 0) ? storyTypes as any[] : FALLBACK_STORY_TYPES;
