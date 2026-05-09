@@ -13,6 +13,10 @@ export const generateStoryText: ReturnType<typeof action> = action({
       storyType: v.optional(v.string()),   // "adventure" | "silly" | "cozy"
       language: v.optional(v.string()),
       childId: v.optional(v.union(v.literal("1"), v.literal("2"))),
+      // Legacy fields from old generate page — accepted but ignored
+      length: v.optional(v.string()),
+      textOnly: v.optional(v.boolean()),
+      useFavorites: v.optional(v.boolean()),
     }),
   },
 
