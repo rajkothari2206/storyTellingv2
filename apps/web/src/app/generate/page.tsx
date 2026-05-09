@@ -56,9 +56,8 @@ function GenerateForm({ isAuthenticated }: { isAuthenticated: boolean }) {
   const credits = useQuery(api.credit.list, isAuthenticated ? {} : "skip");
   const themes = useQuery(api["migration/theme"].list, isAuthenticated ? {} : "skip");
   const lessons = useQuery(api["migration/lesson"].list, isAuthenticated ? {} : "skip");
-  // NOTE: story_types and languages are always served from hardcoded fallbacks
-  // until the Convex backend migration modules are confirmed deployed.
-  // Using useQuery on non-existent Convex functions throws instead of returning undefined.
+  // NOTE: story_types and languages are always served from hardcoded fallbacks.
+  // Using useQuery on these functions was crashing the component before fallback logic ran.
 
   const generateStory = useAction(api.generateStory.generateStoryText);
 
