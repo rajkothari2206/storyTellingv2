@@ -114,13 +114,17 @@ export const generateStoryText: ReturnType<typeof action> = action({
     });
 
     const content = resp.choices?.[0]?.message?.content?.toString().trim() || "";
-    if (!content.includes("SCENE METADATA") && !/Scene \d+:/i.test(content)) {
+    if (!content) {
       await ctx.runMutation(api.stories._markStatus, {
         storyId,
         status: "error",
-        error: "Missing scene metadata",
+        error: "Empty response from AI",
       });
-      throw new Error("Missing scene metadata");
+      throw new Error("Empty response from AI");
+    }
+    // Log warning if scene metadata is missing (non-fatal — happens with non-English stories)
+    if (!content.includes("SCENE METADATA") && !/Scene \d+:/i.test(content)) {
+      console.warn("Scene metadata missing from AI output — images may not generate. Language:", content.slice(0, 100));
     }
 
     await ctx.runMutation(api.stories._setContent, {
