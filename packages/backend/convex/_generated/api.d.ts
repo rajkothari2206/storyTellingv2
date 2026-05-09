@@ -22,10 +22,14 @@ import type * as migration_flavor_magical_triggers from "../migration/flavor_mag
 import type * as migration_flavor_obstacles from "../migration/flavor_obstacles.js";
 import type * as migration_flavor_openings from "../migration/flavor_openings.js";
 import type * as migration_flavor_payoffs from "../migration/flavor_payoffs.js";
+import type * as migration_languages from "../migration/languages.js";
 import type * as migration_lesson from "../migration/lesson.js";
 import type * as migration_personality from "../migration/personality.js";
 import type * as migration_razorpay_plan from "../migration/razorpay_plan.js";
+import type * as migration_seed_system_prompt from "../migration/seed_system_prompt.js";
+import type * as migration_story_types from "../migration/story_types.js";
 import type * as migration_structure from "../migration/structure.js";
+import type * as migration_system_config from "../migration/system_config.js";
 import type * as migration_theme from "../migration/theme.js";
 import type * as migration_theme_compatibility from "../migration/theme_compatibility.js";
 import type * as migration_voice_models from "../migration/voice_models.js";
@@ -44,6 +48,7 @@ import type * as stories from "../stories.js";
 import type * as storyElementSelector from "../storyElementSelector.js";
 import type * as storyPromptFormatter from "../storyPromptFormatter.js";
 import type * as subscription from "../subscription.js";
+import type * as systemConfig from "../systemConfig.js";
 import type * as userProfiles from "../userProfiles.js";
 import type * as voiceMap from "../voiceMap.js";
 
@@ -76,10 +81,14 @@ declare const fullApi: ApiFromModules<{
   "migration/flavor_obstacles": typeof migration_flavor_obstacles;
   "migration/flavor_openings": typeof migration_flavor_openings;
   "migration/flavor_payoffs": typeof migration_flavor_payoffs;
+  "migration/languages": typeof migration_languages;
   "migration/lesson": typeof migration_lesson;
   "migration/personality": typeof migration_personality;
   "migration/razorpay_plan": typeof migration_razorpay_plan;
+  "migration/seed_system_prompt": typeof migration_seed_system_prompt;
+  "migration/story_types": typeof migration_story_types;
   "migration/structure": typeof migration_structure;
+  "migration/system_config": typeof migration_system_config;
   "migration/theme": typeof migration_theme;
   "migration/theme_compatibility": typeof migration_theme_compatibility;
   "migration/voice_models": typeof migration_voice_models;
@@ -98,6 +107,7 @@ declare const fullApi: ApiFromModules<{
   storyElementSelector: typeof storyElementSelector;
   storyPromptFormatter: typeof storyPromptFormatter;
   subscription: typeof subscription;
+  systemConfig: typeof systemConfig;
   userProfiles: typeof userProfiles;
   voiceMap: typeof voiceMap;
 }>;
