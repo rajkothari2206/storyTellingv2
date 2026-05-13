@@ -36,22 +36,23 @@ export const listAll = query({
 	handler: async (ctx) => {
 		const user = await authComponent.getAuthUser(ctx);
 		if (!user) throw new Error("Not authenticated");
-		
+
 		const userIdentifier = (user as any).userId || (user as any)._id;
 		const userRole = await ctx.db
 			.query("user_roles")
 			.withIndex("by_user", (q) => q.eq("userId", userIdentifier))
 			.first();
-		
+
 		if (userRole?.role !== "admin") {
 			throw new Error("Admin access required");
 		}
-		
+
+		// Return ALL stories (including errors) so admin can see failed generations
 		const docs = await ctx.db
 			.query("stories")
 			.order("desc")
 			.collect();
-		return docs.filter((doc) => doc.status != "error");
+		return docs;
 	},
 });
 

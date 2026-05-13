@@ -346,11 +346,19 @@ function StoriesTab({ isAdmin, users }: { isAdmin: boolean; users: any[] | undef
   const filtered = useMemo(() => {
     const list = stories ?? [];
     return list.filter((s: any) => {
-      const matchSearch = !search || (s.title ?? "").toLowerCase().includes(search.toLowerCase());
+      const user = users?.find((u: any) => u.id === s.userId);
+      const matchSearch = !search || (
+        (s.title ?? "").toLowerCase().includes(search.toLowerCase()) ||
+        (s.params?.childName ?? "").toLowerCase().includes(search.toLowerCase()) ||
+        (user?.name ?? "").toLowerCase().includes(search.toLowerCase()) ||
+        (user?.email ?? "").toLowerCase().includes(search.toLowerCase()) ||
+        (user?.profile?.childName ?? "").toLowerCase().includes(search.toLowerCase()) ||
+        (s.userId ?? "").toLowerCase().includes(search.toLowerCase())
+      );
       const matchStatus = statusFilter === "all" || s.status === statusFilter;
       return matchSearch && matchStatus;
     });
-  }, [stories, search, statusFilter]);
+  }, [stories, users, search, statusFilter]);
 
   return (
     <>
@@ -360,7 +368,7 @@ function StoriesTab({ isAdmin, users }: { isAdmin: boolean; users: any[] | undef
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           <input
-            placeholder="Search by title…"
+            placeholder="Search by title, user, child…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{ ...InputStyle(), maxWidth: 280 }}

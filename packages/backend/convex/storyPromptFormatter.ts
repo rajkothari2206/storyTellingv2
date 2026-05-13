@@ -56,7 +56,7 @@ export function formatStoryPrompt(
       storyType: storyTypeName,
       storyTypeGuidance: storyTypeHint,
     },
-    instructions: "BEGIN STORY NOW.",
+    instructions: "BEGIN STORY NOW. MANDATORY: The story body must be exactly 430–450 words (title excluded, SCENE METADATA excluded). Count your words before finalising. Each of the 5 scenes must be approximately 85–90 words of story content. Do NOT write a short summary — write the full story at the required length. This word count is a hard constraint.",
   };
 
   return JSON.stringify(payload, null, 2);

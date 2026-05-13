@@ -700,7 +700,21 @@ function StoryViewer({
     </div>
   );
 
-  const isGenerating = story.status === "generating";
+  // Story is still being generated if it's in any in-progress status
+  const IN_PROGRESS_STATUSES = new Set(["queued", "generating", "text_ready", "images_ready", "voice_ready"]);
+  const isStillGenerating = IN_PROGRESS_STATUSES.has(story.status ?? "");
+  const isGenerating = story.status === "generating"; // kept for narrow "writing" stage checks
+
+  // Show the animated StoryForge loading screen while the story is in any generation stage
+  if (isStillGenerating) {
+    return (
+      <StoryForgeLoadingScreen
+        story={story}
+        imageUrls={imageUrls}
+        narrationUrl={narrationUrl}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "#0e0c1a" }}>
@@ -1531,7 +1545,7 @@ const prompt = STYLE_PREFIX + characterBlock(profile) +
 }
 
 /* ────────────────────────────────────────────────────────────────
-   Loading screen
+   Loading screen (auth / data not yet loaded)
 ──────────────────────────────────────────────────────────────── */
 function LoadingScreen() {
   return (
@@ -1543,6 +1557,251 @@ function LoadingScreen() {
       <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.4)", fontSize: "0.9rem" }}>
         Opening your story…
       </p>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+   StoryForge loading screen
+   Shown while story generation is in progress. Uses real-time
+   Convex data to display which stage we're in and how many
+   scene images have been painted so far.
+──────────────────────────────────────────────────────────────── */
+const FORGE_MESSAGES = [
+  ["✍️", "Lalli is sharpening his pencil…"],
+  ["🦊", "Fafa just had three ideas at once…"],
+  ["🌟", "Mixing the perfect palette of words…"],
+  ["🎨", "Fafa accidentally sat in the paint again…"],
+  ["🦁", "Lalli is making sure every detail is right…"],
+  ["✨", "Sprinkling a little magic on the pages…"],
+  ["📖", "The story is coming to life…"],
+  ["🎙️", "Warming up the voices for narration…"],
+];
+
+function StoryForgeLoadingScreen({
+  story,
+  imageUrls,
+  narrationUrl,
+}: {
+  story: StoryShape;
+  imageUrls: Array<{ url?: string | null }> | null | undefined;
+  narrationUrl: string | null;
+}) {
+  const [msgIdx, setMsgIdx] = useState(0);
+  const [dots, setDots] = useState(".");
+
+  // Cycle fun messages every 3.5 seconds
+  useEffect(() => {
+    const id = setInterval(() => setMsgIdx(i => (i + 1) % FORGE_MESSAGES.length), 3500);
+    return () => clearInterval(id);
+  }, []);
+
+  // Animate ellipsis
+  useEffect(() => {
+    const id = setInterval(() => setDots(d => d.length >= 3 ? "." : d + "."), 500);
+    return () => clearInterval(id);
+  }, []);
+
+  const status = story.status ?? "generating";
+  const imagesReady = imageUrls?.filter(u => u?.url).length ?? 0;
+  const TOTAL_SCENES = 5;
+
+  // Stage logic
+  let stage: 1 | 2 | 3;
+  let stageTitle: string;
+  let stageDesc: string;
+  let progress: number;
+
+  if (status === "generating") {
+    stage = 1;
+    stageTitle = "Writing the story" + dots;
+    stageDesc = "Lalli & Fafa are crafting your personalised adventure";
+    progress = 18;
+  } else if (imagesReady < TOTAL_SCENES) {
+    stage = 2;
+    stageTitle = `Painting scene ${imagesReady + 1} of ${TOTAL_SCENES}` + dots;
+    stageDesc = "Creating unique illustrations for each moment";
+    progress = 30 + (imagesReady / TOTAL_SCENES) * 48;
+  } else if (!narrationUrl) {
+    stage = 3;
+    stageTitle = "Recording the voices" + dots;
+    stageDesc = "Lalli, Fafa & friends are warming up their voices";
+    progress = 88;
+  } else {
+    stage = 3;
+    stageTitle = "Almost ready!";
+    stageDesc = "Just a moment more…";
+    progress = 96;
+  }
+
+  const [emoji, funMsg] = FORGE_MESSAGES[msgIdx];
+
+  return (
+    <div
+      className="min-h-screen flex flex-col items-center justify-center gap-6 px-6 relative overflow-hidden"
+      style={{ background: "#0e0c1a" }}
+    >
+      {/* Background glow orbs */}
+      <div style={{ position: "absolute", top: "10%", left: "8%",  width: 280, height: 280, background: "radial-gradient(circle,rgba(0,201,167,0.1) 0%,transparent 70%)",  borderRadius: "50%", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: "12%", right: "5%", width: 320, height: 320, background: "radial-gradient(circle,rgba(249,199,0,0.09) 0%,transparent 70%)", borderRadius: "50%", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", top: "45%", right: "15%", width: 200, height: 200, background: "radial-gradient(circle,rgba(168,85,247,0.08) 0%,transparent 70%)", borderRadius: "50%", pointerEvents: "none" }} />
+
+      {/* Back link */}
+      <Link
+        href="/library"
+        className="absolute top-5 left-5 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:bg-white/10"
+        style={{ color: "rgba(255,255,255,0.35)", fontFamily: "'Nunito', sans-serif" }}
+      >
+        <ArrowLeft size={13} /> Library
+      </Link>
+
+      {/* Logo + brand */}
+      <div className="flex flex-col items-center gap-2">
+        <div className="relative" style={{ width: 80, height: 80 }}>
+          <Image src="/lf-logo.png" alt="Lalli Fafa" fill className="object-contain animate-bounce" style={{ animationDuration: "2.2s" }} />
+        </div>
+        <div className="flex items-center gap-2">
+          <Sparkles size={14} style={{ color: "var(--lf-teal)" }} />
+          <span style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 900, fontSize: "1rem", letterSpacing: "0.1em", color: "var(--lf-teal)", textTransform: "uppercase" }}>
+            StoryForge
+          </span>
+          <Sparkles size={14} style={{ color: "var(--lf-teal)" }} />
+        </div>
+      </div>
+
+      {/* Stage title */}
+      <div className="flex flex-col items-center gap-1.5 text-center max-w-sm">
+        <h2 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1.35rem", color: "#fff", lineHeight: 1.3 }}>
+          {stageTitle}
+        </h2>
+        <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.88rem", color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>
+          {stageDesc}
+        </p>
+      </div>
+
+      {/* Stage pills */}
+      <div className="flex items-center gap-2">
+        {[
+          { n: 1, icon: "✍️", label: "Writing" },
+          { n: 2, icon: "🎨", label: "Illustrating" },
+          { n: 3, icon: "🎙️", label: "Recording" },
+        ].map(({ n, icon, label }) => (
+          <div
+            key={n}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all"
+            style={{
+              background: stage === n
+                ? "rgba(0,201,167,0.2)"
+                : stage > n
+                  ? "rgba(0,201,167,0.08)"
+                  : "rgba(255,255,255,0.05)",
+              border: `1px solid ${stage >= n ? "rgba(0,201,167,0.4)" : "rgba(255,255,255,0.1)"}`,
+              color: stage === n
+                ? "var(--lf-teal)"
+                : stage > n
+                  ? "rgba(0,201,167,0.5)"
+                  : "rgba(255,255,255,0.25)",
+              fontFamily: "'Nunito', sans-serif",
+              transform: stage === n ? "scale(1.05)" : "scale(1)",
+            }}
+          >
+            <span>{stage > n ? "✓" : icon}</span>
+            <span className="hidden sm:inline">{label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Progress bar */}
+      <div className="w-full max-w-sm flex flex-col gap-2">
+        <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
+          <div
+            className="h-full rounded-full transition-all"
+            style={{
+              width: `${progress}%`,
+              background: "linear-gradient(90deg, var(--lf-teal), #00a38d)",
+              boxShadow: "0 0 12px rgba(0,201,167,0.5)",
+              transition: "width 1.5s ease-out",
+            }}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.68rem", color: "rgba(255,255,255,0.25)" }}>
+            {Math.round(progress)}%
+          </span>
+          <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.68rem", color: "rgba(255,255,255,0.25)" }}>
+            This takes 1–2 min
+          </span>
+        </div>
+      </div>
+
+      {/* Scene image slots — shown during painting stage */}
+      {stage === 2 && (
+        <div className="flex gap-2">
+          {Array.from({ length: TOTAL_SCENES }, (_, i) => {
+            const url = imageUrls?.[i]?.url;
+            return (
+              <div
+                key={i}
+                className="relative rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center"
+                style={{
+                  width: 52,
+                  height: 52,
+                  background: url ? "transparent" : "rgba(255,255,255,0.05)",
+                  border: `1.5px solid ${url ? "rgba(0,201,167,0.5)" : i === imagesReady ? "rgba(249,199,0,0.4)" : "rgba(255,255,255,0.1)"}`,
+                  boxShadow: url ? "0 0 10px rgba(0,201,167,0.3)" : "none",
+                  transition: "all 0.5s",
+                }}
+              >
+                {url ? (
+                  <Image src={url} alt={`Scene ${i + 1}`} fill className="object-cover" />
+                ) : i === imagesReady ? (
+                  <Loader2 size={16} className="animate-spin" style={{ color: "#f9c700" }} />
+                ) : (
+                  <span style={{ fontSize: "1rem", opacity: 0.2 }}>🎨</span>
+                )}
+                {/* Scene number label */}
+                <div
+                  className="absolute bottom-0 left-0 right-0 flex items-center justify-center"
+                  style={{ background: "rgba(0,0,0,0.55)", height: 14 }}
+                >
+                  <span style={{ fontSize: "0.55rem", color: url ? "var(--lf-teal)" : "rgba(255,255,255,0.3)", fontFamily: "'Nunito', sans-serif", fontWeight: 700 }}>
+                    {url ? "✓" : i + 1}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Fun rotating message */}
+      <div
+        key={msgIdx}
+        className="flex items-center gap-2 px-5 py-3 rounded-2xl"
+        style={{
+          background: "rgba(255,255,255,0.04)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          animation: "fadeIn 0.5s ease",
+          maxWidth: 340,
+        }}
+      >
+        <span style={{ fontSize: "1.2rem" }}>{emoji}</span>
+        <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.82rem", color: "rgba(255,255,255,0.5)", lineHeight: 1.4, margin: 0 }}>
+          {funMsg}
+        </p>
+      </div>
+
+      {/* Story title preview */}
+      {story.title && (
+        <div className="flex flex-col items-center gap-1 text-center">
+          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.7rem", color: "rgba(255,255,255,0.2)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+            Your story
+          </p>
+          <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1.05rem", color: "rgba(255,255,255,0.6)", textAlign: "center", maxWidth: 300 }}>
+            "{story.title}"
+          </p>
+        </div>
+      )}
     </div>
   );
 }

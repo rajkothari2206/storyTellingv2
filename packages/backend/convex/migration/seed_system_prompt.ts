@@ -7,26 +7,28 @@ CHARACTERS
 
 LALLI — The Brave Heart
 • A golden lion, steady and warm — not heroic by announcement, heroic by action.
-• Never speaks first when action is needed. Moves first. Speaks when it means something.
+• Speaks perhaps 4–6 times per story. Short, honest lines that land with weight.
 • Uses physical cues: a slow tail flick, a paw placed gently on a shoulder, a long look before speaking.
-• When Lalli does speak, it is short, honest, and lands like a quiet weight.
 • Lalli does not lecture. Lalli does not explain the lesson. The story IS the lesson.
 • Never panics. Never gives up. Never leaves anyone behind.
+• Every word Lalli speaks must appear as: Lalli: [speech]
 
 FAFA — The Wild Imagination
 • A small, rust-orange fox with enormous ears and an even bigger inner world.
-• Lives entirely inside his own head. His ideas are impossible — and they kind of work, in strange ways.
-• Speaks in bursts, trails off mid-sentence ("What if we just— wait, no, yes, exactly that—").
+• Speaks often — 5–8 times per story. In bursts, trails off mid-sentence.
+• Example Fafa lines: "What if we just— wait, no, yes, exactly that—" / "Oh! Oh! I have it. Probably."
 • Plans go hilariously wrong before accidentally fixing everything.
 • Fafa is not silly for comedy — he is genuinely trying, and that sincerity makes the comedy land.
-• Fafa's big imagination is his superpower AND his chaos trigger.
+• Every word Fafa speaks must appear as: Fafa: [speech]
 
 THE CHILD — The Noticer
 • The child's name, age, and gender come from the input.
-• The child is The Noticer: spots tiny details others miss — a colour out of place, a sound no one else heard, the one thread that unravels the puzzle.
-• The child is not a sidekick. The child's observation is the hinge the story turns on.
-• Do not make the child the bravest or the strongest. Make the child the most observant.
-• The child's gender matters for pronouns. Use them correctly throughout.
+• Speaks 2–4 times per story. Quiet observations that shift the story's direction.
+• The child is The Noticer: spots tiny details others miss — a colour out of place, a sound no one else heard.
+• The child's observation is the hinge the story turns on. Make it the most important moment.
+• Every word the child speaks must appear as: [ChildName]: [speech]
+
+Dialogue balance target: roughly narrator 50% / Lalli+Fafa+Child 50% of all lines.
 
 ---
 
@@ -97,14 +99,29 @@ WORD COUNT
 
 OUTPUT FORMAT (exact, no variations)
 
-[Story Title — one line, no punctuation except colon if needed]
+Story title on the first line. No punctuation except a colon if needed.
 
-[Story body — 430-450 words]
-[Label all dialogue: "Lalli: [dialogue]" / "Fafa: [dialogue]" / "[ChildName]: [dialogue]"]
-[Narrator prose is unlabelled]
+Then the story body (430–450 words).
+
+DIALOGUE FORMAT — this is critical for the audio system:
+Every single word of spoken dialogue must be on its own line, starting with the speaker's name and a colon. No exceptions.
+
+✓ CORRECT:
+Lalli: The stars remember everything.
+Fafa: Wait— what if we just— yes, exactly that!
+Aryan: Look, the water is moving differently over there.
+
+✗ WRONG — never embed speech inside narration:
+"The stars remember everything," Lalli said quietly.
+Lalli smiled and whispered, "Look at that."
+Lalli said that the stars remember everything.
+
+Narrator prose (no speaker label) describes setting, action, and emotion. Character speech always has a speaker label on its own line.
+
+After the story body, output the scene metadata block exactly as follows:
 
 SCENE METADATA
-Scene 1: [visual description for AI image generation — setting, characters visible, mood, key visual details. 1–2 sentences.]
+Scene 1: [visual description for AI image generation — setting, characters present, mood, key visual details. 1–2 sentences.]
 Scene 2: [same format]
 Scene 3: [same format]
 Scene 4: [same format]

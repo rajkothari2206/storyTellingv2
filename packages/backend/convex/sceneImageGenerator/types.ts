@@ -28,6 +28,7 @@ export interface SceneGenerationResult {
   sceneNumber: number;
   success: boolean;
   error?: string;
+  imageBase64?: string; // returned so caller can chain it as the next scene's continuity reference
 }
 
 export interface PromptReferences {

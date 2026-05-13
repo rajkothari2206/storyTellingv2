@@ -15,6 +15,7 @@ import type * as crons from "../crons.js";
 import type * as generateStory from "../generateStory.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
+import type * as internal_debugNarration from "../internal/debugNarration.js";
 import type * as internal_generateNarration from "../internal/generateNarration.js";
 import type * as internal_generateSceneImage from "../internal/generateSceneImage.js";
 import type * as migration_flavor_endings from "../migration/flavor_endings.js";
@@ -74,6 +75,7 @@ declare const fullApi: ApiFromModules<{
   generateStory: typeof generateStory;
   healthCheck: typeof healthCheck;
   http: typeof http;
+  "internal/debugNarration": typeof internal_debugNarration;
   "internal/generateNarration": typeof internal_generateNarration;
   "internal/generateSceneImage": typeof internal_generateSceneImage;
   "migration/flavor_endings": typeof migration_flavor_endings;

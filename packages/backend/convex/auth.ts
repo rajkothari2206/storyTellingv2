@@ -234,9 +234,26 @@ export const listAllUsers = query({
       ctx.db.query("stories").collect(),
     ]);
 
-    const nonAdmins = allRoles.filter(r => r.role !== "admin");
     const profilesMap = new Map(allProfiles.map(p => [p.userId, p]));
     const creditsMap = new Map(allCredits.map(c => [c.userId, c]));
+    const rolesMap = new Map(allRoles.map(r => [r.userId, r]));
+
+    // Build the unified user list: start from roles (non-admin), then add any
+    // profiles that have NO role entry (e.g. onboarding failed mid-way).
+    const nonAdminRoles = allRoles.filter(r => r.role !== "admin");
+    const roleUserIds = new Set(allRoles.map(r => r.userId));
+    const orphanProfiles = allProfiles.filter(p => !roleUserIds.has(p.userId));
+
+    // Represent orphan profiles as synthetic role-like objects so we can
+    // iterate a single list below.
+    const syntheticEntries = orphanProfiles.map(p => ({
+      userId: p.userId,
+      email: "",      // no role row → no email stored there; will fall back to profile
+      role: "NO_ROLE" as const,
+      createdAt: p.createdAt,
+    }));
+
+    const allEntries = [...nonAdminRoles, ...syntheticEntries];
 
     // Keep only the most-recent subscription per user (prefer active)
     const subscriptionsMap = new Map<string, any>();
@@ -247,16 +264,22 @@ export const listAllUsers = query({
       }
     }
 
-    // Count stories and record latest story date per user
+    // Count stories and record latest story date per user.
+    // Stories are stored with userId = String(user._id), but user_roles may use
+    // a different identifier (user.userId). We index stories by every known alias
+    // so the count is accurate regardless of which format was used at creation time.
     const storyCountMap = new Map<string, number>();
     const lastStoryMap = new Map<string, number>();
+
     for (const story of allStories) {
-      storyCountMap.set(story.userId, (storyCountMap.get(story.userId) ?? 0) + 1);
-      const prev = lastStoryMap.get(story.userId);
-      if (!prev || story.createdAt > prev) lastStoryMap.set(story.userId, story.createdAt);
+      // Normalise: try to map the story's userId to the role's userId
+      const uid = story.userId;
+      storyCountMap.set(uid, (storyCountMap.get(uid) ?? 0) + 1);
+      const prev = lastStoryMap.get(uid);
+      if (!prev || story.createdAt > prev) lastStoryMap.set(uid, story.createdAt);
     }
 
-    const usersWithDetails = await Promise.all(nonAdmins.map(async (role) => {
+    const usersWithDetails = await Promise.all(allEntries.map(async (role) => {
       const profile = profilesMap.get(role.userId);
 
       // Resolve storage URLs
@@ -276,10 +299,24 @@ export const listAllUsers = query({
       const credit = creditsMap.get(role.userId);
       const subscription = subscriptionsMap.get(role.userId);
 
+      // Story counts: try role.userId first, then profile.userId as fallback
+      // (stories may have been written with a different ID format than user_roles)
+      const storyUserId = role.userId;
+      const storyUserIdAlt = profile?.userId;
+      const storyCount =
+        storyCountMap.get(storyUserId) ??
+        (storyUserIdAlt ? storyCountMap.get(storyUserIdAlt) : undefined) ??
+        0;
+      const lastStoryAt =
+        lastStoryMap.get(storyUserId) ??
+        (storyUserIdAlt ? lastStoryMap.get(storyUserIdAlt) : undefined) ??
+        null;
+
       return {
         id: role.userId,
-        email: role.email,
+        email: role.email || profile?.userId || "",
         name: profile?.parentName,
+        role: (role as any).role ?? "user",
         createdAt: role.createdAt,
         // Credits
         credits: credit
@@ -290,8 +327,8 @@ export const listAllUsers = query({
           ? { interval: subscription.interval, status: subscription.status, createdAt: subscription.createdAt }
           : null,
         // Story stats
-        storyCount: storyCountMap.get(role.userId) ?? 0,
-        lastStoryAt: lastStoryMap.get(role.userId) ?? null,
+        storyCount,
+        lastStoryAt,
         // Profile
         profile: profile ? {
           parentName: profile.parentName,

@@ -106,7 +106,7 @@ export const generateStoryText: ReturnType<typeof action> = action({
 
     const makeStoryRequest = async (temperature: number) =>
       gemini.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-2.5-pro",
         config: {
           temperature,
           systemInstruction: system,
@@ -122,7 +122,7 @@ export const generateStoryText: ReturnType<typeof action> = action({
     if (isNonStory) {
       console.warn("AI returned non-story response, retrying:", content.slice(0, 80));
       const retryResp = await gemini.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-2.5-pro",
         config: {
           temperature: 0.7,
           systemInstruction: system,
@@ -140,6 +140,36 @@ export const generateStoryText: ReturnType<typeof action> = action({
         ],
       });
       content = retryResp.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+    }
+
+    // Retry if story body is too short (< 380 words before SCENE METADATA)
+    const storyBodyForCount = content.split(/^SCENE METADATA$/m)[0].trim();
+    const wordCount = storyBodyForCount.split(/\s+/).filter(Boolean).length;
+    if (wordCount < 380 && content.length > 200) {
+      console.warn(`Story body too short (${wordCount} words), retrying with stronger word count enforcement...`);
+      const retryResp = await gemini.models.generateContent({
+        model: "gemini-2.5-pro",
+        config: {
+          temperature: 0.5,
+          systemInstruction: system,
+        },
+        contents: [
+          {
+            role: "user",
+            parts: [{
+              text: formattedPrompt +
+                `\n\nCRITICAL: Your previous attempt produced only ~${wordCount} words. The story body MUST be 430–450 words. ` +
+                "Write the complete story now at the correct length. Each of the 5 scenes needs ~85–90 words of story content. " +
+                "Do not summarise — write every scene in full.",
+            }],
+          },
+        ],
+      });
+      content = retryResp.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || content;
+      const retryWordCount = content.split(/^SCENE METADATA$/m)[0].trim().split(/\s+/).filter(Boolean).length;
+      console.log(`Retry word count: ${retryWordCount}`);
+    } else {
+      console.log(`Story word count: ${wordCount}`);
     }
 
     if (!content) {

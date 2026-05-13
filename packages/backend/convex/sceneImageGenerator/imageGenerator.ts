@@ -101,7 +101,8 @@ export async function generateChildAvatar(
 }
 
 /**
- * Processes and stores a single scene image
+ * Processes and stores a single scene image.
+ * Returns imageBase64 so the caller can chain it as the next scene's continuity reference.
  */
 async function processSceneImage(
   ctx: ActionCtx,
@@ -140,6 +141,7 @@ async function processSceneImage(
   return {
     sceneNumber: scene.sceneNumber,
     success: true,
+    imageBase64: result.imageBase64, // returned for chaining
   };
 }
 
@@ -208,33 +210,36 @@ export async function generateAllSceneImages(
     });
   }
 
-  // STEP 2: Generate remaining scenes in small batches to avoid memory issues
+  // STEP 2: Generate remaining scenes sequentially for visual chaining
+  // Each scene receives the previous scene's image as a continuity reference,
+  // with Scene 1 always available as the style anchor via characterRefBase64.
   const remainingScenes = sortedScenes.slice(1);
-  const BATCH_SIZE = 2; // Process 2 scenes at a time to avoid memory overflow
 
   if (remainingScenes.length > 0) {
-    console.log(`[generateAllSceneImages] Processing ${remainingScenes.length} remaining scenes in batches of ${BATCH_SIZE}`);
-    
-    for (let i = 0; i < remainingScenes.length; i += BATCH_SIZE) {
-      const batch = remainingScenes.slice(i, i + BATCH_SIZE);
-      console.log(`[generateAllSceneImages] Processing batch ${Math.floor(i / BATCH_SIZE) + 1}: scenes ${batch.map(s => s.sceneNumber).join(', ')}`);
-      
-      const batchPromises = batch.map((scene) =>
-        processSceneImage(
-          ctx,
-          scene,
-          child,
-          storyId,
-          characterRefBase64,
-          firstSceneBase64,
-          childAvatarBase64
-        )
+    console.log(`[generateAllSceneImages] Processing ${remainingScenes.length} remaining scenes sequentially with chaining`);
+
+    let previousSceneBase64: string | undefined = firstSceneBase64;
+
+    for (const scene of remainingScenes) {
+      console.log(`[generateAllSceneImages] Generating scene ${scene.sceneNumber} (previousScene: ${previousSceneBase64 ? "yes" : "none"})`);
+
+      const result = await processSceneImage(
+        ctx,
+        scene,
+        child,
+        storyId,
+        characterRefBase64,
+        previousSceneBase64,
+        childAvatarBase64
       );
 
-      const batchResults = await Promise.all(batchPromises);
-      results.push(...batchResults);
-      
-      console.log(`[generateAllSceneImages] Completed batch ${Math.floor(i / BATCH_SIZE) + 1}`);
+      // Chain: use this scene's image as the next scene's continuity reference
+      if (result.imageBase64) {
+        previousSceneBase64 = result.imageBase64;
+      }
+
+      results.push(result);
+      console.log(`[generateAllSceneImages] Scene ${scene.sceneNumber} done (success: ${result.success})`);
     }
   }
 
