@@ -38,6 +38,13 @@ export const generateImages = internalAction({
       status: "images_ready",
     });
 
+    // If narration is already done (narrationFilePath is set), both pipelines are complete → mark ready.
+    // (If narration finishes after us, generateNarration will check status and mark ready.)
+    const freshStory = await ctx.runQuery(api.stories.get, { storyId });
+    if (freshStory?.narrationFilePath) {
+      await ctx.runMutation(api.stories._markStatus, { storyId, status: "ready" });
+    }
+
     return { ok: true };
   },
 });

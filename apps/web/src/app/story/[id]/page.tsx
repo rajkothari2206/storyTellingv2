@@ -702,8 +702,14 @@ function StoryViewer({
 
   // Story is still being generated if it's in any in-progress status
   const IN_PROGRESS_STATUSES = new Set(["queued", "generating", "text_ready", "images_ready", "voice_ready"]);
-  const isStillGenerating = IN_PROGRESS_STATUSES.has(story.status ?? "");
   const isGenerating = story.status === "generating"; // kept for narrow "writing" stage checks
+
+  // Early-unlock: start the story viewer as soon as 3+ scene images AND narration are available,
+  // even if the backend hasn't promoted to "ready" yet. Scenes 4 & 5 images will stream in
+  // progressively — by the time the reader reaches them they'll be ready.
+  const readyImagesCount = imageUrls?.filter(u => u?.url).length ?? 0;
+  const canEarlyUnlock = readyImagesCount >= 3 && !!narrationUrl;
+  const isStillGenerating = !canEarlyUnlock && IN_PROGRESS_STATUSES.has(story.status ?? "");
 
   // Show the animated StoryForge loading screen while the story is in any generation stage
   if (isStillGenerating) {
