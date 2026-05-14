@@ -147,9 +147,6 @@ export const _generateContent = internalAction({
       content,
     });
 
-    // Update streak
-    await ctx.runMutation(api.userProfiles.updateStreak, {});
-
     await ctx.runMutation(api.stories._markStatus, {
       storyId,
       status: "text_ready",
@@ -278,6 +275,9 @@ export const enqueueStory: ReturnType<typeof action> = action({
       title: "",
       params: storyParams,
     });
+
+    // Update streak here (needs auth context — can't do this inside internal action)
+    await ctx.runMutation(api.userProfiles.updateStreak, {});
 
     // Schedule heavy generation in background — return immediately after this
     await ctx.scheduler.runAfter(0, internal.generateStory._generateContent, {
