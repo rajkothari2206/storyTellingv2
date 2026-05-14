@@ -343,6 +343,35 @@ export default function ProfilePage() {
     toast.success("Signed out successfully");
   }
 
+  // ── Change password state ──
+  const [showChangePw, setShowChangePw] = useState(false);
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [changingPw, setChangingPw] = useState(false);
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (newPw.length < 8) { toast.error("New password must be at least 8 characters."); return; }
+    if (newPw !== confirmPw) { toast.error("Passwords don't match."); return; }
+    setChangingPw(true);
+    try {
+      const result = await authClient.changePassword({
+        currentPassword: currentPw,
+        newPassword: newPw,
+        revokeOtherSessions: true,
+      });
+      if ((result as any)?.error) throw new Error((result as any).error.message);
+      toast.success("Password updated! ✨");
+      setShowChangePw(false);
+      setCurrentPw(""); setNewPw(""); setConfirmPw("");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to change password. Check your current password.");
+    } finally {
+      setChangingPw(false);
+    }
+  }
+
   return (
     <>
       <AuthLoading>
@@ -687,6 +716,59 @@ export default function ProfilePage() {
                 </div>
 
                 {/* ══ ACTIONS ══ */}
+                {/* ── Change password ── */}
+                <div className="mb-4 rounded-2xl overflow-hidden" style={{ border: "1.5px solid rgba(0,0,0,0.08)", background: "#fff" }}>
+                  <button
+                    onClick={() => setShowChangePw(v => !v)}
+                    className="w-full flex items-center justify-between px-5 py-4 transition-all hover:bg-black/[0.03]"
+                    style={{ fontFamily: "'Nunito', sans-serif" }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(0,201,167,0.1)" }}>
+                        <Lock size={15} style={{ color: "var(--lf-teal)" }} />
+                      </div>
+                      <span style={{ fontWeight: 700, fontSize: "0.92rem", color: "var(--lf-dark)" }}>Change password</span>
+                    </div>
+                    <ChevronRight size={16} style={{ color: "rgba(45,45,45,0.3)", transform: showChangePw ? "rotate(90deg)" : "none", transition: "transform 0.2s" }} />
+                  </button>
+
+                  {showChangePw && (
+                    <form onSubmit={handleChangePassword} className="flex flex-col gap-3 px-5 pb-5 pt-1">
+                      {[
+                        { label: "Current password", value: currentPw, setter: setCurrentPw, placeholder: "Your current password" },
+                        { label: "New password", value: newPw, setter: setNewPw, placeholder: "At least 8 characters" },
+                        { label: "Confirm new password", value: confirmPw, setter: setConfirmPw, placeholder: "Same password again" },
+                      ].map(({ label, value, setter, placeholder }) => (
+                        <div key={label} className="flex flex-col gap-1">
+                          <label style={{ fontSize: "0.78rem", fontWeight: 700, color: "rgba(45,45,45,0.5)", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "'Nunito', sans-serif" }}>{label}</label>
+                          <input
+                            type="password"
+                            value={value}
+                            onChange={e => setter(e.target.value)}
+                            placeholder={placeholder}
+                            required
+                            disabled={changingPw}
+                            className="w-full px-4 py-2.5 rounded-xl outline-none transition-all"
+                            style={{ background: "rgba(0,0,0,0.03)", border: "1.5px solid rgba(0,0,0,0.08)", fontSize: "0.9rem", fontFamily: "'Nunito', sans-serif", color: "var(--lf-dark)" }}
+                          />
+                        </div>
+                      ))}
+                      {confirmPw && newPw !== confirmPw && (
+                        <p style={{ fontSize: "0.78rem", color: "#dc2626", fontFamily: "'Nunito', sans-serif" }}>Passwords don't match</p>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={changingPw || !currentPw || !newPw || newPw !== confirmPw}
+                        className="btn-primary mt-1"
+                        style={{ justifyContent: "center", opacity: (changingPw || !currentPw || !newPw || newPw !== confirmPw) ? 0.5 : 1 }}
+                      >
+                        {changingPw ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}
+                        {changingPw ? "Updating…" : "Update password"}
+                      </button>
+                    </form>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-6">
                   <Link
                     href="/pricing"
