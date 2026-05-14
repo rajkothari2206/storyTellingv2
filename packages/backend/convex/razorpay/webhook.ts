@@ -88,8 +88,10 @@ export const razorpayWebhook = httpAction(async (ctx, request) => {
 					
 					if (plan) {
 						console.log(plan);
-						// Add credits based on plan (monthly: 1000, yearly: 2000)
-						const creditsToAdd = plan.interval === "monthly" ? 1000 : 2000;
+						// Add credits based on plan
+						// Monthly: 1,000 credits (~12 stories at 80/story)
+						// Yearly: 13,200 credits upfront (1,100/mo × 12 — slightly better than monthly)
+						const creditsToAdd = plan.interval === "monthly" ? 1000 : 13200;
 						await ctx.runMutation(api.credit._addCredits, {
 							userId,
 							credits: creditsToAdd,

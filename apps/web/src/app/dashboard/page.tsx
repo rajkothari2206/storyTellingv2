@@ -67,7 +67,7 @@ function getSceneForTheme(theme?: string): string {
 /* ── Generate form options ── */
 const LANGUAGES = ["English", "Hindi"] as const;
 const LENGTHS: { value: "short" | "medium" | "long"; label: string; desc: string; credits: number; premium?: boolean }[] = [
-  { value: "short", label: "Short", desc: "~3 min", credits: 60 },
+  { value: "short", label: "Short", desc: "~3 min", credits: 80 },
   { value: "medium", label: "Medium", desc: "~6 min", credits: 80 },
   { value: "long", label: "Long", desc: "~10 min", credits: 0, premium: true },
 ];
@@ -679,7 +679,7 @@ function StoryDrawer({
   const [textOnly, setTextOnly] = useState(false);
   const [generating, setGenerating] = useState(false);
 
-  const creditCost = textOnly ? 20 : length === "short" ? 60 : length === "medium" ? 80 : 0;
+  const creditCost = textOnly ? 20 : 80;
   const canAfford = availableCredits >= creditCost;
   const canGenerate = !!theme && canAfford && !generating;
 

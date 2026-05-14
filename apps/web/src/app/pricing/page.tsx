@@ -12,7 +12,7 @@ const BASE = "https://www.lallifafa.com";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Start free with 250 credits — no credit card needed. Upgrade to Magic Pass for ₹199/month and get 1,000 credits, Hindi narration, and unlimited AI-illustrated stories for your child.",
+    "Start free with 320 credits — no credit card needed. Upgrade to Magic Pass for ₹199/month and get 1,000 credits (~12 stories), Hindi narration, and unlimited AI-illustrated stories for your child.",
   alternates: { canonical: `${BASE}/pricing` },
   openGraph: {
     title: "Lalli Fafa Pricing — Free plan + Magic Pass from ₹199/month",
@@ -30,17 +30,17 @@ const pricingFaqSchema = {
     {
       "@type": "Question",
       name: "What are Lalli Fafa credits?",
-      acceptedAnswer: { "@type": "Answer", text: "Credits are the currency used to generate stories on Lalli Fafa. A short illustrated story costs 60 credits, a medium story costs 80. Voice narration is included. Free accounts start with 250 credits — enough for about 4 stories." },
+      acceptedAnswer: { "@type": "Answer", text: "Credits are the currency used to generate stories on Lalli Fafa. Each illustrated and narrated story costs 80 credits. Voice narration and illustrations are included in every story. Free accounts start with 320 credits — enough for about 4 stories." },
     },
     {
       "@type": "Question",
       name: "How much does Lalli Fafa cost?",
-      acceptedAnswer: { "@type": "Answer", text: "Lalli Fafa has a free plan with 250 credits and no credit card required. The paid Magic Pass plan costs ₹199 per month and includes 1,000 credits per month, Hindi narration, and priority story generation." },
+      acceptedAnswer: { "@type": "Answer", text: "Lalli Fafa has a free plan with 320 credits and no credit card required. The paid Magic Pass plan costs ₹199 per month and includes 1,000 credits per month (~12 stories), Hindi narration, and priority story generation." },
     },
     {
       "@type": "Question",
       name: "Can I try Lalli Fafa for free?",
-      acceptedAnswer: { "@type": "Answer", text: "Yes. Sign up for free and receive 250 credits instantly — no credit card needed. That gives you approximately 4 fully illustrated and narrated stories to try." },
+      acceptedAnswer: { "@type": "Answer", text: "Yes. Sign up for free and receive 320 credits instantly — no credit card needed. That gives you approximately 4 fully illustrated and narrated stories to try." },
     },
     {
       "@type": "Question",
@@ -63,7 +63,7 @@ const plans = [
     accentBg: "rgba(0,201,167,0.08)",
     accentBorder: "rgba(0,201,167,0.25)",
     features: [
-      { text: "250 welcome credits", note: "~4 stories" },
+      { text: "320 welcome credits", note: "~4 stories" },
       { text: "English & Hindi text" },
       { text: "Short & medium story lengths" },
       { text: "1 child profile" },
@@ -87,7 +87,7 @@ const plans = [
     accentColor: "#f9c700",
     accentBg: "rgba(249,199,0,0.06)",
     features: [
-      { text: "1,000 credits / month", note: "~16 stories" },
+      { text: "1,000 credits / month", note: "~12 stories" },
       { text: "All story lengths" },
       { text: "Voice narration", note: "EN + HI" },
       { text: "AI scene illustrations" },
@@ -115,7 +115,8 @@ const plans = [
     accentBg: "rgba(168,85,247,0.06)",
     accentBorder: "rgba(168,85,247,0.2)",
     features: [
-      { text: "2,000 credits + 100/day", note: "top-up" },
+      { text: "13,200 credits / year", note: "~165 stories" },
+      { text: "~1,100 credits / month", note: "13 stories/mo" },
       { text: "Everything in Monthly" },
       { text: "Multiple child profiles" },
       { text: "Early feature access" },
@@ -130,12 +131,12 @@ const plans = [
 
 /* ── Credit comparison table ── */
 const creditRows = [
-  { action: "Short story (text + illustrations)", free: "60", magic: "60" },
-  { action: "Medium story", free: "80", magic: "80" },
-  { action: "Long story", free: "🔒", magic: "Available" },
-  { action: "Monthly credit allowance", free: "250 (once)", magic: "1,000" },
-  { action: "Voice narration (EN)", free: "🔒", magic: "Included" },
-  { action: "Voice narration (HI)", free: "🔒", magic: "Included" },
+  { action: "Story with illustrations + narration", free: "80", magic: "80" },
+  { action: "Starting credits", free: "320 (once)", magic: "1,000 / month" },
+  { action: "Yearly plan credits", free: "—", magic: "13,200 / year" },
+  { action: "Stories on free plan", free: "~4 stories", magic: "—" },
+  { action: "Stories on monthly plan", free: "—", magic: "~12 / month" },
+  { action: "Stories on yearly plan", free: "—", magic: "~165 / year" },
 ];
 
 /* ── Trust badges ── */
@@ -718,7 +719,7 @@ export default function PricingPage() {
               }}
             >
               Start with{" "}
-              <span style={{ color: "#f9c700" }}>250 free credits</span>
+              <span style={{ color: "#f9c700" }}>320 free credits</span>
             </h2>
 
             <p className="mt-4 mb-8" style={{ color: "rgba(255,255,255,0.55)", fontSize: "1rem", lineHeight: 1.75 }}>

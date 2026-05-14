@@ -156,7 +156,7 @@ export const _generateContent = internalAction({
     });
 
     // Deduct credits
-    const creditCost = 60;
+    const creditCost = 80;
     await ctx.runMutation(api.credit._updateCredit, {
       creditId,
       usedCredits: creditCost,
