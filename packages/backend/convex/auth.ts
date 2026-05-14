@@ -7,6 +7,7 @@ import { query, mutation } from "./_generated/server";
 import { betterAuth } from "better-auth";
 import { emailOTP } from "better-auth/plugins/email-otp";
 import { v } from "convex/values";
+import { Resend } from "resend";
 
 const siteUrl = process.env.SITE_URL!;
 
@@ -37,7 +38,6 @@ function createAuth(
         const resendKey = process.env.RESEND_API_KEY;
         if (resendKey) {
           try {
-            const { Resend } = await import("resend");
             const resend = new Resend(resendKey);
             await resend.emails.send({
               from: "Lalli Fafa <raj@lallifafa.com>",
@@ -77,7 +77,6 @@ function createAuth(
         const resendKey = process.env.RESEND_API_KEY;
         if (resendKey) {
           try {
-            const { Resend } = await import("resend");
             const resend = new Resend(resendKey);
             await resend.emails.send({
               from: "Lalli Fafa <raj@lallifafa.com>",
