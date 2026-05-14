@@ -59,7 +59,7 @@ function GenerateForm({ isAuthenticated }: { isAuthenticated: boolean }) {
   // Languages come from DB so the admin panel toggle (isActive) controls what users see.
   const dbLanguages = useQuery((api as any)["migration/languages"].list, isAuthenticated ? {} : "skip");
 
-  const generateStory = useAction(api.generateStory.generateStoryText);
+  const generateStory = useAction(api.generateStory.enqueueStory);
 
   const availableCredits = credits?.[0]?.availableCredits ?? 0;
   const hasSecondChild = !!(profile as { child2Name?: string } | null | undefined)?.child2Name;
@@ -362,7 +362,7 @@ function GenerateForm({ isAuthenticated }: { isAuthenticated: boolean }) {
                   {generating ? (
                     <>
                       <Loader2 size={18} className="animate-spin" />
-                      Generating your story…
+                      Starting your story…
                     </>
                   ) : (
                     <>
@@ -373,7 +373,7 @@ function GenerateForm({ isAuthenticated }: { isAuthenticated: boolean }) {
                 </button>
                 {generating && (
                   <p className="text-center text-sm" style={{ color: "rgba(45,45,45,0.5)", fontFamily: "'Nunito', sans-serif" }}>
-                    Lalli & Fafa are crafting your story — this takes about 20 seconds ✨
+                    Opening your story… ✨
                   </p>
                 )}
               </div>

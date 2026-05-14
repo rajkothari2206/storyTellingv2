@@ -31,9 +31,7 @@ function createAuth(
       "https://lallifafa.com",
     ],
     database: authComponent.adapter(ctx),
-    emailAndPassword: {
-      enabled: true,
-      requireEmailVerification: false,
+    emailVerification: {
       sendVerificationEmail: async ({ user, url }) => {
         const resendKey = process.env.RESEND_API_KEY;
         if (resendKey) {
@@ -73,6 +71,11 @@ function createAuth(
           console.log(`[email-verify] Verification URL for ${user.email}: ${url}`);
         }
       },
+      sendOnSignUp: true,
+    },
+    emailAndPassword: {
+      enabled: true,
+      requireEmailVerification: false,
       sendResetPassword: async ({ user, url }) => {
         const resendKey = process.env.RESEND_API_KEY;
         if (resendKey) {

@@ -1,80 +1,33 @@
-import { action } from "./_generated/server";
+import { action, internalAction } from "./_generated/server";
 import { v } from "convex/values";
 import { authComponent } from "./auth";
 import { GoogleGenAI } from "@google/genai";
 import { api, internal } from "./_generated/api";
 import { formatStoryPrompt } from "./storyPromptFormatter";
 
-export const generateStoryText: ReturnType<typeof action> = action({
+// ─── Internal action: does all the slow Gemini work in the background ───────
+
+export const _generateContent = internalAction({
   args: {
-    params: v.object({
-      theme: v.string(),
-      lesson: v.optional(v.string()),
-      storyType: v.optional(v.string()),   // "adventure" | "silly" | "cozy"
-      language: v.optional(v.string()),
-      childId: v.optional(v.union(v.literal("1"), v.literal("2"))),
-      // Legacy fields from old generate page — accepted but ignored
-      length: v.optional(v.string()),
-      textOnly: v.optional(v.boolean()),
-      useFavorites: v.optional(v.boolean()),
+    storyId: v.id("stories"),
+    theme: v.string(),
+    lesson: v.optional(v.string()),
+    language: v.optional(v.string()),
+    storyTypeCode: v.optional(v.string()),
+    storyTypeName: v.optional(v.string()),
+    storyTypePromptHint: v.optional(v.string()),
+    creditId: v.id("user_credits"),
+    childInfo: v.object({
+      id: v.union(v.literal("1"), v.literal("2")),
+      name: v.string(),
+      gender: v.union(v.literal("male"), v.literal("female"), v.literal("other")),
+      age: v.number(),
+      avatarStorageId: v.optional(v.string()),
     }),
   },
 
-  handler: async (ctx, { params }) => {
-    const user = await authComponent.getAuthUser(ctx);
-    if (!user) throw new Error("Not authenticated");
-
-    const profile = await ctx.runQuery(api.userProfiles.getProfile, {});
-    if (!profile) throw new Error("Profile not found");
-
-    const childId = params.childId || "1";
-    const name =
-      childId === "1"
-        ? profile.childName || profile.childNickName?.trim()
-        : profile.child2Name || profile.child2NickName?.trim();
-    const age =
-      childId === "1"
-        ? profile.childAge ?? 0
-        : profile.child2Age ?? 0;
-    const gender =
-      childId === "1"
-        ? profile.childGender || "male"
-        : profile.child2Gender || "male";
-
-    const avatarStorageId =
-      childId === "1"
-        ? profile.childAvatarStorageId
-        : profile.child2AvatarStorageId;
-
-    // Fetch story type details from DB (for name + prompt hint)
-    const storyTypeRecord = params.storyType
-      ? await ctx.runQuery((api as any)["migration/story_types"].getByCode, { code: params.storyType })
-      : null;
-
-    // Select structure element (now simplified — just maps storyType → structureCode)
-    const flavor = await ctx.runMutation(api.storyElementSelector.selectStoryElements, {
-      themeName: params.theme,
-      storyType: params.storyType,
-    });
-
-    const structure = await ctx.runQuery(api.migration.structure.getByCode, {
-      code: flavor.structureCode,
-    });
-    if (!structure) throw new Error("Structure not found");
-
-    // Create story record
-    const storyParams = {
-      theme: params.theme,
-      lesson: params.lesson,
-      storyType: params.storyType,
-      language: params.language,
-      childName: name || undefined,
-    };
-
-    const storyId = await ctx.runMutation(api.stories._create, {
-      title: "",
-      params: storyParams,
-    });
+  handler: async (ctx, args) => {
+    const { storyId, theme, lesson, language, storyTypeCode, storyTypeName, storyTypePromptHint, creditId, childInfo } = args;
 
     await ctx.runMutation(api.stories._markStatus, {
       storyId,
@@ -84,14 +37,14 @@ export const generateStoryText: ReturnType<typeof action> = action({
     const gemini = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
     const formattedPrompt = formatStoryPrompt(
-      { name: name || "", gender, age },
+      { name: childInfo.name, gender: childInfo.gender, age: childInfo.age },
       {
-        theme: params.theme,
-        lesson: params.lesson || undefined,
-        language: params.language,
-        storyType: params.storyType,
-        storyTypeName: storyTypeRecord?.name,
-        storyTypePromptHint: storyTypeRecord?.promptHint,
+        theme,
+        lesson: lesson || undefined,
+        language,
+        storyType: storyTypeCode,
+        storyTypeName,
+        storyTypePromptHint,
       }
     );
 
@@ -101,7 +54,12 @@ export const generateStoryText: ReturnType<typeof action> = action({
     });
     const system = systemConfig?.value || process.env.SYSTEM_PROMPT;
     if (!system) {
-      throw new Error("SYSTEM_PROMPT not configured. Set it in Admin → System Prompt or add env var.");
+      await ctx.runMutation(api.stories._markStatus, {
+        storyId,
+        status: "error",
+        error: "SYSTEM_PROMPT not configured",
+      });
+      throw new Error("SYSTEM_PROMPT not configured.");
     }
 
     const makeStoryRequest = async (temperature: number) =>
@@ -180,7 +138,6 @@ export const generateStoryText: ReturnType<typeof action> = action({
       });
       throw new Error("Empty response from AI");
     }
-    // Log warning if scene metadata is missing (non-fatal)
     if (!content.includes("SCENE METADATA") && !/Scene \d+:/i.test(content)) {
       console.warn("Scene metadata missing from AI output. Language:", content.slice(0, 100));
     }
@@ -198,14 +155,10 @@ export const generateStoryText: ReturnType<typeof action> = action({
       status: "text_ready",
     });
 
-    const childNameForBackground = name || "Child";
-    const creditCost = 60; // Single flat cost
-    const userCredit = await ctx.runQuery(api.credit.list, {});
-    if (!userCredit || userCredit.length === 0) {
-      throw new Error("User doesn't have enough credits");
-    }
+    // Deduct credits
+    const creditCost = 60;
     await ctx.runMutation(api.credit._updateCredit, {
-      creditId: userCredit[0]._id,
+      creditId,
       usedCredits: creditCost,
     });
 
@@ -218,11 +171,11 @@ export const generateStoryText: ReturnType<typeof action> = action({
       {
         storyId,
         child: {
-          id: childId,
-          name: childNameForBackground,
-          gender,
-          age,
-          avatarStorageId,
+          id: childInfo.id,
+          name: childInfo.name,
+          gender: childInfo.gender,
+          age: childInfo.age,
+          avatarStorageId: childInfo.avatarStorageId,
         },
       }
     );
@@ -233,12 +186,121 @@ export const generateStoryText: ReturnType<typeof action> = action({
       {
         storyId,
         child: {
-          name: childNameForBackground,
-          gender,
+          name: childInfo.name,
+          gender: childInfo.gender,
         },
       }
     );
+  },
+});
+
+// ─── Public action: fast path — returns storyId immediately ─────────────────
+// Frontend calls this, redirects instantly, generation runs in the background.
+
+export const enqueueStory: ReturnType<typeof action> = action({
+  args: {
+    params: v.object({
+      theme: v.string(),
+      lesson: v.optional(v.string()),
+      storyType: v.optional(v.string()),
+      language: v.optional(v.string()),
+      childId: v.optional(v.union(v.literal("1"), v.literal("2"))),
+      // Legacy fields — accepted but ignored
+      length: v.optional(v.string()),
+      textOnly: v.optional(v.boolean()),
+      useFavorites: v.optional(v.boolean()),
+    }),
+  },
+
+  handler: async (ctx, { params }) => {
+    const user = await authComponent.getAuthUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+
+    const profile = await ctx.runQuery(api.userProfiles.getProfile, {});
+    if (!profile) throw new Error("Profile not found");
+
+    const childId = params.childId || "1";
+    const name =
+      childId === "1"
+        ? profile.childName || profile.childNickName?.trim()
+        : profile.child2Name || profile.child2NickName?.trim();
+    const age =
+      childId === "1"
+        ? profile.childAge ?? 0
+        : profile.child2Age ?? 0;
+    const gender =
+      childId === "1"
+        ? profile.childGender || "male"
+        : profile.child2Gender || "male";
+
+    const avatarStorageId =
+      childId === "1"
+        ? profile.childAvatarStorageId
+        : profile.child2AvatarStorageId;
+
+    // Validate credits early so we fail before creating the story
+    const userId = String((user as any)._id);
+    const userCredit = await ctx.runQuery(api.credit.list, {});
+    if (!userCredit || userCredit.length === 0) {
+      throw new Error("No credit record found");
+    }
+    if (userCredit[0].availableCredits < 60) {
+      throw new Error("Not enough credits");
+    }
+    const creditId = userCredit[0]._id;
+
+    // Fetch story type details for prompt
+    const storyTypeRecord = params.storyType
+      ? await ctx.runQuery((api as any)["migration/story_types"].getByCode, { code: params.storyType })
+      : null;
+
+    // Select structure element
+    const flavor = await ctx.runMutation(api.storyElementSelector.selectStoryElements, {
+      themeName: params.theme,
+      storyType: params.storyType,
+    });
+
+    const structure = await ctx.runQuery(api.migration.structure.getByCode, {
+      code: flavor.structureCode,
+    });
+    if (!structure) throw new Error("Structure not found");
+
+    // Create story record — this is the fast part
+    const storyParams = {
+      theme: params.theme,
+      lesson: params.lesson,
+      storyType: params.storyType,
+      language: params.language,
+      childName: name || undefined,
+    };
+
+    const storyId = await ctx.runMutation(api.stories._create, {
+      title: "",
+      params: storyParams,
+    });
+
+    // Schedule heavy generation in background — return immediately after this
+    await ctx.scheduler.runAfter(0, internal.generateStory._generateContent, {
+      storyId,
+      theme: params.theme,
+      lesson: params.lesson,
+      language: params.language,
+      storyTypeCode: params.storyType,
+      storyTypeName: storyTypeRecord?.name,
+      storyTypePromptHint: storyTypeRecord?.promptHint,
+      creditId,
+      childInfo: {
+        id: childId,
+        name: name || "",
+        gender: gender as "male" | "female" | "other",
+        age,
+        avatarStorageId,
+      },
+    });
 
     return { storyId };
   },
 });
+
+// ─── Legacy alias — kept so any existing callers still work ─────────────────
+export const generateStoryText = enqueueStory;

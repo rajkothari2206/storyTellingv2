@@ -664,7 +664,7 @@ function StoryDrawer({
   const subscription = useQuery(api.subscription.getSubscription, isAuthenticated ? {} : "skip");
   const themes = useQuery(api["migration/theme"].list, isAuthenticated ? {} : "skip");
   const lessons = useQuery(api["migration/lesson"].list, isAuthenticated ? {} : "skip");
-  const generateStory = useAction(api.generateStory.generateStoryText);
+  const generateStory = useAction(api.generateStory.enqueueStory);
 
   const availableCredits = credits?.[0]?.availableCredits ?? 0;
   const isPremium = subscription?.status === "active";
