@@ -73,6 +73,46 @@ function createAuth(
           console.log(`[email-verify] Verification URL for ${user.email}: ${url}`);
         }
       },
+      sendResetPassword: async ({ user, url }) => {
+        const resendKey = process.env.RESEND_API_KEY;
+        if (resendKey) {
+          try {
+            const { Resend } = await import("resend");
+            const resend = new Resend(resendKey);
+            await resend.emails.send({
+              from: "Lalli Fafa <raj@lallifafa.com>",
+              to: [user.email],
+              subject: "Reset your Lalli Fafa password 🔐",
+              html: `
+                <div style="font-family:'Nunito',Arial,sans-serif;max-width:520px;margin:0 auto;background:#fffef9;border-radius:16px;overflow:hidden;border:1.5px solid rgba(0,0,0,0.06)">
+                  <div style="background:#1a1a2e;padding:32px;text-align:center">
+                    <h1 style="color:#fff;font-size:24px;margin:0;font-weight:800">Lalli <span style="color:#4ecdc4">Fafa</span></h1>
+                    <p style="color:rgba(255,255,255,0.5);font-size:13px;margin:6px 0 0">Personalised stories for your little one</p>
+                  </div>
+                  <div style="padding:40px 32px">
+                    <h2 style="color:#1a1a2e;font-size:22px;font-weight:800;margin:0 0 12px">Reset your password 🔐</h2>
+                    <p style="color:#555;font-size:15px;line-height:1.6;margin:0 0 28px">
+                      Hi ${user.name || "there"},<br/><br/>
+                      We received a request to reset your Lalli Fafa password. Click the button below to choose a new one. This link expires in 1 hour.
+                    </p>
+                    <a href="${url}" style="display:inline-block;background:#f9c700;color:#1a1a2e;text-decoration:none;font-weight:800;font-size:15px;padding:14px 36px;border-radius:50px">
+                      Reset my password →
+                    </a>
+                    <p style="color:#999;font-size:12px;margin:28px 0 0;line-height:1.6">
+                      If you didn't request a password reset, you can safely ignore this email — your password won't change.
+                    </p>
+                  </div>
+                </div>
+              `,
+              text: `Hi ${user.name || "there"},\n\nReset your Lalli Fafa password by visiting:\n${url}\n\nThis link expires in 1 hour. If you didn't request this, ignore this email.`,
+            });
+          } catch (err) {
+            console.error("Failed to send password reset email:", err);
+          }
+        } else {
+          console.log(`[password-reset] Reset URL for ${user.email}: ${url}`);
+        }
+      },
     },
     socialProviders: {
       google: {
