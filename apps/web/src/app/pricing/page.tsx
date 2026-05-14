@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { Check, Star, Zap, Shield, HelpCircle, X, Sparkles } from "lucide-react";
+import { Check, Star, Zap, Shield, HelpCircle, X, Sparkles, Lock, Baby, EyeOff, BellOff, HeartHandshake } from "lucide-react";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { PricingFAQ } from "./PricingFAQ";
@@ -374,9 +374,40 @@ export default function PricingPage() {
               ))}
             </div>
 
-            <p className="text-center mt-8" style={{ color: "rgba(45,45,45,0.4)", fontSize: "0.82rem", fontFamily: "'Nunito', sans-serif" }}>
-              Secure payments via Razorpay · Cancel anytime · No hidden fees
-            </p>
+            {/* Payment security + cancel strip */}
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-8">
+              {/* Razorpay badge */}
+              <div
+                className="flex items-center gap-2 px-4 py-2 rounded-xl"
+                style={{ background: "#072654", border: "1px solid rgba(255,255,255,0.1)" }}
+              >
+                <Lock size={13} style={{ color: "#3395FF" }} />
+                <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.78rem", fontWeight: 700, color: "#fff", letterSpacing: "0.01em" }}>
+                  Secured by
+                </span>
+                <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.82rem", fontWeight: 800, color: "#3395FF", letterSpacing: "-0.01em" }}>
+                  Razorpay
+                </span>
+              </div>
+
+              <div style={{ width: 1, height: 20, background: "rgba(0,0,0,0.1)" }} />
+
+              {/* Cancel anytime */}
+              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl" style={{ background: "rgba(0,201,167,0.08)", border: "1px solid rgba(0,201,167,0.2)" }}>
+                <Check size={13} style={{ color: "#00c9a7" }} />
+                <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.8rem", fontWeight: 700, color: "#00875a" }}>
+                  Cancel anytime
+                </span>
+              </div>
+
+              {/* No hidden fees */}
+              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl" style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.07)" }}>
+                <Check size={13} style={{ color: "rgba(45,45,45,0.4)" }} />
+                <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.8rem", fontWeight: 600, color: "rgba(45,45,45,0.5)" }}>
+                  No hidden fees
+                </span>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -475,6 +506,107 @@ export default function PricingPage() {
                   <p style={{ fontSize: "0.78rem", color: "rgba(45,45,45,0.5)", fontFamily: "'Nunito', sans-serif" }}>{item.sub}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════
+            SAFE FOR KIDS TRUST BLOCK
+        ══════════════════════════════════════════ */}
+        <section className="py-14" style={{ background: "linear-gradient(160deg,#F0FFF8 0%,#E8F8FF 100%)" }}>
+          <div className="mx-auto px-5" style={{ maxWidth: 960 }}>
+
+            {/* Heading */}
+            <div className="text-center mb-10">
+              <span
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-3"
+                style={{ background: "rgba(0,150,100,0.1)", color: "#006b45" }}
+              >
+                <Shield size={12} /> Built for families
+              </span>
+              <h2 style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "clamp(1.5rem,3vw,2rem)", color: "var(--lf-dark)", lineHeight: 1.2 }}>
+                Safe for your little one. Always.
+              </h2>
+              <p style={{ marginTop: 8, color: "rgba(45,45,45,0.55)", fontSize: "0.9rem", fontFamily: "'Nunito', sans-serif" }}>
+                Every story is designed with children&apos;s wellbeing as the priority — not engagement metrics.
+              </p>
+            </div>
+
+            {/* Trust grid */}
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+
+              <div className="flex items-start gap-4 p-5 rounded-2xl" style={{ background: "#fff", border: "1.5px solid rgba(0,201,167,0.2)", boxShadow: "0 2px 12px rgba(0,201,167,0.06)" }}>
+                <div className="flex-shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: "rgba(0,201,167,0.12)" }}>
+                  <Shield size={20} style={{ color: "#00c9a7" }} />
+                </div>
+                <div>
+                  <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 700, fontSize: "0.92rem", color: "var(--lf-dark)" }}>No violent content</p>
+                  <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.8rem", color: "rgba(45,45,45,0.55)", marginTop: 3, lineHeight: 1.5 }}>
+                    Every story is warm, positive, and age-appropriate. Nothing scary, dark, or inappropriate.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-5 rounded-2xl" style={{ background: "#fff", border: "1.5px solid rgba(249,199,0,0.25)", boxShadow: "0 2px 12px rgba(249,199,0,0.06)" }}>
+                <div className="flex-shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: "rgba(249,199,0,0.12)" }}>
+                  <BellOff size={20} style={{ color: "#d4a800" }} />
+                </div>
+                <div>
+                  <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 700, fontSize: "0.92rem", color: "var(--lf-dark)" }}>Zero ads. Ever.</p>
+                  <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.8rem", color: "rgba(45,45,45,0.55)", marginTop: 3, lineHeight: 1.5 }}>
+                    No ads, no upsells inside stories, no dark patterns. Your child&apos;s reading time is sacred.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-5 rounded-2xl" style={{ background: "#fff", border: "1.5px solid rgba(168,85,247,0.2)", boxShadow: "0 2px 12px rgba(168,85,247,0.06)" }}>
+                <div className="flex-shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: "rgba(168,85,247,0.1)" }}>
+                  <EyeOff size={20} style={{ color: "#a855f7" }} />
+                </div>
+                <div>
+                  <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 700, fontSize: "0.92rem", color: "var(--lf-dark)" }}>Your data stays yours</p>
+                  <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.8rem", color: "rgba(45,45,45,0.55)", marginTop: 3, lineHeight: 1.5 }}>
+                    We never sell or share your child&apos;s information. Stories are private to your family.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-5 rounded-2xl" style={{ background: "#fff", border: "1.5px solid rgba(255,107,53,0.2)", boxShadow: "0 2px 12px rgba(255,107,53,0.06)" }}>
+                <div className="flex-shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: "rgba(255,107,53,0.1)" }}>
+                  <Baby size={20} style={{ color: "#ff6b35" }} />
+                </div>
+                <div>
+                  <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 700, fontSize: "0.92rem", color: "var(--lf-dark)" }}>Designed for ages 2–10</p>
+                  <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.8rem", color: "rgba(45,45,45,0.55)", marginTop: 3, lineHeight: 1.5 }}>
+                    Stories, vocabulary, and themes are calibrated for young children&apos;s development.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-5 rounded-2xl" style={{ background: "#fff", border: "1.5px solid rgba(0,150,200,0.2)", boxShadow: "0 2px 12px rgba(0,150,200,0.06)" }}>
+                <div className="flex-shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: "rgba(0,150,200,0.1)" }}>
+                  <HeartHandshake size={20} style={{ color: "#0096c8" }} />
+                </div>
+                <div>
+                  <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 700, fontSize: "0.92rem", color: "var(--lf-dark)" }}>Built by parents</p>
+                  <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.8rem", color: "rgba(45,45,45,0.55)", marginTop: 3, lineHeight: 1.5 }}>
+                    Lalli Fafa was created by a parent who wanted better bedtime stories for their own child.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-5 rounded-2xl" style={{ background: "#fff", border: "1.5px solid rgba(0,201,167,0.2)", boxShadow: "0 2px 12px rgba(0,201,167,0.06)" }}>
+                <div className="flex-shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: "rgba(0,201,167,0.12)" }}>
+                  <Lock size={20} style={{ color: "#00c9a7" }} />
+                </div>
+                <div>
+                  <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 700, fontSize: "0.92rem", color: "var(--lf-dark)" }}>Secure by default</p>
+                  <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.8rem", color: "rgba(45,45,45,0.55)", marginTop: 3, lineHeight: 1.5 }}>
+                    All data is encrypted in transit and at rest. Payments handled entirely by Razorpay.
+                  </p>
+                </div>
+              </div>
+
             </div>
           </div>
         </section>
