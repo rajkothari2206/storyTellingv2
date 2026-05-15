@@ -242,7 +242,7 @@ function GenerateForm({ isAuthenticated }: { isAuthenticated: boolean }) {
                 ))}
               </div>
               <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.78rem", color: "rgba(45,45,45,0.4)", marginTop: 4 }}>
-                Each story is 430–450 words · 80 credits
+                Each story is ~300 words · ~2 min read · 80 credits
               </p>
             </Section>
 

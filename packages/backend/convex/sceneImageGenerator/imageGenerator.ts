@@ -146,11 +146,10 @@ async function processSceneImage(
 }
 
 /**
- * Generates and stores all scene images with batched approach:
- * - Scene 1 generated first
- * - Remaining scenes generated in small batches (2 at a time) to avoid memory issues
- * - All scenes use Scene 1 as reference for consistency
- * This balances speed with memory efficiency
+ * Generates and stores all scene images sequentially.
+ * Each scene gets the character reference image for consistency,
+ * but NOT the previous scene — this prevents composition copying
+ * which causes scenes to look identical.
  */
 export async function generateAllSceneImages(
   ctx: ActionCtx,
@@ -161,10 +160,9 @@ export async function generateAllSceneImages(
 ): Promise<SceneGenerationResult[]> {
   if (!scenes.length) return [];
 
-  // Sort scenes by sceneNumber
   const sortedScenes = [...scenes].sort((a, b) => a.sceneNumber - b.sceneNumber);
 
-  // Load character reference image (Lalli & Fafa) once
+  // Load the Lalli & Fafa character reference once — used for every scene
   const characterRefBase64 = await loadReferenceImage(ctx);
 
   // Load child avatar if available
@@ -174,73 +172,37 @@ export async function generateAllSceneImages(
 
   const results: SceneGenerationResult[] = [];
 
-  // STEP 1: Generate first scene (anchor scene)
-  const firstScene = sortedScenes[0];
+  for (const scene of sortedScenes) {
+    console.log(`[generateAllSceneImages] Generating scene ${scene.sceneNumber}`);
 
-  const firstResult = await generateSceneImage(
-    ctx,
-    firstScene,
-    child,
-    characterRefBase64,
-    undefined, // No previous scene for first one
-    childAvatarBase64
-  );
-
-  let firstSceneBase64: string | undefined = undefined;
-
-  if (firstResult.error || !firstResult.imageBase64) {
-    results.push({
-      sceneNumber: firstScene.sceneNumber,
-      success: false,
-      error: firstResult.error,
-    });
-  } else {
-    const firstSceneStorageId = await storeImageFromBase64(ctx, firstResult.imageBase64);
-    firstSceneBase64 = firstResult.imageBase64;
-
-    await ctx.runMutation(api.stories._updateSceneFilePath, {
+    // Generate without previous scene — avoids composition copying that makes scenes look identical.
+    // Character consistency is maintained via characterRefBase64 + STYLE_LOCK in the prompt.
+    let result = await processSceneImage(
+      ctx,
+      scene,
+      child,
       storyId,
-      sceneNumber: firstScene.sceneNumber,
-      filePath: firstSceneStorageId,
-    });
+      characterRefBase64,
+      undefined, // no previousScene
+      childAvatarBase64
+    );
 
-    results.push({
-      sceneNumber: firstScene.sceneNumber,
-      success: true,
-    });
-  }
-
-  // STEP 2: Generate remaining scenes sequentially for visual chaining
-  // Each scene receives the previous scene's image as a continuity reference,
-  // with Scene 1 always available as the style anchor via characterRefBase64.
-  const remainingScenes = sortedScenes.slice(1);
-
-  if (remainingScenes.length > 0) {
-    console.log(`[generateAllSceneImages] Processing ${remainingScenes.length} remaining scenes sequentially with chaining`);
-
-    let previousSceneBase64: string | undefined = firstSceneBase64;
-
-    for (const scene of remainingScenes) {
-      console.log(`[generateAllSceneImages] Generating scene ${scene.sceneNumber} (previousScene: ${previousSceneBase64 ? "yes" : "none"})`);
-
-      const result = await processSceneImage(
+    // Retry once on failure before giving up
+    if (!result.success) {
+      console.warn(`[generateAllSceneImages] Scene ${scene.sceneNumber} failed (${result.error}), retrying...`);
+      result = await processSceneImage(
         ctx,
         scene,
         child,
         storyId,
         characterRefBase64,
-        previousSceneBase64,
+        undefined,
         childAvatarBase64
       );
-
-      // Chain: use this scene's image as the next scene's continuity reference
-      if (result.imageBase64) {
-        previousSceneBase64 = result.imageBase64;
-      }
-
-      results.push(result);
-      console.log(`[generateAllSceneImages] Scene ${scene.sceneNumber} done (success: ${result.success})`);
     }
+
+    results.push(result);
+    console.log(`[generateAllSceneImages] Scene ${scene.sceneNumber} done (success: ${result.success})`);
   }
 
   const failed = results.filter((r) => !r.success);
