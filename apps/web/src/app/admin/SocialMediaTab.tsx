@@ -177,6 +177,153 @@ async function generateThumbnail(
   }, "image/jpeg", 0.93);
 }
 
+// ─── Canvas helpers ───────────────────────────────────────────────────────────
+
+function loadImg(src: string, crossOrigin = false): Promise<HTMLImageElement> {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    if (crossOrigin) img.crossOrigin = "anonymous";
+    img.onload = () => res(img);
+    img.onerror = rej;
+    img.src = src;
+  });
+}
+
+/**
+ * Draws a 1280×720 canvas frame with:
+ *  - scene image centred / letterboxed on dark background
+ *  - Lalli Fafa watermark pill (top-right)
+ * Returns the canvas as a compressed JPEG Uint8Array (~100–200 KB).
+ */
+async function renderFrame(
+  imgSrc: string,
+  logoImg: HTMLImageElement | null,
+  W = 1280,
+  H = 720
+): Promise<Uint8Array<ArrayBuffer>> {
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d")!;
+
+  // Dark background
+  ctx.fillStyle = "#0d1117";
+  ctx.fillRect(0, 0, W, H);
+
+  // Scene image — letterboxed
+  try {
+    const img = await loadImg(imgSrc, true);
+    const scale = Math.min(W / img.width, H / img.height);
+    const sw = img.width * scale, sh = img.height * scale;
+    ctx.drawImage(img, (W - sw) / 2, (H - sh) / 2, sw, sh);
+  } catch { /* use dark bg if load fails */ }
+
+  // Watermark pill (top-right)
+  const pillW = 230, pillH = 52, pillX = W - pillW - 14, pillY = 12;
+  ctx.fillStyle = "rgba(0,0,0,0.60)";
+  ctx.beginPath();
+  ctx.roundRect(pillX, pillY, pillW, pillH, 10);
+  ctx.fill();
+
+  if (logoImg) {
+    const lh = 34, lw = (logoImg.width / logoImg.height) * lh;
+    ctx.drawImage(logoImg, pillX + 8, pillY + (pillH - lh) / 2, lw, lh);
+  }
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 15px Arial, sans-serif";
+  ctx.textBaseline = "top";
+  ctx.fillText("Lalli Fafa", pillX + 50, pillY + 8);
+  ctx.fillStyle = "#00b8a6";
+  ctx.font = "12px Arial, sans-serif";
+  ctx.fillText("www.lallifafa.com", pillX + 50, pillY + 28);
+
+  const blob = await new Promise<Blob>((res, rej) =>
+    canvas.toBlob(b => b ? res(b) : rej(new Error("toBlob returned null")), "image/jpeg", 0.82)
+  );
+  return new Uint8Array(await blob.arrayBuffer()) as Uint8Array<ArrayBuffer>;
+}
+
+/** Generates the branded end-card frame (dark gradient + CTA). */
+async function renderEndCard(
+  customUrl: string | null,
+  logoImg: HTMLImageElement | null,
+  W = 1280,
+  H = 720
+): Promise<Uint8Array<ArrayBuffer>> {
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d")!;
+
+  if (customUrl) {
+    try {
+      const img = await loadImg(customUrl, true);
+      const scale = Math.max(W / img.width, H / img.height);
+      ctx.drawImage(img, (W - img.width * scale) / 2, (H - img.height * scale) / 2, img.width * scale, img.height * scale);
+      const blob = await new Promise<Blob>((res, rej) =>
+        canvas.toBlob(b => b ? res(b) : rej(new Error("toBlob null")), "image/jpeg", 0.88)
+      );
+      return new Uint8Array(await blob.arrayBuffer()) as Uint8Array<ArrayBuffer>;
+    } catch { /* fall through to branded card */ }
+  }
+
+  // Auto-generated branded end card
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, "#0d2235");
+  grad.addColorStop(1, "#003d2e");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Stars
+  const rng = { v: 42 }; // deterministic via simple LCG
+  const nextRng = () => { rng.v = (rng.v * 1664525 + 1013904223) & 0x7fffffff; return rng.v / 0x7fffffff; };
+  for (let s = 0; s < 90; s++) {
+    ctx.fillStyle = `rgba(255,255,255,${nextRng() * 0.55 + 0.15})`;
+    ctx.beginPath();
+    ctx.arc(nextRng() * W, nextRng() * H * 0.55, nextRng() * 2 + 0.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Glow circle
+  const glow = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, 200);
+  glow.addColorStop(0, "rgba(0,184,166,0.22)");
+  glow.addColorStop(1, "rgba(0,184,166,0)");
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(W / 2, H / 2, 200, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  // Logo
+  if (logoImg) {
+    const lh = 60, lw = (logoImg.width / logoImg.height) * lh;
+    ctx.drawImage(logoImg, W / 2 - lw / 2, H * 0.12, lw, lh);
+  }
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 60px Arial, sans-serif";
+  ctx.fillText("✨ The End ✨", W / 2, H * 0.38);
+
+  ctx.fillStyle = "#00b8a6";
+  ctx.font = "bold 38px Arial, sans-serif";
+  ctx.fillText("Create Your Child's Story!", W / 2, H * 0.54);
+
+  ctx.fillStyle = "#e0f7f5";
+  ctx.font = "28px Arial, sans-serif";
+  ctx.fillText("www.lallifafa.com", W / 2, H * 0.65);
+
+  ctx.fillStyle = "rgba(255,255,255,0.55)";
+  ctx.font = "20px Arial, sans-serif";
+  ctx.fillText("Personalized stories where YOUR child is the hero 🌟", W / 2, H * 0.75);
+
+  const blob = await new Promise<Blob>((res, rej) =>
+    canvas.toBlob(b => b ? res(b) : rej(new Error("toBlob null")), "image/jpeg", 0.88)
+  );
+  return new Uint8Array(await blob.arrayBuffer()) as Uint8Array<ArrayBuffer>;
+}
+
 // ─── FFmpeg video assembler ───────────────────────────────────────────────────
 
 async function generateAndDownloadVideo(
@@ -189,17 +336,15 @@ async function generateAndDownloadVideo(
 ): Promise<void> {
   onProgress(2, "Loading video engine…");
 
-  // Dynamic import so FFmpeg only loads when needed
   const { FFmpeg } = await import("@ffmpeg/ffmpeg");
   const { toBlobURL, fetchFile } = await import("@ffmpeg/util");
 
   const ffmpeg = new FFmpeg();
-
   ffmpeg.on("progress", ({ progress }) => {
-    onProgress(10 + Math.round(progress * 75), `Rendering… ${Math.round(progress * 100)}%`);
+    onProgress(62 + Math.round(progress * 33), `Encoding… ${Math.round(progress * 100)}%`);
   });
 
-  onProgress(4, "Loading FFmpeg WebAssembly…");
+  onProgress(5, "Loading FFmpeg WebAssembly…");
   await ffmpeg.load({
     coreURL: await toBlobURL(
       "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js",
@@ -211,152 +356,51 @@ async function generateAndDownloadVideo(
     ),
   });
 
-  onProgress(10, "Fetching story assets…");
+  onProgress(14, "Pre-processing scene images…");
 
-  // Write scene images
-  for (let i = 0; i < sceneUrls.length; i++) {
-    const data = await fetchFile(sceneUrls[i]);
-    await ffmpeg.writeFile(`scene${i}.jpg`, data);
-    onProgress(10 + i * 3, `Loading scene ${i + 1}…`);
+  // Load logo once for watermark use
+  let logoImg: HTMLImageElement | null = null;
+  try { logoImg = await loadImg("/logoNoBg.png"); } catch { /* skip */ }
+
+  // Pre-scale each scene to 1280×720 JPEG with watermark baked in.
+  // This keeps each file ~100–200 KB instead of 1–3 MB, preventing FFmpeg FS memory issues.
+  const numScenes = sceneUrls.length;
+  for (let i = 0; i < numScenes; i++) {
+    onProgress(14 + i * 8, `Processing scene ${i + 1} of ${numScenes}…`);
+    const frameData = await renderFrame(sceneUrls[i], logoImg);
+    await ffmpeg.writeFile(`s${i}.jpg`, frameData);
   }
+
+  // Pre-render end card
+  onProgress(56, "Rendering end card…");
+  const endCardData = await renderEndCard(endCardUrl, logoImg);
+  await ffmpeg.writeFile("ec.jpg", endCardData);
 
   // Write audio
+  onProgress(60, "Loading audio…");
   const audioData = await fetchFile(audioUrl);
   await ffmpeg.writeFile("audio.mp3", audioData);
-  onProgress(26, "Loading audio…");
 
-  // Create watermark PNG using canvas (logo + URL)
-  const wmCanvas = document.createElement("canvas");
-  wmCanvas.width = 320;
-  wmCanvas.height = 70;
-  const wmCtx = wmCanvas.getContext("2d")!;
+  onProgress(62, "Starting video encode…");
 
-  // Background pill
-  wmCtx.fillStyle = "rgba(0,0,0,0.55)";
-  wmCtx.beginPath();
-  wmCtx.roundRect(0, 0, 320, 70, 10);
-  wmCtx.fill();
-
-  // Try loading logo
-  try {
-    const logo = await new Promise<HTMLImageElement>((res, rej) => {
-      const img = new Image();
-      img.onload = () => res(img);
-      img.onerror = rej;
-      img.src = "/logoNoBg.png";
-    });
-    wmCtx.drawImage(logo, 8, 8, 54, 54);
-  } catch { /* skip */ }
-
-  wmCtx.fillStyle = "#ffffff";
-  wmCtx.font = "bold 22px Arial, sans-serif";
-  wmCtx.textBaseline = "top";
-  wmCtx.fillText("Lalli Fafa", 70, 8);
-  wmCtx.fillStyle = "#00b8a6";
-  wmCtx.font = "15px Arial, sans-serif";
-  wmCtx.fillText("www.lallifafa.com", 70, 36);
-
-  const wmBlob = await new Promise<Blob>(res => wmCanvas.toBlob(b => res(b!), "image/png"));
-  await ffmpeg.writeFile("watermark.png", new Uint8Array(await wmBlob.arrayBuffer()));
-  onProgress(30, "Building watermark…");
-
-  // Write end card (or generate a simple one)
-  let hasEndCard = false;
-  if (endCardUrl) {
-    try {
-      await ffmpeg.writeFile("endcard.jpg", await fetchFile(endCardUrl));
-      hasEndCard = true;
-    } catch { /* skip */ }
-  }
-
-  if (!hasEndCard) {
-    // Generate a simple branded end card with canvas
-    const ecCanvas = document.createElement("canvas");
-    ecCanvas.width = 1280;
-    ecCanvas.height = 720;
-    const ecCtx = ecCanvas.getContext("2d")!;
-    const ecGrad = ecCtx.createLinearGradient(0, 0, 1280, 720);
-    ecGrad.addColorStop(0, "#0d2235");
-    ecGrad.addColorStop(1, "#003d2e");
-    ecCtx.fillStyle = ecGrad;
-    ecCtx.fillRect(0, 0, 1280, 720);
-
-    // Stars
-    for (let s = 0; s < 80; s++) {
-      ecCtx.fillStyle = `rgba(255,255,255,${Math.random() * 0.6 + 0.2})`;
-      ecCtx.beginPath();
-      ecCtx.arc(Math.random() * 1280, Math.random() * 400, Math.random() * 2 + 0.5, 0, Math.PI * 2);
-      ecCtx.fill();
-    }
-
-    // Glow circle
-    const glow = ecCtx.createRadialGradient(640, 360, 0, 640, 360, 220);
-    glow.addColorStop(0, "rgba(0,184,166,0.18)");
-    glow.addColorStop(1, "rgba(0,184,166,0)");
-    ecCtx.fillStyle = glow;
-    ecCtx.beginPath();
-    ecCtx.arc(640, 360, 220, 0, Math.PI * 2);
-    ecCtx.fill();
-
-    ecCtx.fillStyle = "#ffffff";
-    ecCtx.font = "bold 72px Arial, sans-serif";
-    ecCtx.textAlign = "center";
-    ecCtx.textBaseline = "middle";
-    ecCtx.fillText("✨ The End ✨", 640, 240);
-
-    ecCtx.fillStyle = "#00b8a6";
-    ecCtx.font = "bold 44px Arial, sans-serif";
-    ecCtx.fillText("Create Your Child's Story!", 640, 360);
-
-    ecCtx.fillStyle = "#e0f7f5";
-    ecCtx.font = "32px Arial, sans-serif";
-    ecCtx.fillText("www.lallifafa.com", 640, 440);
-
-    ecCtx.fillStyle = "rgba(255,255,255,0.65)";
-    ecCtx.font = "24px Arial, sans-serif";
-    ecCtx.fillText("Personalized stories where YOUR child is the hero 🌟", 640, 510);
-
-    const ecBlob = await new Promise<Blob>(res => ecCanvas.toBlob(b => res(b!), "image/jpeg", 0.92));
-    await ffmpeg.writeFile("endcard.jpg", new Uint8Array(await ecBlob.arrayBuffer()));
-  }
-  onProgress(35, "Preparing end card…");
-
-  // Build FFmpeg command
-  const numScenes = sceneUrls.length;
+  // Simple concat slideshow — no complex filters needed (images are pre-processed)
   const sceneDuration = audioDurationSeconds / numScenes;
-  const totalDuration = audioDurationSeconds + 6; // 6s end card
+  const totalDuration = audioDurationSeconds + 6;
 
   const inputs: string[] = [];
   for (let i = 0; i < numScenes; i++) {
-    inputs.push("-loop", "1", "-t", String(sceneDuration.toFixed(3)), "-i", `scene${i}.jpg`);
+    inputs.push("-loop", "1", "-t", sceneDuration.toFixed(3), "-i", `s${i}.jpg`);
   }
-  inputs.push("-loop", "1", "-t", "6", "-i", "endcard.jpg");
-  inputs.push("-i", "audio.mp3");
-  inputs.push("-i", "watermark.png");
+  inputs.push("-loop", "1", "-t", "6", "-i", "ec.jpg"); // end card at index numScenes
+  inputs.push("-i", "audio.mp3");                        // audio at index numScenes + 1
 
-  // Filter: scale each scene → 1280x720, concat, overlay watermark
-  const scaleFilters = Array.from({ length: numScenes }, (_, i) =>
-    `[${i}:v]scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:-1:-1:color=#0d1117[v${i}]`
-  );
-  scaleFilters.push(
-    `[${numScenes}:v]scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:-1:-1:color=#0d1117[vend]`
-  );
-  const concatInputs = Array.from({ length: numScenes }, (_, i) => `[v${i}]`).join("") + "[vend]";
+  const concatParts = Array.from({ length: numScenes }, (_, i) => `[${i}:v]`).join("") + `[${numScenes}:v]`;
   const audioIdx = numScenes + 1;
-  const wmIdx = numScenes + 2;
-
-  const filterComplex = [
-    ...scaleFilters,
-    `${concatInputs}concat=n=${numScenes + 1}:v=1:a=0[slides]`,
-    `[${wmIdx}:v]scale=240:-1[wm]`,
-    `[slides][wm]overlay=W-w-16:16[out]`,
-  ].join(";");
-
-  onProgress(37, "Starting render…");
 
   await ffmpeg.exec([
     ...inputs,
-    "-filter_complex", filterComplex,
+    "-filter_complex",
+    `${concatParts}concat=n=${numScenes + 1}:v=1:a=0[out]`,
     "-map", "[out]",
     "-map", `${audioIdx}:a:0`,
     "-c:v", "libx264",
@@ -365,16 +409,15 @@ async function generateAndDownloadVideo(
     "-pix_fmt", "yuv420p",
     "-c:a", "aac",
     "-b:a", "128k",
-    "-af", `apad=pad_dur=6`,
-    "-t", String(totalDuration.toFixed(3)),
+    "-af", "apad=pad_dur=6",
+    "-t", totalDuration.toFixed(3),
     "output.mp4",
   ]);
 
-  onProgress(88, "Finalising…");
+  onProgress(97, "Saving file…");
 
   const rawData = await ffmpeg.readFile("output.mp4");
-  // Normalise to a plain Uint8Array backed by a standard ArrayBuffer
-  const safeData: Uint8Array<ArrayBuffer> = rawData instanceof Uint8Array
+  const safeData = rawData instanceof Uint8Array
     ? new Uint8Array(rawData)
     : new Uint8Array(rawData as unknown as ArrayBuffer);
   const blob = new Blob([safeData], { type: "video/mp4" });
@@ -385,7 +428,7 @@ async function generateAndDownloadVideo(
   a.click();
   URL.revokeObjectURL(url);
 
-  onProgress(100, "Done!");
+  onProgress(100, "Done! ✅");
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
