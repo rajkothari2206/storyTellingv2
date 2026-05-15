@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -93,7 +93,7 @@ async function generateThumbnail(
     const i = new Image();
     i.crossOrigin = "anonymous";
     i.onload = () => res(i);
-    i.onerror = rej;
+    i.onerror = () => rej(new Error("Scene image failed to load — check browser console for CORS errors"));
     i.src = sceneImageUrl;
   });
 
@@ -506,6 +506,22 @@ export function SocialMediaTab({ isAdmin }: { isAdmin: boolean }) {
   const [generatingMeta, setGeneratingMeta] = useState(false);
   const [metaError, setMetaError] = useState("");
 
+  // Persist YouTube metadata in localStorage keyed by story ID (survives refresh)
+  useEffect(() => {
+    if (selectedStoryId) {
+      const cached = localStorage.getItem(`yt_meta_${selectedStoryId}`);
+      setMeta(cached ? (JSON.parse(cached) as YouTubeMeta) : null);
+    } else {
+      setMeta(null);
+    }
+  }, [selectedStoryId]);
+
+  useEffect(() => {
+    if (meta && selectedStoryId) {
+      localStorage.setItem(`yt_meta_${selectedStoryId}`, JSON.stringify(meta));
+    }
+  }, [meta, selectedStoryId]);
+
   // Video generation
   const [videoProgress, setVideoProgress] = useState(0);
   const [videoStatus, setVideoStatus] = useState("");
@@ -599,12 +615,12 @@ export function SocialMediaTab({ isAdmin }: { isAdmin: boolean }) {
     }
     try {
       await generateThumbnail(
-        firstScene,
+        proxyConvex(firstScene),
         story?.title || "Lalli Fafa Story",
         meta?.thumbnailHook || "AN AMAZING ADVENTURE! ✨"
       );
     } catch (err: any) {
-      alert("Thumbnail generation failed: " + err.message);
+      alert("Thumbnail generation failed: " + (err?.message || err?.toString() || "Image could not be loaded — check browser console"));
     }
   }
 
@@ -630,7 +646,7 @@ export function SocialMediaTab({ isAdmin }: { isAdmin: boolean }) {
         </label>
         <select
           value={selectedStoryId}
-          onChange={e => { setSelectedStoryId(e.target.value); setMeta(null); }}
+          onChange={e => { setSelectedStoryId(e.target.value); }}
           style={{ padding: "10px 14px", border: "1.5px solid rgba(0,0,0,0.1)", borderRadius: "0.7rem", fontFamily: "'Nunito',sans-serif", fontSize: "0.95rem", color: "var(--lf-dark)", background: "#fff", outline: "none", cursor: "pointer" }}
         >
           <option value="">— choose a story —</option>
