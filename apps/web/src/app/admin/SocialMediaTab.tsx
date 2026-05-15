@@ -177,54 +177,33 @@ async function generateThumbnail(
   }, "image/jpeg", 0.93);
 }
 
-// ─── Canvas helpers ───────────────────────────────────────────────────────────
+// ─── Canvas / image helpers ───────────────────────────────────────────────────
 
-function loadImg(src: string, crossOrigin = false): Promise<HTMLImageElement> {
+/** Proxy Convex storage URLs through our server-side route to avoid CORS issues on canvas. */
+function proxyConvex(url: string): string {
+  if (url.includes("convex.cloud") || url.includes("convex.site")) {
+    return `/api/media-proxy?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+}
+
+function loadImg(src: string): Promise<HTMLImageElement> {
   return new Promise((res, rej) => {
     const img = new Image();
-    if (crossOrigin) img.crossOrigin = "anonymous";
+    img.crossOrigin = "anonymous";
     img.onload = () => res(img);
     img.onerror = rej;
     img.src = src;
   });
 }
 
-/**
- * Draws a 1280×720 canvas frame with:
- *  - scene image centred / letterboxed on dark background
- *  - Lalli Fafa watermark pill (top-right)
- * Returns the canvas as a compressed JPEG Uint8Array (~100–200 KB).
- */
-async function renderFrame(
-  imgSrc: string,
-  logoImg: HTMLImageElement | null,
-  W = 1280,
-  H = 720
-): Promise<Uint8Array<ArrayBuffer>> {
-  const canvas = document.createElement("canvas");
-  canvas.width = W;
-  canvas.height = H;
-  const ctx = canvas.getContext("2d")!;
-
-  // Dark background
-  ctx.fillStyle = "#0d1117";
-  ctx.fillRect(0, 0, W, H);
-
-  // Scene image — letterboxed
-  try {
-    const img = await loadImg(imgSrc, true);
-    const scale = Math.min(W / img.width, H / img.height);
-    const sw = img.width * scale, sh = img.height * scale;
-    ctx.drawImage(img, (W - sw) / 2, (H - sh) / 2, sw, sh);
-  } catch { /* use dark bg if load fails */ }
-
-  // Watermark pill (top-right)
+/** Draws watermark pill (top-right corner) onto an existing canvas context. */
+function drawWatermark(ctx: CanvasRenderingContext2D, logoImg: HTMLImageElement | null, W: number) {
   const pillW = 230, pillH = 52, pillX = W - pillW - 14, pillY = 12;
   ctx.fillStyle = "rgba(0,0,0,0.60)";
   ctx.beginPath();
   ctx.roundRect(pillX, pillY, pillW, pillH, 10);
   ctx.fill();
-
   if (logoImg) {
     const lh = 34, lw = (logoImg.width / logoImg.height) * lh;
     ctx.drawImage(logoImg, pillX + 8, pillY + (pillH - lh) / 2, lw, lh);
@@ -236,35 +215,26 @@ async function renderFrame(
   ctx.fillStyle = "#00b8a6";
   ctx.font = "12px Arial, sans-serif";
   ctx.fillText("www.lallifafa.com", pillX + 50, pillY + 28);
-
-  const blob = await new Promise<Blob>((res, rej) =>
-    canvas.toBlob(b => b ? res(b) : rej(new Error("toBlob returned null")), "image/jpeg", 0.82)
-  );
-  return new Uint8Array(await blob.arrayBuffer()) as Uint8Array<ArrayBuffer>;
 }
 
-/** Generates the branded end-card frame (dark gradient + CTA). */
-async function renderEndCard(
-  customUrl: string | null,
+/** Draws the branded end card onto an existing canvas context. */
+function drawEndCard(
+  ctx: CanvasRenderingContext2D,
+  endCardImg: HTMLImageElement | null,
   logoImg: HTMLImageElement | null,
-  W = 1280,
-  H = 720
-): Promise<Uint8Array<ArrayBuffer>> {
-  const canvas = document.createElement("canvas");
-  canvas.width = W;
-  canvas.height = H;
-  const ctx = canvas.getContext("2d")!;
-
-  if (customUrl) {
-    try {
-      const img = await loadImg(customUrl, true);
-      const scale = Math.max(W / img.width, H / img.height);
-      ctx.drawImage(img, (W - img.width * scale) / 2, (H - img.height * scale) / 2, img.width * scale, img.height * scale);
-      const blob = await new Promise<Blob>((res, rej) =>
-        canvas.toBlob(b => b ? res(b) : rej(new Error("toBlob null")), "image/jpeg", 0.88)
-      );
-      return new Uint8Array(await blob.arrayBuffer()) as Uint8Array<ArrayBuffer>;
-    } catch { /* fall through to branded card */ }
+  W: number,
+  H: number
+) {
+  if (endCardImg) {
+    const scale = Math.max(W / endCardImg.width, H / endCardImg.height);
+    ctx.drawImage(
+      endCardImg,
+      (W - endCardImg.width * scale) / 2,
+      (H - endCardImg.height * scale) / 2,
+      endCardImg.width * scale,
+      endCardImg.height * scale
+    );
+    return;
   }
 
   // Auto-generated branded end card
@@ -274,17 +244,16 @@ async function renderEndCard(
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
 
-  // Stars
-  const rng = { v: 42 }; // deterministic via simple LCG
-  const nextRng = () => { rng.v = (rng.v * 1664525 + 1013904223) & 0x7fffffff; return rng.v / 0x7fffffff; };
+  // Stars (deterministic LCG so they don't flicker between frames)
+  const rng = { v: 42 };
+  const nr = () => { rng.v = (rng.v * 1664525 + 1013904223) & 0x7fffffff; return rng.v / 0x7fffffff; };
   for (let s = 0; s < 90; s++) {
-    ctx.fillStyle = `rgba(255,255,255,${nextRng() * 0.55 + 0.15})`;
+    ctx.fillStyle = `rgba(255,255,255,${nr() * 0.5 + 0.15})`;
     ctx.beginPath();
-    ctx.arc(nextRng() * W, nextRng() * H * 0.55, nextRng() * 2 + 0.5, 0, Math.PI * 2);
+    ctx.arc(nr() * W, nr() * H * 0.55, nr() * 2 + 0.5, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  // Glow circle
   const glow = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, 200);
   glow.addColorStop(0, "rgba(0,184,166,0.22)");
   glow.addColorStop(1, "rgba(0,184,166,0)");
@@ -295,36 +264,27 @@ async function renderEndCard(
 
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-
-  // Logo
   if (logoImg) {
     const lh = 60, lw = (logoImg.width / logoImg.height) * lh;
     ctx.drawImage(logoImg, W / 2 - lw / 2, H * 0.12, lw, lh);
   }
-
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 60px Arial, sans-serif";
   ctx.fillText("✨ The End ✨", W / 2, H * 0.38);
-
   ctx.fillStyle = "#00b8a6";
   ctx.font = "bold 38px Arial, sans-serif";
   ctx.fillText("Create Your Child's Story!", W / 2, H * 0.54);
-
   ctx.fillStyle = "#e0f7f5";
   ctx.font = "28px Arial, sans-serif";
   ctx.fillText("www.lallifafa.com", W / 2, H * 0.65);
-
   ctx.fillStyle = "rgba(255,255,255,0.55)";
   ctx.font = "20px Arial, sans-serif";
   ctx.fillText("Personalized stories where YOUR child is the hero 🌟", W / 2, H * 0.75);
-
-  const blob = await new Promise<Blob>((res, rej) =>
-    canvas.toBlob(b => b ? res(b) : rej(new Error("toBlob null")), "image/jpeg", 0.88)
-  );
-  return new Uint8Array(await blob.arrayBuffer()) as Uint8Array<ArrayBuffer>;
 }
 
-// ─── FFmpeg video assembler ───────────────────────────────────────────────────
+// ─── MediaRecorder video assembler ───────────────────────────────────────────
+// Uses the browser's native MediaRecorder API — no WASM, no memory limits, no CORS.
+// Output: WebM (VP8/VP9 + Opus) — YouTube accepts this natively.
 
 async function generateAndDownloadVideo(
   sceneUrls: string[],
@@ -334,97 +294,125 @@ async function generateAndDownloadVideo(
   title: string,
   onProgress: (pct: number, label: string) => void
 ): Promise<void> {
-  onProgress(2, "Loading video engine…");
+  const W = 1280, H = 720;
+  const totalDuration = audioDurationSeconds + 6; // +6s end card
 
-  const { FFmpeg } = await import("@ffmpeg/ffmpeg");
-  const { toBlobURL, fetchFile } = await import("@ffmpeg/util");
+  onProgress(3, "Loading images…");
 
-  const ffmpeg = new FFmpeg();
-  ffmpeg.on("progress", ({ progress }) => {
-    onProgress(62 + Math.round(progress * 33), `Encoding… ${Math.round(progress * 100)}%`);
-  });
-
-  onProgress(5, "Loading FFmpeg WebAssembly…");
-  await ffmpeg.load({
-    coreURL: await toBlobURL(
-      "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js",
-      "text/javascript"
-    ),
-    wasmURL: await toBlobURL(
-      "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm",
-      "application/wasm"
-    ),
-  });
-
-  onProgress(14, "Pre-processing scene images…");
-
-  // Load logo once for watermark use
+  // Load logo
   let logoImg: HTMLImageElement | null = null;
-  try { logoImg = await loadImg("/logoNoBg.png"); } catch { /* skip */ }
+  try { logoImg = await loadImg("/logoNoBg.png"); } catch { /* optional */ }
 
-  // Pre-scale each scene to 1280×720 JPEG with watermark baked in.
-  // This keeps each file ~100–200 KB instead of 1–3 MB, preventing FFmpeg FS memory issues.
-  const numScenes = sceneUrls.length;
-  for (let i = 0; i < numScenes; i++) {
-    onProgress(14 + i * 8, `Processing scene ${i + 1} of ${numScenes}…`);
-    const frameData = await renderFrame(sceneUrls[i], logoImg);
-    await ffmpeg.writeFile(`s${i}.jpg`, frameData);
+  // Load scene images via proxy (avoids CORS taint on canvas)
+  const sceneImages: (HTMLImageElement | null)[] = [];
+  for (let i = 0; i < sceneUrls.length; i++) {
+    onProgress(3 + i * 7, `Loading scene ${i + 1} of ${sceneUrls.length}…`);
+    try { sceneImages.push(await loadImg(proxyConvex(sceneUrls[i]))); }
+    catch { sceneImages.push(null); }
   }
 
-  // Pre-render end card
-  onProgress(56, "Rendering end card…");
-  const endCardData = await renderEndCard(endCardUrl, logoImg);
-  await ffmpeg.writeFile("ec.jpg", endCardData);
-
-  // Write audio
-  onProgress(60, "Loading audio…");
-  const audioData = await fetchFile(audioUrl);
-  await ffmpeg.writeFile("audio.mp3", audioData);
-
-  onProgress(62, "Starting video encode…");
-
-  // Simple concat slideshow — no complex filters needed (images are pre-processed)
-  const sceneDuration = audioDurationSeconds / numScenes;
-  const totalDuration = audioDurationSeconds + 6;
-
-  const inputs: string[] = [];
-  for (let i = 0; i < numScenes; i++) {
-    inputs.push("-loop", "1", "-t", sceneDuration.toFixed(3), "-i", `s${i}.jpg`);
+  // Load end card image (if set)
+  let endCardImg: HTMLImageElement | null = null;
+  if (endCardUrl) {
+    try { endCardImg = await loadImg(proxyConvex(endCardUrl)); } catch { /* use auto-generated */ }
   }
-  inputs.push("-loop", "1", "-t", "6", "-i", "ec.jpg"); // end card at index numScenes
-  inputs.push("-i", "audio.mp3");                        // audio at index numScenes + 1
 
-  const concatParts = Array.from({ length: numScenes }, (_, i) => `[${i}:v]`).join("") + `[${numScenes}:v]`;
-  const audioIdx = numScenes + 1;
+  onProgress(38, "Loading audio…");
 
-  await ffmpeg.exec([
-    ...inputs,
-    "-filter_complex",
-    `${concatParts}concat=n=${numScenes + 1}:v=1:a=0[out]`,
-    "-map", "[out]",
-    "-map", `${audioIdx}:a:0`,
-    "-c:v", "libx264",
-    "-preset", "ultrafast",
-    "-crf", "23",
-    "-pix_fmt", "yuv420p",
-    "-c:a", "aac",
-    "-b:a", "128k",
-    "-af", "apad=pad_dur=6",
-    "-t", totalDuration.toFixed(3),
-    "output.mp4",
+  // Fetch audio via proxy
+  const audioRes = await fetch(proxyConvex(audioUrl));
+  if (!audioRes.ok) throw new Error(`Audio fetch failed: ${audioRes.status}`);
+  const audioBuffer = await audioRes.arrayBuffer();
+
+  onProgress(44, "Setting up recording…");
+
+  // Canvas
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d")!;
+
+  // Audio context — route audio into the recording stream
+  const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+  const audioCtx = new AudioCtx();
+  const decoded = await audioCtx.decodeAudioData(audioBuffer.slice(0));
+  const audioSrc = audioCtx.createBufferSource();
+  audioSrc.buffer = decoded;
+  const audioDest = audioCtx.createMediaStreamDestination();
+  audioSrc.connect(audioDest);
+
+  // Combined stream: canvas video + audio
+  const canvasStream = canvas.captureStream(24);
+  const combined = new MediaStream([
+    ...canvasStream.getVideoTracks(),
+    ...audioDest.stream.getAudioTracks(),
   ]);
 
-  onProgress(97, "Saving file…");
+  // Pick best supported codec
+  const mimeType = (
+    ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"]
+      .find(m => MediaRecorder.isTypeSupported(m))
+  ) ?? "video/webm";
 
-  const rawData = await ffmpeg.readFile("output.mp4");
-  const safeData = rawData instanceof Uint8Array
-    ? new Uint8Array(rawData)
-    : new Uint8Array(rawData as unknown as ArrayBuffer);
-  const blob = new Blob([safeData], { type: "video/mp4" });
+  const recorder = new MediaRecorder(combined, { mimeType, videoBitsPerSecond: 2_500_000 });
+  const chunks: Blob[] = [];
+  recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+
+  const sceneDuration = audioDurationSeconds / sceneImages.length;
+
+  // Animation loop
+  let rafId = 0;
+  let recordingStart = 0;
+  function drawFrame(ts: number) {
+    if (!recordingStart) recordingStart = ts;
+    const elapsed = (ts - recordingStart) / 1000;
+
+    ctx.fillStyle = "#0d1117";
+    ctx.fillRect(0, 0, W, H);
+
+    if (elapsed >= audioDurationSeconds) {
+      drawEndCard(ctx, endCardImg, logoImg, W, H);
+    } else {
+      const idx = Math.min(Math.floor(elapsed / sceneDuration), sceneImages.length - 1);
+      const img = sceneImages[idx];
+      if (img) {
+        const s = Math.min(W / img.width, H / img.height);
+        ctx.drawImage(img, (W - img.width * s) / 2, (H - img.height * s) / 2, img.width * s, img.height * s);
+      }
+      drawWatermark(ctx, logoImg, W);
+    }
+
+    const pct = Math.min(96, 44 + Math.round((elapsed / totalDuration) * 52));
+    const remaining = Math.max(0, Math.round(totalDuration - elapsed));
+    onProgress(pct, `Recording… ${remaining}s remaining`);
+
+    if (elapsed < totalDuration) {
+      rafId = requestAnimationFrame(drawFrame);
+    }
+  }
+
+  // Start everything simultaneously
+  recorder.start(500);
+  audioSrc.start();
+  rafId = requestAnimationFrame(drawFrame);
+
+  // Wait for recording to finish
+  await new Promise<void>(resolve => {
+    setTimeout(() => {
+      cancelAnimationFrame(rafId);
+      recorder.stop();
+      audioCtx.close();
+    }, totalDuration * 1000 + 600);
+    recorder.addEventListener("stop", () => resolve(), { once: true });
+  });
+
+  onProgress(98, "Saving file…");
+
+  const blob = new Blob(chunks, { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${title.replace(/[^a-z0-9]/gi, "_")}.mp4`;
+  a.download = `${title.replace(/[^a-z0-9]/gi, "_")}.webm`;
   a.click();
   URL.revokeObjectURL(url);
 
@@ -771,9 +759,9 @@ export function SocialMediaTab({ isAdmin }: { isAdmin: boolean }) {
 
             {/* Output spec */}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <Pill color="#7c3aed">1280×720 MP4</Pill>
-              <Pill color="#7c3aed">H.264 + AAC</Pill>
-              <Pill color="#7c3aed">mp3_44100_64 audio</Pill>
+              <Pill color="#7c3aed">1280×720 WebM</Pill>
+              <Pill color="#7c3aed">VP9 + Opus</Pill>
+              <Pill color="#7c3aed">2.5 Mbps video</Pill>
               <Pill color="#7c3aed">Lalli Fafa watermark</Pill>
               <Pill color="#7c3aed">6s end card</Pill>
             </div>
@@ -789,7 +777,7 @@ export function SocialMediaTab({ isAdmin }: { isAdmin: boolean }) {
                   <div style={{ height: "100%", borderRadius: 999, background: "var(--lf-teal)", width: `${videoProgress}%`, transition: "width 0.3s ease" }} />
                 </div>
                 <p style={{ fontFamily: "'Nunito',sans-serif", fontSize: "0.8rem", color: "rgba(45,45,45,0.4)", margin: 0 }}>
-                  ⚠️ FFmpeg runs in your browser. Keep this tab open. Large stories may take 2–5 minutes.
+                  ⏱️ Recording in real-time — keep this tab open. A 2.5-min story takes ~2.5 min to record.
                 </p>
               </div>
             )}
