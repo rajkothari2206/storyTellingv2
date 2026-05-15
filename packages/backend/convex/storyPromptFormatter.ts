@@ -56,7 +56,7 @@ export function formatStoryPrompt(
       storyType: storyTypeName,
       storyTypeGuidance: storyTypeHint,
     },
-    instructions: "BEGIN STORY NOW. MANDATORY: The story body must be exactly 300–320 words (title excluded, SCENE METADATA excluded). Count your words before finalising. Each of the 5 scenes must be approximately 60–64 words of story content. Do NOT exceed 320 words — this is a hard upper limit. Keep sentences short and punchy. Do NOT write a longer story thinking more is better — shorter is correct.",
+    instructions: "BEGIN STORY NOW. MANDATORY: The story body must be exactly 255–270 words (title excluded, SCENE METADATA excluded). Count your words before finalising. Each of the 5 scenes must be approximately 51–54 words of story content. Do NOT exceed 270 words — this is a hard upper limit. Keep sentences short and punchy. Do NOT write a longer story thinking more is better — shorter is correct.",
   };
 
   return JSON.stringify(payload, null, 2);

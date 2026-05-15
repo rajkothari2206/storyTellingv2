@@ -103,13 +103,13 @@ export const _generateContent = internalAction({
     // Check word count — retry if too short OR too long
     const storyBodyForCount = content.split(/^SCENE METADATA$/m)[0].trim();
     const wordCount = storyBodyForCount.split(/\s+/).filter(Boolean).length;
-    const tooShort = wordCount < 260 && content.length > 200;
-    const tooLong = wordCount > 360;
+    const tooShort = wordCount < 220 && content.length > 200;
+    const tooLong = wordCount > 290;
 
     if (tooShort || tooLong) {
       const reason = tooShort
-        ? `too short (${wordCount} words, need 300–320)`
-        : `too long (${wordCount} words, max 320)`;
+        ? `too short (${wordCount} words, need 255–270)`
+        : `too long (${wordCount} words, max 270)`;
       console.warn(`Story body ${reason}, retrying...`);
       const retryResp = await gemini.models.generateContent({
         model: "gemini-2.5-pro",
@@ -122,8 +122,8 @@ export const _generateContent = internalAction({
             role: "user",
             parts: [{
               text: formattedPrompt +
-                `\n\nCRITICAL: Your previous attempt produced ~${wordCount} words. The story body MUST be exactly 300–320 words — no more, no less. ` +
-                "Each of the 5 scenes must be ~60–64 words. Short, punchy sentences. Stop at 320 words.",
+                `\n\nCRITICAL: Your previous attempt produced ~${wordCount} words. The story body MUST be exactly 255–270 words — no more, no less. ` +
+                "Each of the 5 scenes must be ~51–54 words. Short, punchy sentences. Stop at 270 words.",
             }],
           },
         ],
@@ -246,7 +246,7 @@ export const enqueueStory: ReturnType<typeof action> = action({
     if (!userCredit || userCredit.length === 0) {
       throw new Error("No credit record found");
     }
-    if (userCredit[0].availableCredits < 60) {
+    if (userCredit[0].availableCredits < 80) {
       throw new Error("Not enough credits");
     }
     const creditId = userCredit[0]._id;

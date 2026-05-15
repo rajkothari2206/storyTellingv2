@@ -140,8 +140,14 @@ async function ttsArrayBuffer(voiceId: string, text: string, language: string): 
   const resp = await client.textToSpeech.convert(voiceId, {
     text,
     modelId,
-    outputFormat: "mp3_22050_32",
-    voiceSettings: { stability: 0.5, speed: 0.9 },
+    outputFormat: "mp3_44100_64",        // higher quality: 44kHz, 64kbps
+    voiceSettings: {
+      stability: 0.45,                   // slightly lower = more expressive variation
+      similarityBoost: 0.80,             // faithful to the voice character
+      style: 0.40,                       // style exaggeration for emotional delivery
+      useSpeakerBoost: true,             // enhances voice clarity
+      speed: 0.85,                       // slightly slower for children's storytelling
+    },
   });
 
   // handle web ReadableStream -> ArrayBuffer
