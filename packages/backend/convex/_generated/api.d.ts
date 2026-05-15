@@ -44,6 +44,7 @@ import type * as sceneImageGenerator_index from "../sceneImageGenerator/index.js
 import type * as sceneImageGenerator_promptBuilder from "../sceneImageGenerator/promptBuilder.js";
 import type * as sceneImageGenerator_types from "../sceneImageGenerator/types.js";
 import type * as sceneImageGenerator_utils from "../sceneImageGenerator/utils.js";
+import type * as socialMedia from "../socialMedia.js";
 import type * as stories from "../stories.js";
 import type * as storyElementSelector from "../storyElementSelector.js";
 import type * as storyPromptFormatter from "../storyPromptFormatter.js";
@@ -95,6 +96,7 @@ declare const fullApi: ApiFromModules<{
   "sceneImageGenerator/promptBuilder": typeof sceneImageGenerator_promptBuilder;
   "sceneImageGenerator/types": typeof sceneImageGenerator_types;
   "sceneImageGenerator/utils": typeof sceneImageGenerator_utils;
+  socialMedia: typeof socialMedia;
   stories: typeof stories;
   storyElementSelector: typeof storyElementSelector;
   storyPromptFormatter: typeof storyPromptFormatter;
