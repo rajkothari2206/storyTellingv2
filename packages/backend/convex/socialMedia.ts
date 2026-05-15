@@ -27,6 +27,18 @@ export const getEndCard = query({
   },
 });
 
+export const getEndCardUrl = query({
+  args: {},
+  handler: async (ctx) => {
+    const config = await ctx.db
+      .query("system_config")
+      .withIndex("by_key", (q) => q.eq("key", "end_card_storage_id"))
+      .first();
+    if (!config?.value) return null;
+    return await ctx.storage.getUrl(config.value as any);
+  },
+});
+
 export const setEndCard = mutation({
   args: { storageId: v.string() },
   handler: async (ctx, { storageId }) => {
@@ -42,6 +54,43 @@ export const setEndCard = mutation({
     } else {
       await ctx.db.insert("system_config", {
         key: "end_card_storage_id",
+        value: storageId,
+        updatedAt: now,
+      });
+    }
+    return { ok: true };
+  },
+});
+
+// ─── Background music storage ─────────────────────────────────────────────────
+
+export const getBgMusicUrl = query({
+  args: {},
+  handler: async (ctx) => {
+    const config = await ctx.db
+      .query("system_config")
+      .withIndex("by_key", (q) => q.eq("key", "bg_music_storage_id"))
+      .first();
+    if (!config?.value) return null;
+    return await ctx.storage.getUrl(config.value as any);
+  },
+});
+
+export const setBgMusic = mutation({
+  args: { storageId: v.string() },
+  handler: async (ctx, { storageId }) => {
+    const user = await authComponent.getAuthUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+    const existing = await ctx.db
+      .query("system_config")
+      .withIndex("by_key", (q) => q.eq("key", "bg_music_storage_id"))
+      .first();
+    const now = Date.now();
+    if (existing) {
+      await ctx.db.patch(existing._id, { value: storageId, updatedAt: now });
+    } else {
+      await ctx.db.insert("system_config", {
+        key: "bg_music_storage_id",
         value: storageId,
         updatedAt: now,
       });

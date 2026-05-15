@@ -23,6 +23,16 @@ interface SrtLine {
   text: string;
 }
 
+interface Particle {
+  x: number; y: number;
+  vx: number; vy: number;
+  radius: number;
+  baseOpacity: number;
+  phase: number;
+  speed: number;
+  color: string;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function secondsToSrtTime(s: number): string {
@@ -282,6 +292,83 @@ function drawEndCard(
   ctx.fillText("Personalized stories where YOUR child is the hero 🌟", W / 2, H * 0.75);
 }
 
+// ─── Particle system (sparkles) ───────────────────────────────────────────────
+
+function initParticles(W: number, H: number, count = 42): Particle[] {
+  const colors = ["#00b8a6", "#ffffff", "#ffd700", "#c8f0ff", "#a8f0dc", "#ffb3de"];
+  return Array.from({ length: count }, () => ({
+    x: Math.random() * W,
+    y: Math.random() * H,
+    vx: (Math.random() - 0.5) * 0.55,
+    vy: -(Math.random() * 0.55 + 0.15),
+    radius: Math.random() * 2.6 + 0.7,
+    baseOpacity: Math.random() * 0.55 + 0.18,
+    phase: Math.random() * Math.PI * 2,
+    speed: Math.random() * 1.6 + 0.7,
+    color: colors[Math.floor(Math.random() * colors.length)],
+  }));
+}
+
+function tickAndDrawParticles(
+  ctx: CanvasRenderingContext2D,
+  particles: Particle[],
+  elapsed: number,
+  W: number,
+  H: number,
+) {
+  ctx.save();
+  for (const p of particles) {
+    p.x += p.vx;
+    p.y += p.vy;
+    if (p.y < -12) { p.y = H + 12; p.x = Math.random() * W; }
+    if (p.x < -12) p.x = W + 12;
+    if (p.x > W + 12) p.x = -12;
+
+    const opacity = p.baseOpacity * (0.5 + 0.5 * Math.sin(elapsed * p.speed * 3 + p.phase));
+    ctx.globalAlpha = opacity;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Star cross for larger sparkles
+    if (p.radius > 1.9) {
+      ctx.globalAlpha = opacity * 0.55;
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = 0.8;
+      for (let k = 0; k < 4; k++) {
+        const a = (k * Math.PI) / 2;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x + Math.cos(a) * (p.radius + 4), p.y + Math.sin(a) * (p.radius + 4));
+        ctx.stroke();
+      }
+    }
+  }
+  ctx.restore();
+}
+
+/** Cover-fill a scene image with Ken Burns zoom + gentle pan. No save/restore — caller manages globalAlpha. */
+function drawSceneKenBurns(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  W: number,
+  H: number,
+  sceneElapsed: number,
+  sceneDuration: number,
+  sceneIndex: number,
+) {
+  const progress = Math.min(sceneElapsed / Math.max(sceneDuration, 0.001), 1);
+  const zoom = 1 + progress * 0.06; // subtle zoom 1.0 → 1.06
+  const panXDir = sceneIndex % 2 === 0 ? 1 : -1;
+  const panYDir = Math.floor(sceneIndex / 2) % 2 === 0 ? 0.4 : -0.4;
+  const baseS = Math.max(W / img.width, H / img.height) * zoom;
+  const dw = img.width * baseS, dh = img.height * baseS;
+  const dx = (W - dw) / 2 + panXDir * progress * W * 0.022;
+  const dy = (H - dh) / 2 + panYDir * progress * H * 0.018;
+  ctx.drawImage(img, dx, dy, dw, dh);
+}
+
 // ─── MediaRecorder video assembler ───────────────────────────────────────────
 // Uses the browser's native MediaRecorder API — no WASM, no memory limits, no CORS.
 // Output: WebM (VP8/VP9 + Opus) — YouTube accepts this natively.
@@ -290,95 +377,152 @@ async function generateAndDownloadVideo(
   sceneUrls: string[],
   audioUrl: string,
   endCardUrl: string | null,
+  bgMusicUrl: string | null,
   audioDurationSeconds: number,
   title: string,
   onProgress: (pct: number, label: string) => void
 ): Promise<void> {
   const W = 1280, H = 720;
-  const totalDuration = audioDurationSeconds + 6; // +6s end card
+  const FADE = 0.5;           // crossfade duration between scenes (seconds)
+  const END_CARD_SECS = 6;    // end card duration
+  const totalDuration = audioDurationSeconds + END_CARD_SECS;
 
   onProgress(3, "Loading images…");
 
-  // Load logo
+  // Logo
   let logoImg: HTMLImageElement | null = null;
   try { logoImg = await loadImg("/logoNoBg.png"); } catch { /* optional */ }
 
-  // Load scene images via proxy (avoids CORS taint on canvas)
+  // Scene images via CORS proxy
   const sceneImages: (HTMLImageElement | null)[] = [];
   for (let i = 0; i < sceneUrls.length; i++) {
-    onProgress(3 + i * 7, `Loading scene ${i + 1} of ${sceneUrls.length}…`);
+    onProgress(3 + i * 6, `Loading scene ${i + 1} of ${sceneUrls.length}…`);
     try { sceneImages.push(await loadImg(proxyConvex(sceneUrls[i]))); }
     catch { sceneImages.push(null); }
   }
 
-  // Load end card image (if set)
+  // End card image
   let endCardImg: HTMLImageElement | null = null;
   if (endCardUrl) {
-    try { endCardImg = await loadImg(proxyConvex(endCardUrl)); } catch { /* use auto-generated */ }
+    onProgress(33, "Loading end card…");
+    try { endCardImg = await loadImg(proxyConvex(endCardUrl)); } catch { /* auto-generated fallback */ }
   }
 
-  onProgress(38, "Loading audio…");
-
-  // Fetch audio via proxy
+  onProgress(36, "Loading narration…");
   const audioRes = await fetch(proxyConvex(audioUrl));
   if (!audioRes.ok) throw new Error(`Audio fetch failed: ${audioRes.status}`);
-  const audioBuffer = await audioRes.arrayBuffer();
+  const narrationBuffer = await audioRes.arrayBuffer();
+
+  // Background music (optional)
+  let bgBuffer: ArrayBuffer | null = null;
+  if (bgMusicUrl) {
+    onProgress(40, "Loading background music…");
+    try {
+      const bgRes = await fetch(proxyConvex(bgMusicUrl));
+      if (bgRes.ok) bgBuffer = await bgRes.arrayBuffer();
+    } catch { /* bg music is optional */ }
+  }
 
   onProgress(44, "Setting up recording…");
 
   // Canvas
   const canvas = document.createElement("canvas");
-  canvas.width = W;
-  canvas.height = H;
+  canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d")!;
 
-  // Audio context — route audio into the recording stream
+  // AudioContext — all sources mixed into a single MediaStream destination
   const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
   const audioCtx = new AudioCtx();
-  const decoded = await audioCtx.decodeAudioData(audioBuffer.slice(0));
-  const audioSrc = audioCtx.createBufferSource();
-  audioSrc.buffer = decoded;
   const audioDest = audioCtx.createMediaStreamDestination();
-  audioSrc.connect(audioDest);
 
-  // Combined stream: canvas video + audio
+  // Narration at full volume
+  const narrationBuf = await audioCtx.decodeAudioData(narrationBuffer.slice(0));
+  const narrationSrc = audioCtx.createBufferSource();
+  narrationSrc.buffer = narrationBuf;
+  const narrationGain = audioCtx.createGain();
+  narrationGain.gain.value = 1.0;
+  narrationSrc.connect(narrationGain);
+  narrationGain.connect(audioDest);
+
+  // Background music looped at low volume (22%)
+  let bgSrc: AudioBufferSourceNode | null = null;
+  if (bgBuffer) {
+    try {
+      const bgBuf = await audioCtx.decodeAudioData(bgBuffer.slice(0));
+      bgSrc = audioCtx.createBufferSource();
+      bgSrc.buffer = bgBuf;
+      bgSrc.loop = true;
+      const bgGain = audioCtx.createGain();
+      bgGain.gain.value = 0.22;
+      bgSrc.connect(bgGain);
+      bgGain.connect(audioDest);
+    } catch { /* ignore decode errors */ }
+  }
+
+  // Combined video + audio stream
   const canvasStream = canvas.captureStream(24);
   const combined = new MediaStream([
     ...canvasStream.getVideoTracks(),
     ...audioDest.stream.getAudioTracks(),
   ]);
 
-  // Pick best supported codec
   const mimeType = (
     ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"]
       .find(m => MediaRecorder.isTypeSupported(m))
   ) ?? "video/webm";
 
-  const recorder = new MediaRecorder(combined, { mimeType, videoBitsPerSecond: 2_500_000 });
+  const recorder = new MediaRecorder(combined, { mimeType, videoBitsPerSecond: 3_000_000 });
   const chunks: Blob[] = [];
   recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
 
-  const sceneDuration = audioDurationSeconds / sceneImages.length;
+  const sceneDuration = audioDurationSeconds / Math.max(sceneImages.length, 1);
 
-  // Animation loop
-  let rafId = 0;
-  let recordingStart = 0;
+  // Sparkle particle system
+  const particles = initParticles(W, H, 42);
+
+  let rafId = 0, recordingStart = 0;
+
   function drawFrame(ts: number) {
     if (!recordingStart) recordingStart = ts;
     const elapsed = (ts - recordingStart) / 1000;
 
-    ctx.fillStyle = "#0d1117";
+    // Reset state each frame
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = "#050a10";
     ctx.fillRect(0, 0, W, H);
 
     if (elapsed >= audioDurationSeconds) {
+      // ── End card ──────────────────────────────────────────────────────
       drawEndCard(ctx, endCardImg, logoImg, W, H);
     } else {
+      // ── Story scenes with Ken Burns + crossfade ───────────────────────
       const idx = Math.min(Math.floor(elapsed / sceneDuration), sceneImages.length - 1);
-      const img = sceneImages[idx];
-      if (img) {
-        const s = Math.min(W / img.width, H / img.height);
-        ctx.drawImage(img, (W - img.width * s) / 2, (H - img.height * s) / 2, img.width * s, img.height * s);
+      const sceneElapsed = elapsed - idx * sceneDuration;
+      const timeUntilSceneEnd = sceneDuration - sceneElapsed;
+      const nextIdx = idx + 1;
+      const hasNext = nextIdx < sceneImages.length;
+      const currentImg = sceneImages[idx];
+      const nextImg = hasNext ? sceneImages[nextIdx] : null;
+
+      if (currentImg) {
+        if (hasNext && nextImg && timeUntilSceneEnd < FADE) {
+          // Crossfade: current fades out, next fades in
+          const t = 1 - timeUntilSceneEnd / FADE; // 0→1
+          ctx.save(); ctx.globalAlpha = 1 - t;
+          drawSceneKenBurns(ctx, currentImg, W, H, sceneElapsed, sceneDuration, idx);
+          ctx.restore();
+          ctx.save(); ctx.globalAlpha = t;
+          drawSceneKenBurns(ctx, nextImg, W, H, 0, sceneDuration, nextIdx);
+          ctx.restore();
+        } else {
+          drawSceneKenBurns(ctx, currentImg, W, H, sceneElapsed, sceneDuration, idx);
+        }
       }
+
+      // Sparkle particles
+      tickAndDrawParticles(ctx, particles, elapsed, W, H);
+      ctx.globalAlpha = 1;
       drawWatermark(ctx, logoImg, W);
     }
 
@@ -391,31 +535,29 @@ async function generateAndDownloadVideo(
     }
   }
 
-  // Start everything simultaneously
+  // Fire everything simultaneously
   recorder.start(500);
-  audioSrc.start();
+  narrationSrc.start();
+  if (bgSrc) bgSrc.start();
   rafId = requestAnimationFrame(drawFrame);
 
-  // Wait for recording to finish
   await new Promise<void>(resolve => {
     setTimeout(() => {
       cancelAnimationFrame(rafId);
       recorder.stop();
       audioCtx.close();
-    }, totalDuration * 1000 + 600);
+    }, totalDuration * 1000 + 800);
     recorder.addEventListener("stop", () => resolve(), { once: true });
   });
 
   onProgress(98, "Saving file…");
-
   const blob = new Blob(chunks, { type: mimeType });
-  const url = URL.createObjectURL(blob);
+  const blobUrl = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url;
+  a.href = blobUrl;
   a.download = `${title.replace(/[^a-z0-9]/gi, "_")}.webm`;
   a.click();
-  URL.revokeObjectURL(url);
-
+  URL.revokeObjectURL(blobUrl);
   onProgress(100, "Done! ✅");
 }
 
@@ -497,15 +639,21 @@ export function SocialMediaTab({ isAdmin }: { isAdmin: boolean }) {
   ) as { url: string | null } | null | undefined;
   const narrationUrl: string | null | undefined = narrationData?.url;
 
-  // End card
+  // End card — storage ID (for "uploaded" badge) + resolved URL from backend
   const endCardStorageId = useQuery(api.socialMedia.getEndCard) as string | null | undefined;
-  const setEndCard = useMutation(api.socialMedia.setEndCard);
+  const endCardUrlFromQuery = useQuery(api.socialMedia.getEndCardUrl) as string | null | undefined;
+  const saveEndCard = useMutation(api.socialMedia.setEndCard);
   const generateUploadUrl = useMutation(api.socialMedia.generateUploadUrl);
-
-  // End card resolved URL via storage
-  const [endCardResolvedUrl, setEndCardResolvedUrl] = useState<string | null>(null);
+  const [endCardLocalUrl, setEndCardLocalUrl] = useState<string | null>(null); // blob URL this session
   const [endCardUploading, setEndCardUploading] = useState(false);
   const endCardInputRef = useRef<HTMLInputElement>(null);
+
+  // Background music
+  const bgMusicUrlFromQuery = useQuery(api.socialMedia.getBgMusicUrl) as string | null | undefined;
+  const saveBgMusic = useMutation(api.socialMedia.setBgMusic);
+  const [bgMusicLocalUrl, setBgMusicLocalUrl] = useState<string | null>(null);
+  const [bgMusicUploading, setBgMusicUploading] = useState(false);
+  const bgMusicInputRef = useRef<HTMLInputElement>(null);
 
   // YouTube metadata
   const generateContent = useAction(api.socialMedia.generateYouTubeContent);
@@ -546,12 +694,30 @@ export function SocialMediaTab({ isAdmin }: { isAdmin: boolean }) {
       const uploadUrl = await generateUploadUrl();
       const res = await fetch(uploadUrl, { method: "POST", body: file, headers: { "Content-Type": file.type } });
       const { storageId } = await res.json();
-      await setEndCard({ storageId });
-      setEndCardResolvedUrl(URL.createObjectURL(file));
+      await saveEndCard({ storageId });
+      setEndCardLocalUrl(URL.createObjectURL(file));
     } catch (err: any) {
-      alert("Upload failed: " + err.message);
+      alert("End card upload failed: " + err.message);
     } finally {
       setEndCardUploading(false);
+    }
+  }
+
+  // Upload background music
+  async function handleBgMusicUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBgMusicUploading(true);
+    try {
+      const uploadUrl = await generateUploadUrl();
+      const res = await fetch(uploadUrl, { method: "POST", body: file, headers: { "Content-Type": file.type } });
+      const { storageId } = await res.json();
+      await saveBgMusic({ storageId });
+      setBgMusicLocalUrl(URL.createObjectURL(file));
+    } catch (err: any) {
+      alert("Background music upload failed: " + err.message);
+    } finally {
+      setBgMusicUploading(false);
     }
   }
 
@@ -593,10 +759,14 @@ export function SocialMediaTab({ isAdmin }: { isAdmin: boolean }) {
     setVideoProgress(0);
     setVideoStatus("Starting…");
     try {
+      // Prefer local blob URL (same session), fall back to Convex-resolved URL
+      const endCardUrl = endCardLocalUrl || endCardUrlFromQuery || null;
+      const bgMusicUrl = bgMusicLocalUrl || bgMusicUrlFromQuery || null;
       await generateAndDownloadVideo(
         sceneImageUrls,
         narrationUrl,
-        endCardResolvedUrl || (endCardStorageId ? `https://glorious-gnat-469.convex.cloud/api/storage/${endCardStorageId}` : null),
+        endCardUrl,
+        bgMusicUrl,
         story?.audioDurationSeconds || 150,
         story?.title || "story",
         (pct, label) => {
@@ -759,32 +929,51 @@ export function SocialMediaTab({ isAdmin }: { isAdmin: boolean }) {
             </h3>
 
             {/* End card upload */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <p style={{ fontFamily: "'Nunito',sans-serif", fontWeight: 700, fontSize: "0.9rem", color: "var(--lf-dark)", margin: "0 0 2px" }}>
-                    End Card Image <span style={{ fontWeight: 400, color: "rgba(45,45,45,0.45)", fontSize: "0.82rem" }}>(optional — 1280×720 or 9:16)</span>
-                  </p>
-                  <p style={{ fontFamily: "'Nunito',sans-serif", fontSize: "0.82rem", color: "rgba(45,45,45,0.45)", margin: 0 }}>
-                    {endCardStorageId ? "✅ End card uploaded — shown at end of every video" : "No end card set — an auto-generated branded card will be used"}
-                  </p>
-                </div>
-                <button
-                  onClick={() => endCardInputRef.current?.click()}
-                  disabled={endCardUploading}
-                  style={{ padding: "8px 16px", borderRadius: "0.65rem", border: "1.5px solid rgba(0,0,0,0.1)", background: "#fff", color: "var(--lf-dark)", fontFamily: "'Nunito',sans-serif", fontWeight: 700, fontSize: "0.85rem", cursor: endCardUploading ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}
-                >
-                  {endCardUploading ? "Uploading…" : endCardStorageId ? "🔄 Replace" : "⬆️ Upload"}
-                </button>
-                <input ref={endCardInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleEndCardUpload} />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontFamily: "'Nunito',sans-serif", fontWeight: 700, fontSize: "0.9rem", color: "var(--lf-dark)", margin: "0 0 2px" }}>
+                  End Card Image <span style={{ fontWeight: 400, color: "rgba(45,45,45,0.45)", fontSize: "0.82rem" }}>(optional — 1280×720)</span>
+                </p>
+                <p style={{ fontFamily: "'Nunito',sans-serif", fontSize: "0.82rem", color: "rgba(45,45,45,0.45)", margin: 0 }}>
+                  {endCardStorageId ? "✅ Uploaded — shown at end of every video" : "No end card — auto-generated branded card will be used"}
+                </p>
               </div>
+              <button
+                onClick={() => endCardInputRef.current?.click()}
+                disabled={endCardUploading}
+                style={{ padding: "8px 16px", borderRadius: "0.65rem", border: "1.5px solid rgba(0,0,0,0.1)", background: "#fff", color: "var(--lf-dark)", fontFamily: "'Nunito',sans-serif", fontWeight: 700, fontSize: "0.85rem", cursor: endCardUploading ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}
+              >
+                {endCardUploading ? "Uploading…" : endCardStorageId ? "🔄 Replace" : "⬆️ Upload"}
+              </button>
+              <input ref={endCardInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleEndCardUpload} />
+            </div>
+
+            {/* Background music upload */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontFamily: "'Nunito',sans-serif", fontWeight: 700, fontSize: "0.9rem", color: "var(--lf-dark)", margin: "0 0 2px" }}>
+                  Background Music <span style={{ fontWeight: 400, color: "rgba(45,45,45,0.45)", fontSize: "0.82rem" }}>(optional — MP3/AAC, loops automatically)</span>
+                </p>
+                <p style={{ fontFamily: "'Nunito',sans-serif", fontSize: "0.82rem", color: "rgba(45,45,45,0.45)", margin: 0 }}>
+                  {bgMusicUrlFromQuery || bgMusicLocalUrl ? "✅ Background music set — mixed at 22% volume under narration" : "No background music — video will have narration audio only"}
+                </p>
+              </div>
+              <button
+                onClick={() => bgMusicInputRef.current?.click()}
+                disabled={bgMusicUploading}
+                style={{ padding: "8px 16px", borderRadius: "0.65rem", border: "1.5px solid rgba(0,0,0,0.1)", background: "#fff", color: "var(--lf-dark)", fontFamily: "'Nunito',sans-serif", fontWeight: 700, fontSize: "0.85rem", cursor: bgMusicUploading ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}
+              >
+                {bgMusicUploading ? "Uploading…" : bgMusicUrlFromQuery || bgMusicLocalUrl ? "🔄 Replace" : "🎵 Upload"}
+              </button>
+              <input ref={bgMusicInputRef} type="file" accept="audio/*" style={{ display: "none" }} onChange={handleBgMusicUpload} />
             </div>
 
             {/* Output spec */}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <Pill color="#7c3aed">1280×720 WebM</Pill>
-              <Pill color="#7c3aed">VP9 + Opus</Pill>
-              <Pill color="#7c3aed">2.5 Mbps video</Pill>
+              <Pill color="#7c3aed">VP9 + Opus · 3 Mbps</Pill>
+              <Pill color="#7c3aed">Ken Burns + crossfade</Pill>
+              <Pill color="#7c3aed">✨ Sparkle particles</Pill>
               <Pill color="#7c3aed">Lalli Fafa watermark</Pill>
               <Pill color="#7c3aed">6s end card</Pill>
             </div>
