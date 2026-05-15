@@ -480,15 +480,22 @@ export function SocialMediaTab({ isAdmin }: { isAdmin: boolean }) {
     selectedStoryId ? { storyId: selectedStoryId as Id<"stories"> } : "skip"
   ) as any | null | undefined;
 
-  const sceneImageUrls = useQuery(
+  // getSceneImageUrls returns objects { sceneNumber, description, filePath, url }
+  const sceneImageData = useQuery(
     api.stories.getSceneImageUrls,
     selectedStoryId ? { storyId: selectedStoryId as Id<"stories"> } : "skip"
-  ) as string[] | undefined;
+  ) as { sceneNumber: number; description: string; filePath: string; url: string | null }[] | undefined;
+  // Derive a plain string[] of resolved URLs (filter out nulls)
+  const sceneImageUrls: string[] | undefined = sceneImageData
+    ? (sceneImageData.map(s => s.url).filter(Boolean) as string[])
+    : undefined;
 
-  const narrationUrl = useQuery(
+  // getNarrationFileUrl returns { url } not a bare string
+  const narrationData = useQuery(
     api.stories.getNarrationFileUrl,
     selectedStoryId ? { storyId: selectedStoryId as Id<"stories"> } : "skip"
-  ) as string | null | undefined;
+  ) as { url: string | null } | null | undefined;
+  const narrationUrl: string | null | undefined = narrationData?.url;
 
   // End card
   const endCardStorageId = useQuery(api.socialMedia.getEndCard) as string | null | undefined;
