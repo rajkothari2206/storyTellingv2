@@ -56,7 +56,7 @@ export function formatStoryPrompt(
       storyType: storyTypeName,
       storyTypeGuidance: storyTypeHint,
     },
-    instructions: "BEGIN STORY NOW. MANDATORY: The story body must be exactly 255–270 words (title excluded, SCENE METADATA excluded). Count your words before finalising. Each of the 5 scenes must be approximately 51–54 words of story content. Do NOT exceed 270 words — this is a hard upper limit. Keep sentences short and punchy. Do NOT write a longer story thinking more is better — shorter is correct. EMOTION TAGS: Embed ElevenLabs v3 audio tags inside character dialogue lines to bring voices to life. Use square-bracket tags placed immediately before the words they affect. Available tags: [excited], [cheerfully], [nervous], [sorrowful], [calm], [tired], [laughs], [chuckles], [gasps], [whispers], [sighs], [pauses]. Rules: (1) Tags go INSIDE the speaker line after the colon — e.g. 'Lalli: [excited] Oh look at that butterfly!' or 'Fafa: [chuckles] That is not a butterfly!' (2) Maximum 1–2 tags per character line. (3) Narrator lines may use 1 tag only for strong dramatic or cozy moments. (4) Match the tag to the emotional beat of the moment — do not guess or overuse. (5) Never stack two tags with no words between them.",
+    instructions: "BEGIN STORY NOW. MANDATORY: The story body must be exactly 255–270 words (title excluded, SCENE METADATA excluded). Count your words before finalising. Each of the 5 scenes must be approximately 51–54 words of story content. Do NOT exceed 270 words — this is a hard upper limit. Keep sentences short and punchy. Do NOT write a longer story thinking more is better — shorter is correct.",
   };
 
   return JSON.stringify(payload, null, 2);
