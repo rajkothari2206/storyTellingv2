@@ -500,11 +500,20 @@ async function generateAndDownloadVideo(
     ...audioDest.stream.getAudioTracks(),
   ]);
 
+  // Prefer MP4/H.264 (natively supported by Windows Media Player & most players).
+  // Fall back to VP8 WebM (more compatible than VP9), then generic WebM.
   const mimeType = (
-    ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"]
-      .find(m => MediaRecorder.isTypeSupported(m))
+    [
+      "video/mp4;codecs=avc1.42001E,mp4a.40.2",
+      "video/mp4;codecs=avc1,mp4a",
+      "video/mp4",
+      "video/webm;codecs=vp8,opus",
+      "video/webm;codecs=vp9,opus",
+      "video/webm",
+    ].find(m => MediaRecorder.isTypeSupported(m))
   ) ?? "video/webm";
 
+  const isMP4 = mimeType.startsWith("video/mp4");
   const recorder = new MediaRecorder(combined, { mimeType, videoBitsPerSecond: 3_000_000 });
   const chunks: Blob[] = [];
   recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
@@ -585,14 +594,28 @@ async function generateAndDownloadVideo(
   });
 
   onProgress(98, "Saving file…");
-  const blob = new Blob(chunks, { type: mimeType });
-  const blobUrl = URL.createObjectURL(blob);
+
+  let finalBlob = new Blob(chunks, { type: mimeType });
+
+  // Fix WebM duration metadata so media players show a proper seekbar.
+  // MP4 files from MediaRecorder don't need this fix.
+  if (!isMP4) {
+    try {
+      const { default: fixWebmDuration } = await import("fix-webm-duration");
+      finalBlob = await fixWebmDuration(finalBlob, totalDuration * 1000, { logger: false });
+    } catch {
+      /* non-fatal — continue with raw blob */
+    }
+  }
+
+  const ext = isMP4 ? "mp4" : "webm";
+  const blobUrl = URL.createObjectURL(finalBlob);
   const a = document.createElement("a");
   a.href = blobUrl;
-  a.download = `${title.replace(/[^a-z0-9]/gi, "_")}.webm`;
+  a.download = `${title.replace(/[^a-z0-9]/gi, "_")}.${ext}`;
   a.click();
   URL.revokeObjectURL(blobUrl);
-  onProgress(100, "Done! ✅");
+  onProgress(100, `Done! ✅ (${ext.toUpperCase()})`);
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
