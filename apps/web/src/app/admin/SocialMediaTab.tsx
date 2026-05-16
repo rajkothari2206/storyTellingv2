@@ -176,15 +176,19 @@ async function generateThumbnail(
   ctx.textAlign = "right";
   ctx.fillText("www.lallifafa.com", W - 20, 36);
 
-  canvas.toBlob(blob => {
-    if (!blob) return;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${title.replace(/[^a-z0-9]/gi, "_")}_thumbnail.jpg`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, "image/jpeg", 0.93);
+  // Wrap toBlob in a Promise so errors surface instead of silently failing
+  await new Promise<void>((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if (!blob) { reject(new Error("Canvas toBlob returned null — canvas may be tainted")); return; }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${title.replace(/[^a-z0-9]/gi, "_")}_thumbnail.jpg`;
+      a.click();
+      URL.revokeObjectURL(url);
+      resolve();
+    }, "image/jpeg", 0.93);
+  });
 }
 
 // ─── Canvas / image helpers ───────────────────────────────────────────────────
