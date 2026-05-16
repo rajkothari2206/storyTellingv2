@@ -56,8 +56,6 @@ export const createRazorpaySubscription = action({
         customer_notify: 1,
         quantity: 1,
         total_count: selectedPlan.interval === "monthly" ? 12 : 1,
-        callback_url: `${siteUrl}/dashboard`,
-        callback_method: "get",
         notes: {
           userId: userId,
         },
@@ -70,8 +68,24 @@ export const createRazorpaySubscription = action({
         checkoutUrl: subscription.short_url || null,
       };
     } catch (err: unknown) {
-      // Surface the actual Razorpay error to help with debugging
-      const message = err instanceof Error ? err.message : String(err);
+      // Razorpay SDK throws plain objects, not Error instances — serialize properly
+      console.error("Razorpay raw error:", JSON.stringify(err, null, 2));
+
+      let message = "Unknown error from Razorpay";
+      if (err instanceof Error) {
+        message = err.message;
+      } else if (typeof err === "object" && err !== null) {
+        // Razorpay error shape: { statusCode, error: { description, code, reason } }
+        const e = err as Record<string, any>;
+        message =
+          e?.error?.description ||
+          e?.description ||
+          e?.message ||
+          `Razorpay error (status ${e?.statusCode ?? "unknown"}): ${JSON.stringify(e?.error ?? e)}`;
+      } else {
+        message = String(err);
+      }
+
       console.error("Razorpay subscription creation failed:", message);
       throw new ConvexError(`Payment setup failed: ${message}`);
     }
