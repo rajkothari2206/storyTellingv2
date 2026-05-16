@@ -27,15 +27,28 @@ export const getEndCard = query({
   },
 });
 
+/** Returns the resolved public URL for the end card image (stored at upload time). */
 export const getEndCardUrl = query({
   args: {},
   handler: async (ctx) => {
-    const config = await ctx.db
+    // Try the pre-resolved URL first (set by new setEndCard mutation)
+    const urlConfig = await ctx.db
+      .query("system_config")
+      .withIndex("by_key", (q) => q.eq("key", "end_card_url"))
+      .first();
+    if (urlConfig?.value) return urlConfig.value;
+
+    // Fallback: try resolving from the storage ID (for previously-uploaded end cards)
+    const idConfig = await ctx.db
       .query("system_config")
       .withIndex("by_key", (q) => q.eq("key", "end_card_storage_id"))
       .first();
-    if (!config?.value) return null;
-    return await ctx.storage.getUrl(config.value as any);
+    if (!idConfig?.value) return null;
+    try {
+      return await ctx.storage.getUrl(idConfig.value as any);
+    } catch {
+      return null;
+    }
   },
 });
 
@@ -44,35 +57,51 @@ export const setEndCard = mutation({
   handler: async (ctx, { storageId }) => {
     const user = await authComponent.getAuthUser(ctx);
     if (!user) throw new Error("Not authenticated");
-    const existing = await ctx.db
+
+    // Resolve the public URL now, while we're in a mutation (works reliably)
+    const resolvedUrl = await ctx.storage.getUrl(storageId as any);
+
+    const now = Date.now();
+
+    // Persist storage ID (for "uploaded" badge check)
+    const existingId = await ctx.db
       .query("system_config")
       .withIndex("by_key", (q) => q.eq("key", "end_card_storage_id"))
       .first();
-    const now = Date.now();
-    if (existing) {
-      await ctx.db.patch(existing._id, { value: storageId, updatedAt: now });
+    if (existingId) {
+      await ctx.db.patch(existingId._id, { value: storageId, updatedAt: now });
     } else {
-      await ctx.db.insert("system_config", {
-        key: "end_card_storage_id",
-        value: storageId,
-        updatedAt: now,
-      });
+      await ctx.db.insert("system_config", { key: "end_card_storage_id", value: storageId, updatedAt: now });
     }
+
+    // Persist resolved URL (queries read this — avoids ctx.storage.getUrl in query context)
+    if (resolvedUrl) {
+      const existingUrl = await ctx.db
+        .query("system_config")
+        .withIndex("by_key", (q) => q.eq("key", "end_card_url"))
+        .first();
+      if (existingUrl) {
+        await ctx.db.patch(existingUrl._id, { value: resolvedUrl, updatedAt: now });
+      } else {
+        await ctx.db.insert("system_config", { key: "end_card_url", value: resolvedUrl, updatedAt: now });
+      }
+    }
+
     return { ok: true };
   },
 });
 
 // ─── Background music storage ─────────────────────────────────────────────────
 
+/** Returns the resolved public URL for the background music (stored at upload time). */
 export const getBgMusicUrl = query({
   args: {},
   handler: async (ctx) => {
     const config = await ctx.db
       .query("system_config")
-      .withIndex("by_key", (q) => q.eq("key", "bg_music_storage_id"))
+      .withIndex("by_key", (q) => q.eq("key", "bg_music_url"))
       .first();
-    if (!config?.value) return null;
-    return await ctx.storage.getUrl(config.value as any);
+    return config?.value ?? null;
   },
 });
 
@@ -81,20 +110,33 @@ export const setBgMusic = mutation({
   handler: async (ctx, { storageId }) => {
     const user = await authComponent.getAuthUser(ctx);
     if (!user) throw new Error("Not authenticated");
-    const existing = await ctx.db
+
+    const resolvedUrl = await ctx.storage.getUrl(storageId as any);
+
+    const now = Date.now();
+
+    const existingId = await ctx.db
       .query("system_config")
       .withIndex("by_key", (q) => q.eq("key", "bg_music_storage_id"))
       .first();
-    const now = Date.now();
-    if (existing) {
-      await ctx.db.patch(existing._id, { value: storageId, updatedAt: now });
+    if (existingId) {
+      await ctx.db.patch(existingId._id, { value: storageId, updatedAt: now });
     } else {
-      await ctx.db.insert("system_config", {
-        key: "bg_music_storage_id",
-        value: storageId,
-        updatedAt: now,
-      });
+      await ctx.db.insert("system_config", { key: "bg_music_storage_id", value: storageId, updatedAt: now });
     }
+
+    if (resolvedUrl) {
+      const existingUrl = await ctx.db
+        .query("system_config")
+        .withIndex("by_key", (q) => q.eq("key", "bg_music_url"))
+        .first();
+      if (existingUrl) {
+        await ctx.db.patch(existingUrl._id, { value: resolvedUrl, updatedAt: now });
+      } else {
+        await ctx.db.insert("system_config", { key: "bg_music_url", value: resolvedUrl, updatedAt: now });
+      }
+    }
+
     return { ok: true };
   },
 });
