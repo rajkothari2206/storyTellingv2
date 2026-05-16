@@ -294,17 +294,17 @@ function drawEndCard(
 
 // ─── Particle system (sparkles) ───────────────────────────────────────────────
 
-function initParticles(W: number, H: number, count = 42): Particle[] {
-  const colors = ["#00b8a6", "#ffffff", "#ffd700", "#c8f0ff", "#a8f0dc", "#ffb3de"];
+function initParticles(W: number, H: number, count = 80): Particle[] {
+  const colors = ["#00e5d0", "#ffffff", "#ffd700", "#ffe066", "#a8f0dc", "#ffb3de", "#80dfff", "#ff9ff3"];
   return Array.from({ length: count }, () => ({
     x: Math.random() * W,
     y: Math.random() * H,
-    vx: (Math.random() - 0.5) * 0.55,
-    vy: -(Math.random() * 0.55 + 0.15),
-    radius: Math.random() * 2.6 + 0.7,
-    baseOpacity: Math.random() * 0.55 + 0.18,
+    vx: (Math.random() - 0.5) * 1.0,
+    vy: -(Math.random() * 0.9 + 0.25),
+    radius: Math.random() * 4.5 + 1.5,           // 1.5–6.0 px (was 0.7–3.3)
+    baseOpacity: Math.random() * 0.65 + 0.35,    // 0.35–1.0 (was 0.18–0.73)
     phase: Math.random() * Math.PI * 2,
-    speed: Math.random() * 1.6 + 0.7,
+    speed: Math.random() * 2.5 + 1.0,
     color: colors[Math.floor(Math.random() * colors.length)],
   }));
 }
@@ -320,27 +320,47 @@ function tickAndDrawParticles(
   for (const p of particles) {
     p.x += p.vx;
     p.y += p.vy;
-    if (p.y < -12) { p.y = H + 12; p.x = Math.random() * W; }
-    if (p.x < -12) p.x = W + 12;
-    if (p.x > W + 12) p.x = -12;
+    if (p.y < -15) { p.y = H + 15; p.x = Math.random() * W; }
+    if (p.x < -15) p.x = W + 15;
+    if (p.x > W + 15) p.x = -15;
 
     const opacity = p.baseOpacity * (0.5 + 0.5 * Math.sin(elapsed * p.speed * 3 + p.phase));
+
+    // Glow halo behind particle
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 12;
+    ctx.globalAlpha = opacity * 0.7;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.radius * 1.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Bright core
+    ctx.shadowBlur = 4;
     ctx.globalAlpha = opacity;
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.radius * 0.55, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Coloured outer ring
+    ctx.globalAlpha = opacity * 0.9;
     ctx.fillStyle = p.color;
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
     ctx.fill();
+    ctx.shadowBlur = 0;
 
     // Star cross for larger sparkles
-    if (p.radius > 1.9) {
-      ctx.globalAlpha = opacity * 0.55;
-      ctx.strokeStyle = p.color;
-      ctx.lineWidth = 0.8;
+    if (p.radius > 3.5) {
+      ctx.globalAlpha = opacity * 0.75;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1.2;
       for (let k = 0; k < 4; k++) {
         const a = (k * Math.PI) / 2;
         ctx.beginPath();
         ctx.moveTo(p.x, p.y);
-        ctx.lineTo(p.x + Math.cos(a) * (p.radius + 4), p.y + Math.sin(a) * (p.radius + 4));
+        ctx.lineTo(p.x + Math.cos(a) * (p.radius + 7), p.y + Math.sin(a) * (p.radius + 7));
         ctx.stroke();
       }
     }
@@ -348,7 +368,16 @@ function tickAndDrawParticles(
   ctx.restore();
 }
 
-/** Cover-fill a scene image with Ken Burns zoom + gentle pan. No save/restore — caller manages globalAlpha. */
+// Ken Burns directions: each scene gets a unique start→end pan + zoom direction
+const KB_DIRS = [
+  { sx: -0.06, sy: -0.04, ex: 0.06, ey: 0.04, sz: 1.0,  ez: 1.18 }, // pan →↓  zoom in
+  { sx:  0.06, sy:  0.04, ex: -0.06, ey: -0.04, sz: 1.18, ez: 1.0  }, // pan ←↑  zoom out
+  { sx: -0.06, sy:  0.04, ex: 0.06, ey: -0.04, sz: 1.0,  ez: 1.18 }, // pan →↑  zoom in
+  { sx:  0.06, sy: -0.04, ex: -0.06, ey: 0.04, sz: 1.18, ez: 1.0  }, // pan ←↓  zoom out
+  { sx:  0.0,  sy: -0.05, ex: 0.0,  ey: 0.05, sz: 1.0,  ez: 1.18 }, // pan ↓   zoom in
+] as const;
+
+/** Cover-fill with dramatic Ken Burns: 18% zoom + 12% pan, alternating direction per scene. */
 function drawSceneKenBurns(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
@@ -358,14 +387,15 @@ function drawSceneKenBurns(
   sceneDuration: number,
   sceneIndex: number,
 ) {
-  const progress = Math.min(sceneElapsed / Math.max(sceneDuration, 0.001), 1);
-  const zoom = 1 + progress * 0.06; // subtle zoom 1.0 → 1.06
-  const panXDir = sceneIndex % 2 === 0 ? 1 : -1;
-  const panYDir = Math.floor(sceneIndex / 2) % 2 === 0 ? 0.4 : -0.4;
+  const t = Math.min(sceneElapsed / Math.max(sceneDuration, 0.001), 1);
+  const d = KB_DIRS[sceneIndex % KB_DIRS.length];
+  const zoom  = d.sz + (d.ez - d.sz) * t;
+  const panX  = d.sx + (d.ex - d.sx) * t;
+  const panY  = d.sy + (d.ey - d.sy) * t;
   const baseS = Math.max(W / img.width, H / img.height) * zoom;
   const dw = img.width * baseS, dh = img.height * baseS;
-  const dx = (W - dw) / 2 + panXDir * progress * W * 0.022;
-  const dy = (H - dh) / 2 + panYDir * progress * H * 0.018;
+  const dx = (W - dw) / 2 + panX * W;
+  const dy = (H - dh) / 2 + panY * H;
   ctx.drawImage(img, dx, dy, dw, dh);
 }
 
@@ -383,7 +413,7 @@ async function generateAndDownloadVideo(
   onProgress: (pct: number, label: string) => void
 ): Promise<void> {
   const W = 1280, H = 720;
-  const FADE = 0.5;           // crossfade duration between scenes (seconds)
+  const FADE = 1.2;           // crossfade duration between scenes (seconds)
   const END_CARD_SECS = 6;    // end card duration
   const totalDuration = audioDurationSeconds + END_CARD_SECS;
 
@@ -478,7 +508,7 @@ async function generateAndDownloadVideo(
   const sceneDuration = audioDurationSeconds / Math.max(sceneImages.length, 1);
 
   // Sparkle particle system
-  const particles = initParticles(W, H, 42);
+  const particles = initParticles(W, H, 80);
 
   let rafId = 0, recordingStart = 0;
 
