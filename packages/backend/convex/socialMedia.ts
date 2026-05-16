@@ -27,28 +27,15 @@ export const getEndCard = query({
   },
 });
 
-/** Returns the resolved public URL for the end card image (stored at upload time). */
+/** Returns the resolved public URL for the end card image (stored at upload time in setEndCard). */
 export const getEndCardUrl = query({
   args: {},
   handler: async (ctx) => {
-    // Try the pre-resolved URL first (set by new setEndCard mutation)
-    const urlConfig = await ctx.db
+    const config = await ctx.db
       .query("system_config")
       .withIndex("by_key", (q) => q.eq("key", "end_card_url"))
       .first();
-    if (urlConfig?.value) return urlConfig.value;
-
-    // Fallback: try resolving from the storage ID (for previously-uploaded end cards)
-    const idConfig = await ctx.db
-      .query("system_config")
-      .withIndex("by_key", (q) => q.eq("key", "end_card_storage_id"))
-      .first();
-    if (!idConfig?.value) return null;
-    try {
-      return await ctx.storage.getUrl(idConfig.value as any);
-    } catch {
-      return null;
-    }
+    return config?.value ?? null;
   },
 });
 
