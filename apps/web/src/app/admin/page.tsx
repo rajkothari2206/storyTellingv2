@@ -8,11 +8,9 @@ import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { authClient } from "@/lib/auth-client";
 import { BLOG_POSTS } from "@/lib/blog-data";
-import { SocialMediaTab } from "./SocialMediaTab";
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type TabKey = "stories" | "users" | "blog" | "assets" | "voice" | "settings" | "story-types" | "languages" | "system-prompt" | "social-media";
+type TabKey = "stories" | "users" | "blog" | "assets" | "voice" | "settings" | "story-types" | "languages" | "system-prompt";
 type SettingsSubTab = "themes" | "lessons";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -2009,7 +2007,6 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "story-types", label: "Story Types" },
   { key: "languages", label: "Languages" },
   { key: "system-prompt", label: "System Prompt" },
-  { key: "social-media", label: "🎬 Social Media" },
 ];
 
 export default function AdminPage() {
@@ -2258,7 +2255,6 @@ export default function AdminPage() {
           {activeTab === "story-types" && <TabErrorBoundary><StoryTypesTab isAdmin={isAdmin} /></TabErrorBoundary>}
           {activeTab === "languages" && <TabErrorBoundary><LanguagesTab isAdmin={isAdmin} /></TabErrorBoundary>}
           {activeTab === "system-prompt" && <TabErrorBoundary><SystemPromptTab isAdmin={isAdmin} /></TabErrorBoundary>}
-          {activeTab === "social-media" && <TabErrorBoundary><SocialMediaTab isAdmin={isAdmin} /></TabErrorBoundary>}
         </div>
       </main>
     </div>
