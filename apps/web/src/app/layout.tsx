@@ -94,9 +94,12 @@ export const metadata: Metadata = {
 
   /* ── Icons & manifest ── */
   icons: {
-    icon: "/lf-logo.png",
-    shortcut: "/lf-logo.png",
-    apple: "/lf-logo.png",
+    icon: [
+      { url: "/icon.png", sizes: "32x32", type: "image/png" },
+      { url: "/lf-logo.png", sizes: "any", type: "image/png" },
+    ],
+    shortcut: "/icon.png",
+    apple: "/apple-icon.png",
   },
   manifest: "/site.webmanifest",
 
