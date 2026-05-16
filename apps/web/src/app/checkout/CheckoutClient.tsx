@@ -56,7 +56,11 @@ export function CheckoutClient() {
         window.location.href = checkoutUrl;
       })
       .catch((err: any) => {
-        setError(err?.message ?? "Something went wrong. Please try again.");
+        // Convex wraps ConvexErrors — extract the user-facing message
+        const raw: string = err?.message ?? "Something went wrong. Please try again.";
+        // Strip the "[CONVEX A(...)] ..." prefix that Convex prepends to errors
+        const clean = raw.replace(/^\[CONVEX [^\]]+\]\s*/i, "").trim();
+        setError(clean || "Something went wrong. Please try again.");
       });
   }, [authLoading, isAuthenticated, plans, plan]);
 

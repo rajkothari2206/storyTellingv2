@@ -1,5 +1,5 @@
 ﻿import { mutation, query, action, internalMutation } from "./_generated/server";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { authComponent } from "./auth";
 import { api } from "./_generated/api";
 
@@ -42,17 +42,18 @@ export const initiateSubscription = action({
 	handler: async (ctx, { planId }): Promise<InitiateSubscriptionResult> => {
 		// Get authenticated user
 		const user: User | null = await ctx.runQuery(api.auth.getCurrentUser, {});
-		if (!user) throw new Error("Not authenticated");
-		
+		if (!user) throw new ConvexError("Not authenticated. Please sign in and try again.");
+
 		// Get plan details
 		const plans: Plan[] = await ctx.runQuery(api.subscription.getPlans, {});
 		const selectedPlan: Plan | undefined = plans.find((p) => p.planId === planId);
-		
+
 		if (!selectedPlan) {
-			throw new Error("Plan not found");
+			throw new ConvexError("Plan not found. Please go back to the pricing page and try again.");
 		}
 
 		// Call the Node.js action that handles Razorpay
+		// ConvexErrors thrown inside will propagate up automatically
 		const result: SubscriptionActionResult = await ctx.runAction(
 			api.razorpay.create_subscription.createRazorpaySubscription,
 			{
@@ -62,7 +63,7 @@ export const initiateSubscription = action({
 		);
 
 		if (!result.checkoutUrl) {
-			throw new Error("Failed to generate checkout URL");
+			throw new ConvexError("Failed to generate a checkout link. Please try again or contact support.");
 		}
 
 		// Store pending subscription (will be activated via webhook)
