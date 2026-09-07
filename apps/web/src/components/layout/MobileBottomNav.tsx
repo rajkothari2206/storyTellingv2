@@ -61,7 +61,7 @@ export function MobileBottomNav() {
         <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.65rem", fontWeight: 700, color: isActive("/profile") ? ACTIVE_COLOR : IDLE_COLOR }}>Profile</span>
       </Link>
       {!isSubscribed && (
-        <Link href="/checkout?plan=monthly" className="flex flex-col items-center gap-0.5">
+        <Link href="/pricing" className="flex flex-col items-center gap-0.5">
           <Zap size={22} style={{ color: "var(--lf-electric)" }} />
           <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.65rem", fontWeight: 700, color: "var(--lf-electric)" }}>Upgrade</span>
         </Link>

@@ -311,6 +311,12 @@
 /* Safe area for iPhone home bar */
 .story-footer { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
 
+/* Lets a control row overflow into horizontal scroll instead of clipping
+   off-screen buttons (e.g. the story player's control bar on narrow phones)
+   while hiding the scrollbar itself. */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
 /* Scene strip marquee */
 @keyframes marquee {
   from { transform: translateX(0); }

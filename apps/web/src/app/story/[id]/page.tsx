@@ -1366,7 +1366,7 @@ function StoryViewer({
   return (
     <div
       ref={fullscreenRef}
-      className="min-h-screen flex flex-col"
+      className="min-h-dvh flex flex-col"
       style={{
         background: t.bg,
         filter: bedtimeMode ? "brightness(0.65) saturate(0.7)" : "none",
@@ -1884,9 +1884,9 @@ function StoryViewer({
               {/* Controls row — warm-neutral idle borders, gold for the primary
                   play/pause control, teal accents for secondary controls
                   (same system as the option cards on /generate). */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
                 {/* Volume */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <button
                     onClick={toggleMute}
                     className="flex items-center justify-center w-7 h-7 rounded-full transition-all hover:scale-110 hover:text-[var(--lf-teal)]"
@@ -1901,7 +1901,7 @@ function StoryViewer({
                 </div>
 
                 {/* Playback */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-shrink-0">
                   <button
                     onClick={() => skip(-10)}
                     className="flex items-center justify-center w-7 h-7 rounded-full transition-all hover:scale-110 hover:text-[var(--lf-teal)]"
@@ -1926,7 +1926,7 @@ function StoryViewer({
                 </div>
 
                 {/* Right: speed + CC + text panel + fullscreen */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                   {/* Speed control */}
                   <div className="flex items-center rounded overflow-hidden flex-shrink-0" style={{ border: `1px solid ${lightMode ? "rgba(180,148,92,0.4)" : "rgba(224,198,150,0.28)"}` }}>
                     {[1, 1.25, 1.5].map(rate => (
@@ -1984,10 +1984,13 @@ function StoryViewer({
                     📖
                   </button>
 
-                  {/* Fullscreen toggle */}
+                  {/* Fullscreen toggle — hidden on mobile: little value on a
+                      phone browser (already full-width) and the biggest single
+                      item crowding this row, pushing CC off-screen on narrow
+                      viewports. */}
                   <button
                     onClick={toggleFullscreen}
-                    className="flex items-center justify-center w-7 h-7 rounded-full transition-all hover:scale-110 hover:text-[var(--lf-teal)]"
+                    className="hidden sm:flex items-center justify-center w-7 h-7 rounded-full transition-all hover:scale-110 hover:text-[var(--lf-teal)]"
                     title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
                     style={{ color: t.controlColor, border: `1px solid ${lightMode ? "rgba(180,148,92,0.4)" : "rgba(224,198,150,0.28)"}` }}
                   >
@@ -2646,6 +2649,18 @@ function StoryForgeLoadingScreen({
           instead — more exciting than stock art once the real thing exists. */}
       {stage === 1 && (
         <div className="relative flex flex-col items-center gap-2">
+          {/* Preload every slider illustration at the exact same box size used
+              below (220x150, object-cover) so each 4.5s rotation swaps to an
+              already-cached image instead of triggering a fresh network
+              fetch — that fetch was showing as a white flash on every swap,
+              worst on mobile data. */}
+          <div aria-hidden style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", opacity: 0, pointerEvents: "none" }}>
+            {WAITING_SLIDER.map((s) => (
+              <div key={s.src} className="relative" style={{ width: 220, height: 150 }}>
+                <Image src={s.src} alt="" fill className="object-cover" sizes="220px" />
+              </div>
+            ))}
+          </div>
           {poke && (
             <div
               className="absolute px-3 py-1.5 rounded-2xl text-xs font-bold text-center"
@@ -2661,7 +2676,7 @@ function StoryForgeLoadingScreen({
             style={{ width: 220, height: 150, background: "#fff", padding: 6, boxShadow: "0 12px 30px rgba(0,0,0,0.18)", transform: "rotate(-1.5deg)", border: "none", cursor: "pointer" }}
           >
             <div key={sliderIdx} className="relative w-full h-full rounded-xl overflow-hidden">
-              <Image src={slide.src} alt="" fill className="object-cover" style={{ animation: poke ? "bounceOnce 0.5s ease" : "fadeIn 0.6s ease" }} />
+              <Image src={slide.src} alt="" fill className="object-cover" sizes="220px" style={{ animation: poke ? "bounceOnce 0.5s ease" : "fadeIn 0.6s ease" }} />
             </div>
             <span
               className="absolute flex items-center justify-center rounded-full"
