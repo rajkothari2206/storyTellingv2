@@ -126,6 +126,27 @@ function ChallengeBadge({ challenge }: { challenge?: { status: string; score?: {
   );
 }
 
+// Turns a stored answer (new-format JSON in answeredData, or legacy
+// answeredIndex) into readable text for admin review, across every question
+// format (mcq/fill_blank/match_column/sequence).
+function getChallengeAnswerText(q: any, answered?: { answeredIndex?: number; answeredData?: string }): string | null {
+  if (!answered) return null;
+  if (answered.answeredData) {
+    try {
+      const d = JSON.parse(answered.answeredData);
+      if (d.selectedId) return q.richOptions?.find((o: any) => o.id === d.selectedId)?.text ?? d.selectedId;
+      if (d.selectedWord) return d.selectedWord;
+      if (d.pairs) return JSON.stringify(d.pairs);
+      if (d.order) return JSON.stringify(d.order);
+      return JSON.stringify(d);
+    } catch {
+      return answered.answeredData;
+    }
+  }
+  if (answered.answeredIndex !== undefined && q.options) return q.options[answered.answeredIndex] ?? null;
+  return null;
+}
+
 function InputStyle(extra?: React.CSSProperties): React.CSSProperties {
   return {
     padding: "8px 12px",
@@ -228,6 +249,11 @@ function StoryModal({ story, users, onClose, onDeleted }: { story: any; users: a
   const deleteStory = useMutation((api as any).stories.adminDeleteStory);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showChallengeDetail, setShowChallengeDetail] = useState(false);
+  const fullChallenge = useQuery(
+    (api as any).testserver.challenge.adminGetChallengeForStory,
+    showChallengeDetail && story.challenge ? { storyId: story._id } : "skip"
+  ) as any | undefined;
 
   async function handleDelete() {
     if (!confirmDelete) { setConfirmDelete(true); return; }
@@ -364,6 +390,12 @@ function StoryModal({ story, users, onClose, onDeleted }: { story: any; users: a
                     Generated {formatDate(story.challenge.createdAt)}
                     {story.challenge.completedAt ? ` · Completed ${formatDate(story.challenge.completedAt)}` : ""}
                   </span>
+                  <button
+                    onClick={() => setShowChallengeDetail(v => !v)}
+                    style={{ marginLeft: "auto", background: "rgba(124,77,255,0.1)", border: "none", color: "#7c4dff", fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.75rem", padding: "4px 10px", borderRadius: "999px", cursor: "pointer" }}
+                  >
+                    {showChallengeDetail ? "Hide questions" : "View questions & answers"}
+                  </button>
                 </div>
                 {story.challenge.score && (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -379,6 +411,44 @@ function StoryModal({ story, users, onClose, onDeleted }: { story: any; users: a
                       ⭐ {story.challenge.score.starsEarned}
                     </span>
                   </div>
+                )}
+                {showChallengeDetail && (
+                  fullChallenge === undefined ? (
+                    <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.8rem", color: "rgba(45,45,45,0.4)" }}>Loading…</p>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4, paddingTop: 10, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+                      {(fullChallenge?.questions ?? []).map((q: any, idx: number) => {
+                        const answered = fullChallenge?.answeredIndices?.find((a: any) => a.index === idx);
+                        const answerText = getChallengeAnswerText(q, answered);
+                        const correct = answered?.firstAttemptCorrect;
+                        return (
+                          <div key={idx} style={{ background: "rgba(0,0,0,0.02)", borderRadius: "0.6rem", padding: "10px 12px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                              <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.68rem", color: "rgba(45,45,45,0.45)", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                                {q.pillar}
+                              </span>
+                              <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.75rem", color: !answered ? "rgba(45,45,45,0.35)" : correct ? "#0d7a6e" : "#b91c1c" }}>
+                                {!answered ? "Not answered" : correct ? "✓ Correct" : "✗ Incorrect"}
+                              </span>
+                            </div>
+                            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.85rem", color: "var(--lf-dark)", margin: "0 0 4px", fontWeight: 600 }}>
+                              {q.promptText ?? q.question ?? q.snippet}
+                            </p>
+                            {answerText && (
+                              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.8rem", color: "rgba(45,45,45,0.6)", margin: "0 0 4px" }}>
+                                Answered: <strong>{answerText}</strong>
+                              </p>
+                            )}
+                            {q.revealFraming && (
+                              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.78rem", color: "rgba(45,45,45,0.45)", margin: 0, fontStyle: "italic" }}>
+                                {q.revealFraming}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )
                 )}
               </div>
             )}

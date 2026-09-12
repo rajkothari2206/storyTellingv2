@@ -1027,6 +1027,26 @@ export const _getExistingForStory = internalQuery({
   },
 });
 
+// ─── Admin: full read-only view of a story's Challenge ────────────────────────
+//
+// getForStory/getChallenge above are scoped to the CALLING session's own
+// userId (assertChallengeAccess), so an admin viewing a customer's story
+// can't see the real Challenge through them — matching queries silently
+// return null instead of the actual row. This bypasses that scoping (admin
+// role only) so the Story Challenge column/modal in /admin can show what a
+// child actually answered, not just whether a row exists.
+export const adminGetChallengeForStory = query({
+  args: { storyId: v.id("stories") },
+  handler: async (ctx, { storyId }) => {
+    const { isAdmin } = await assertChallengeAccess(ctx);
+    if (!isAdmin) throw new Error("Admin access required");
+    return await ctx.db
+      .query("testserver_challenges")
+      .withIndex("by_story", (q) => q.eq("storyId", storyId))
+      .first();
+  },
+});
+
 // ─── Read queries (unchanged surface area) ────────────────────────────────────
 
 export const getChallenge = query({
