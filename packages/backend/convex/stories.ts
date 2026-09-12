@@ -53,7 +53,29 @@ export const listAll = query({
 			.query("stories")
 			.order("desc")
 			.collect();
-		return docs;
+
+		// Attach each story's Story Challenge status — previously invisible to
+		// admin entirely; auditing it required a direct Convex CLI query.
+		const withChallenge = await Promise.all(
+			docs.map(async (s) => {
+				const challenge = await ctx.db
+					.query("testserver_challenges")
+					.withIndex("by_story", (q) => q.eq("storyId", s._id))
+					.first();
+				return {
+					...s,
+					challenge: challenge
+						? {
+								status: challenge.status,
+								score: challenge.score ?? null,
+								completedAt: challenge.completedAt ?? null,
+								createdAt: challenge.createdAt,
+							}
+						: null,
+				};
+			})
+		);
+		return withChallenge;
 	},
 });
 

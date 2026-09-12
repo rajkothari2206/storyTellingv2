@@ -355,6 +355,39 @@ function parseQuestion(raw: any, pillar: Pillar): any {
   return base;
 }
 
+// ─── Admin: regenerate a Story Challenge for any story ────────────────────────
+//
+// The admin Stories tab's "⚡ Challenge" button used to call `generateChallenge`
+// directly, which resolves `userId` from the ADMIN's own session (via
+// assertChallengeAccessInAction) rather than the story's actual owner. Since
+// generateChallenge/generateChallengeBypass dedup on (storyId, userId), that
+// mismatch meant the dedup check against the customer's real, already-ready
+// challenge always missed — so clicking it on any story that already had a
+// working challenge silently attempted a brand-new generation under the
+// admin's own identity instead of returning the existing one. On failure
+// (as happened on story k1720qenwzvtbr8hd6k5267z558e4zz9, 2026-09-12) this
+// stamps stories.challengeGenerationError even though the real customer's
+// challenge was already fine and untouched — a misleading false alarm with
+// no way to self-clear, since a future real success never reaches this
+// story+userId's error flag. Routes through generateChallengeBypass with the
+// story's own userId instead, so dedup actually works.
+export const adminGenerateChallengeForStory = action({
+  args: { storyId: v.id("stories") },
+  handler: async (ctx, { storyId }): Promise<{ challengeId: string }> => {
+    const { isAdmin } = await assertChallengeAccessInAction(ctx);
+    if (!isAdmin) throw new Error("Admin access required");
+
+    const story: any = await ctx.runQuery(api.stories.get, { storyId });
+    if (!story) throw new Error("Story not found");
+    if (!story.userId) throw new Error("Story has no owning userId");
+
+    return await ctx.runAction(internal.testserver.challenge.generateChallengeBypass, {
+      storyId,
+      userId: story.userId,
+    });
+  },
+});
+
 // ─── Generate the Story Challenge questions ───────────────────────────────────
 
 export const generateChallenge = action({

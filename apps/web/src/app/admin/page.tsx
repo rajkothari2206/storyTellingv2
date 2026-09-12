@@ -96,6 +96,36 @@ function StatusBadge({ status }: { status?: string }) {
   );
 }
 
+function ChallengeBadge({ challenge }: { challenge?: { status: string; score?: { gradableCorrect: number; gradableTotal: number } | null } | null }) {
+  if (!challenge) {
+    return <span style={{ color: "rgba(45,45,45,0.3)", fontSize: "0.78rem" }}>—</span>;
+  }
+  if (challenge.status === "completed" && challenge.score) {
+    return (
+      <span
+        style={{
+          display: "inline-block", padding: "2px 10px", borderRadius: "999px",
+          background: "rgba(0,184,166,0.12)", color: "#0d7a6e",
+          fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.75rem", whiteSpace: "nowrap",
+        }}
+      >
+        ✅ {challenge.score.gradableCorrect}/{challenge.score.gradableTotal}
+      </span>
+    );
+  }
+  return (
+    <span
+      style={{
+        display: "inline-block", padding: "2px 10px", borderRadius: "999px",
+        background: "rgba(249,199,0,0.15)", color: "#8a6900",
+        fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.75rem", whiteSpace: "nowrap",
+      }}
+    >
+      📝 Untaken
+    </span>
+  );
+}
+
 function InputStyle(extra?: React.CSSProperties): React.CSSProperties {
   return {
     padding: "8px 12px",
@@ -316,6 +346,44 @@ function StoryModal({ story, users, onClose, onDeleted }: { story: any; users: a
             <InfoCard label="Story ID" value={story._id?.slice(-12)} />
           </div>
 
+          {/* Story Challenge — read-only view of the real owner's challenge,
+              previously only checkable via a direct Convex CLI query. */}
+          <div>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.82rem", color: "rgba(45,45,45,0.5)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 10px" }}>
+              Story Challenge
+            </p>
+            {!story.challenge ? (
+              <div style={{ background: "#fff", border: "1.5px solid rgba(0,0,0,0.06)", borderRadius: "0.75rem", padding: "14px 16px", fontFamily: "'Nunito', sans-serif", fontSize: "0.85rem", color: "rgba(45,45,45,0.5)" }}>
+                No Challenge generated for this story yet.
+              </div>
+            ) : (
+              <div style={{ background: "#fff", border: "1.5px solid rgba(0,0,0,0.06)", borderRadius: "0.75rem", padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <ChallengeBadge challenge={story.challenge} />
+                  <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.78rem", color: "rgba(45,45,45,0.45)" }}>
+                    Generated {formatDate(story.challenge.createdAt)}
+                    {story.challenge.completedAt ? ` · Completed ${formatDate(story.challenge.completedAt)}` : ""}
+                  </span>
+                </div>
+                {story.challenge.score && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {story.challenge.score.perPillar.map((p: { pillar: string; correct: number; total: number }) => (
+                      <span
+                        key={p.pillar}
+                        style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.75rem", color: "rgba(45,45,45,0.65)", background: "rgba(0,0,0,0.04)", padding: "3px 10px", borderRadius: "999px" }}
+                      >
+                        {p.pillar}: {p.correct}/{p.total}
+                      </span>
+                    ))}
+                    <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.75rem", color: "#8a6900", background: "rgba(249,199,0,0.15)", padding: "3px 10px", borderRadius: "999px" }}>
+                      ⭐ {story.challenge.score.starsEarned}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Scene images */}
           {sceneUrls && sceneUrls.length > 0 && (
             <div>
@@ -404,7 +472,7 @@ function StoriesTab({ isAdmin, users }: { isAdmin: boolean; users: any[] | undef
   const router = useRouter();
   const stories = useQuery(api.stories.listAll, isAdmin ? {} : "skip") as any[] | undefined;
   const deleteStory = useMutation((api as any).stories.adminDeleteStory);
-  const generateChallenge = useAction((api as any).testserver.challenge.generateChallenge);
+  const generateChallenge = useAction((api as any).testserver.challenge.adminGenerateChallengeForStory);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedStory, setSelectedStory] = useState<any | null>(null);
@@ -418,11 +486,16 @@ function StoriesTab({ isAdmin, users }: { isAdmin: boolean; users: any[] | undef
     if (generatingId) return;
     setGeneratingId(storyId);
     try {
+      // Runs under the story's own owner (adminGenerateChallengeForStory), not
+      // this admin session — so unlike the old generateChallenge call, there's
+      // nothing this admin session can navigate to and correctly view; the
+      // customer-facing challenge page resolves its data from the CURRENT
+      // session's own userId, which isn't the story owner here.
       await generateChallenge({ storyId: storyId as any });
       setGenResult(prev => ({ ...prev, [storyId]: "ok" }));
-      router.push(`/testserver/challenge/${storyId}`);
     } catch {
       setGenResult(prev => ({ ...prev, [storyId]: "error" }));
+    } finally {
       setGeneratingId(null);
     }
   }
@@ -505,6 +578,7 @@ function StoriesTab({ isAdmin, users }: { isAdmin: boolean; users: any[] | undef
                   <th style={TH_STYLE}>Lang</th>
                   <th style={TH_STYLE}>Media</th>
                   <th style={TH_STYLE}>Status</th>
+                  <th style={TH_STYLE}>Challenge</th>
                   <th style={TH_STYLE}>Date</th>
                   <th style={{ ...TH_STYLE, textAlign: "right" }}></th>
                 </tr>
@@ -595,6 +669,7 @@ function StoriesTab({ isAdmin, users }: { isAdmin: boolean; users: any[] | undef
                           </div>
                         </td>
                         <td style={TD_STYLE}><StatusBadge status={s.status} /></td>
+                        <td style={TD_STYLE}><ChallengeBadge challenge={s.challenge} /></td>
                         <td style={{ ...TD_STYLE, whiteSpace: "nowrap", fontSize: "0.82rem" }}>{formatDate(s.createdAt)}</td>
                         <td style={{ ...TD_STYLE, textAlign: "right" }}>
                           <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", alignItems: "center" }}>

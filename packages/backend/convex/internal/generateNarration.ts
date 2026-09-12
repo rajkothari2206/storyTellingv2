@@ -9,6 +9,7 @@ export const generateNarration = internalAction({
     child: v.object({
       name: v.string(),
       gender: v.union(v.literal("male"), v.literal("female"), v.literal("other")),
+      phoneticName: v.optional(v.string()),
     }),
   },
 
@@ -27,6 +28,7 @@ export const generateNarration = internalAction({
         childName,
         childGender,
         language: story.params?.language || "english",
+        childPhoneticName: child.phoneticName,
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

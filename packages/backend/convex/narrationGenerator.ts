@@ -145,9 +145,12 @@ function parseStoryToSpeakerLines(title: string, content: string, childName: str
       out.push({ order: orderIdx++, speaker: childName, text: line.slice(childName.length + 1).trim(), pauseAfter: false });
     } else if (lower.startsWith("child:") || lower.startsWith("girl child:") || lower.startsWith("boy child:")) {
       out.push({ order: orderIdx++, speaker: "Child", text: line.replace(/^(child|girl child|boy child):/i, "").trim(), pauseAfter: false });
-    } else if (lower.startsWith("narrator:")) {
-      // Strip the "Narrator:" label before TTS — otherwise ElevenLabs reads it aloud.
-      const stripped = line.replace(/^narrator:\s*/i, "").trim();
+    } else if (lower.startsWith("narrator:") || lower.startsWith("narration:")) {
+      // Strip the "Narrator:"/"Narration:" label before TTS — otherwise ElevenLabs
+      // reads it aloud. The model occasionally echoes "Narration:" (from the
+      // OUTPUT FORMAT prompt's own section heading) as a literal line prefix
+      // even though it was never asked to label narration lines.
+      const stripped = line.replace(/^narrator:\s*/i, "").replace(/^narration:\s*/i, "").trim();
       const sentences = splitToSentences(stripped);
       sentences.forEach((sentence, i) => {
         out.push({ order: orderIdx++, speaker: "Narrator", text: sentence, pauseAfter: i === sentences.length - 1 });
