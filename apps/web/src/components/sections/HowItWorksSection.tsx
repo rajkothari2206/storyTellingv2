@@ -125,7 +125,7 @@ export function HowItWorksSection() {
                   fill
                   className="object-cover"
                   style={{ objectPosition: step.imgPosition }}
-                  sizes="(max-width: 768px) 100vw, 340px"
+                  sizes="(max-width: 768px) calc(100vw - 48px), 340px"
                 />
                 {/* Label badge over image */}
                 <div className="absolute top-3 left-3">

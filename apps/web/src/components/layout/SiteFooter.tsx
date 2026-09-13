@@ -108,10 +108,14 @@ export function SiteFooter() {
                 dark background. */}
             <address style={{ fontStyle: "normal", color: "rgba(255,255,255,0.5)", fontSize: 13, lineHeight: 1.6 }}>
               Siliguri, West Bengal, India<br />
-              <a href="tel:+919434636830" style={{ color: "rgba(255,255,255,0.5)", textDecoration: "none" }}>
+              {/* 0.5 alpha white-on-dark failed WCAG AA contrast; 0.75 passes
+                  while staying visually secondary. Inline-block + vertical
+                  padding also brings the tap target closer to the
+                  recommended ~44px minimum for these stacked links. */}
+              <a href="tel:+919434636830" style={{ display: "inline-block", padding: "6px 0", color: "rgba(255,255,255,0.75)", textDecoration: "none" }}>
                 +91 94346 36830
               </a><br />
-              <ObfuscatedEmail style={{ color: "rgba(255,255,255,0.5)", textDecoration: "none" }} />
+              <ObfuscatedEmail style={{ display: "inline-block", padding: "6px 0", color: "rgba(255,255,255,0.75)", textDecoration: "none" }} />
             </address>
             {/* Socials */}
             <div className="flex items-center gap-3 mt-2">

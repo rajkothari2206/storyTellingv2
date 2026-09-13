@@ -139,7 +139,7 @@ export function CharactersSection() {
               fill
               className="object-cover transition-opacity duration-300"
               style={{ objectPosition: "center 40%" }}
-              sizes="(max-width: 768px) 100vw, 700px"
+              sizes="(max-width: 768px) calc(100vw - 48px), 700px"
             />
             {/* Bottom gradient */}
             <div
