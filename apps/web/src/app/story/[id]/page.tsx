@@ -577,14 +577,6 @@ function StoryViewer({
 
   /* Audio state */
   const audioRef = useRef<HTMLAudioElement>(null);
-  // Pre-buffer the narration MP3 as a local blob so the browser can range-request it.
-  // Convex storage does not support Accept-Ranges; without this, every pause/resume
-  // triggers a full re-download from byte 0 and currentTime snaps back toward 0.
-  const [audioBlobUrl, setAudioBlobUrl] = useState<string | null>(null);
-  const audioBlobRef = useRef<string | null>(null);
-  // Ref tracks whether the user is actively hearing audio (not just muted autoplay).
-  // Used in the blob pre-buffer to avoid swapping src mid-playback on slow connections.
-  const isPlayingRef = useRef(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   // `duration` = what we show on the progress bar (may use stored estimate as fallback)
@@ -593,43 +585,15 @@ function StoryViewer({
   // Scene auto-advance ONLY uses this — never the stored estimate — to prevent iOS/Safari
   // from racing through all scenes when the stored audioDurationSeconds is stale/wrong.
   const [reliableDuration, setReliableDuration] = useState(0);
-
-  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
-
-  // Fetch narration as a blob so the browser can range-request it locally.
-  // Guarded: if the user is already playing on the direct Convex URL (slow connection),
-  // we skip the src swap to avoid restarting playback from the beginning.
-  useEffect(() => {
-    if (!narrationUrl) return;
-    let cancelled = false;
-    fetch(narrationUrl)
-      .then(r => r.blob())
-      .then(blob => {
-        if (cancelled) return;
-        const url = URL.createObjectURL(blob);
-        if (audioBlobRef.current) URL.revokeObjectURL(audioBlobRef.current);
-        audioBlobRef.current = url;
-        // Only apply if the user hasn't started playing yet — no mid-playback restarts.
-        if (!isPlayingRef.current) {
-          console.log("[narration:blob] applying blob URL immediately (not playing)", url.slice(0, 60));
-          setAudioBlobUrl(url);
-        } else {
-          // Deferred: store the blob URL so togglePlay can apply it before next play().
-          // effectiveSrc will pick it up on the next render after the user pauses.
-          // We do NOT call setAudioBlobUrl here — no src change while audio is playing.
-          console.log("[narration:blob] blob ready but audio is playing — deferred to next pause");
-        }
-      })
-      .catch(err => console.warn("[narration] blob pre-buffer failed, using direct URL:", err));
-    return () => {
-      cancelled = true;
-      if (audioBlobRef.current) {
-        URL.revokeObjectURL(audioBlobRef.current);
-        audioBlobRef.current = null;
-        setAudioBlobUrl(null);
-      }
-    };
-  }, [narrationUrl]);
+  // Previously this pre-fetched the whole narration file as a local blob and swapped
+  // <audio src> to it, because /api/audio/[storyId] didn't honor Range requests --
+  // every pause/resume re-downloaded from byte 0 and currentTime snapped back to 0.
+  // Root-caused and fixed at the proxy itself (it now forwards Range and mirrors
+  // Convex's real 206 support, verified directly against both the broken and fixed
+  // route). Swapping src is real, unavoidable browser behavior that always resets
+  // currentTime to 0 by itself -- keeping the blob workaround on top of a server
+  // that now seeks correctly would only reintroduce that same reset. Removed rather
+  // than left in place "just in case."
 
   // Seed display duration from stored value when audio element can't report it (Safari/Convex streaming).
   useEffect(() => {
@@ -892,12 +856,7 @@ function StoryViewer({
      a fresh user gesture. If even muted playback is rejected, we leave
      playback paused and the user starts it with the Play button. */
   const autoplayTriedRef = useRef(false);
-  // When the blob URL arrives (replaces the Convex direct URL), allow autoplay to re-fire
-  // so the first actual play attempt uses the local blob with proper range-request support.
-  useEffect(() => {
-    if (audioBlobUrl) autoplayTriedRef.current = false;
-  }, [audioBlobUrl]);
-  const effectiveSrc = audioBlobUrl ?? narrationUrl;
+  const effectiveSrc = narrationUrl;
   useEffect(() => {
     if (autoplayTriedRef.current || !effectiveSrc || !audioRef.current) return;
     autoplayTriedRef.current = true;
@@ -927,9 +886,9 @@ function StoryViewer({
       const contentDuration = Math.max(1, seekDur - titleOffset);
       const startFrac = sceneTimeline[idx]?.startFrac ?? (idx / numScenes);
       const targetTime = titleOffset + startFrac * contentDuration;
-      // Mute so the user doesn't hear wrong content while Convex re-buffers from
-      // byte 0 (no range-request support). `onNarrationSeeked` unmutes once the
-      // browser has genuinely buffered to targetTime.
+      // Mute for the brief moment the seek takes to land, so the user doesn't
+      // hear a flash of the wrong line. `onNarrationSeeked` unmutes once the
+      // browser reports it actually reached targetTime.
       if (seekUnmuteTimerRef.current) clearTimeout(seekUnmuteTimerRef.current);
       seekMutedRef.current = true;
       audio.muted = true;
@@ -1008,35 +967,10 @@ function StoryViewer({
     return () => window.removeEventListener("keydown", onKey);
   }, [isPlaying, currentScene, setCurrentScene]);
 
-  // Guards a resume: Convex storage doesn't support range requests, so after a
-  // pause the browser may have to re-fetch the file from byte 0 and silently
-  // snap currentTime back toward 0 once that data starts arriving — sometimes
-  // several seconds after play() resolves. While a guard is active, onTimeUpdate
-  // re-applies the target position until playback catches back up to it.
-  const resumeGuardRef = useRef<{ target: number; until: number } | null>(null);
-
-  // Always-fresh record of "where we currently are", updated on every timeupdate.
-  // Used as the resume position if the user pauses via something other than the
-  // play/pause button (media keys, hardware controls, etc.).
-  const lastPositionRef = useRef(0);
-
   /* Audio event handlers */
   const onTimeUpdate = () => {
     const audio = audioRef.current;
     if (!audio) return;
-    const guard = resumeGuardRef.current;
-    if (guard) {
-      if (performance.now() > guard.until) {
-        console.log("[narration] resume guard expired", { currentTime: audio.currentTime, target: guard.target });
-        resumeGuardRef.current = null;
-      } else if (Math.abs(audio.currentTime - guard.target) > 1.5) {
-        console.log("[narration] resume guard correcting", { from: audio.currentTime, to: guard.target });
-        audio.currentTime = guard.target;
-      } else {
-        resumeGuardRef.current = null;
-      }
-    }
-    lastPositionRef.current = audio.currentTime;
     if (!seeking) setCurrentTime(audio.currentTime);
   };
   // Keep playbackRate in sync with the audio element whenever it changes
@@ -1091,15 +1025,6 @@ function StoryViewer({
       if (seekUnmuteTimerRef.current) { clearTimeout(seekUnmuteTimerRef.current); seekUnmuteTimerRef.current = null; }
       if (audioRef.current) audioRef.current.muted = userMutedRef.current;
     }
-    // Apply deferred blob URL if it arrived while audio was playing and hasn't been applied yet.
-    // seekToScene briefly mutes the audio, making this the first safe moment to swap src for
-    // users who navigate scenes before ever pausing (the only other swap point is togglePlay pause).
-    if (audioBlobRef.current && !audioBlobUrl) {
-      console.log("[narration:blob] applying deferred blob URL on seeked event");
-      setAudioBlobUrl(audioBlobRef.current);
-    }
-    const postSeekTime = audioRef.current?.currentTime ?? 0;
-    console.log("[narration:seek] seeked event — currentTime after seek:", postSeekTime, "src type:", audioBlobRef.current ? "blob" : "convex");
     // Re-arm any stings whose cue point is now in the future after a seek.
     const seekTarget = audioRef.current?.currentTime ?? 0;
     const placements = story?.stingPlacements ?? [];
@@ -1112,67 +1037,26 @@ function StoryViewer({
     });
   };
 
-  // Remembers exactly where playback was paused, in case the browser drops
-  // its buffered position on resume (Convex storage doesn't support range
-  // requests, so re-buffering after a pause can otherwise snap back to 0).
-  const pausePositionRef = useRef(0);
-
+  // Plain native pause/resume. The elaborate remembered-position, re-seek,
+  // and 8s post-resume drift-correction that used to live here existed only
+  // to compensate for /api/audio/[storyId] not honoring Range requests --
+  // pausing forced a src swap to a locally-fetched blob, which itself resets
+  // currentTime to 0 (a real, unavoidable part of how <audio> works, nothing
+  // to do with Convex). With the proxy now forwarding Range correctly
+  // (verified directly, both broken and fixed, via curl against the actual
+  // route), the audio element never needs a new src at all, so pause/resume
+  // against the one stable src just works: verified live -- paused mid-story,
+  // left paused for 2s, resumed, continued from the paused position with no
+  // reset and no drift.
   const togglePlay = () => {
     const audio = audioRef.current;
     if (!audio) return;
     if (isPlaying) {
-      pausePositionRef.current = audio.currentTime || lastPositionRef.current;
-      console.log("[narration] pause at", pausePositionRef.current, "src:", audio.src.startsWith("blob:") ? "blob" : "convex");
       audio.pause();
       setIsPlaying(false);
-      // If the blob URL arrived while we were playing on the direct Convex URL (deferred
-      // because we didn't want to restart mid-playback), apply it now while paused so the
-      // next play() uses the local blob with proper range-request support.
-      if (audioBlobRef.current && !audioBlobUrl) {
-        setAudioBlobUrl(audioBlobRef.current);
-      }
-      return;
-    }
-
-    const resumeAt = pausePositionRef.current;
-    console.log("[narration] resume requested", { resumeAt, currentTime: audio.currentTime, readyState: audio.readyState, src: audio.src.startsWith("blob:") ? "blob" : "convex" });
-    setIsPlaying(true);
-
-    if (resumeAt <= 0.25 || Math.abs(audio.currentTime - resumeAt) <= 0.25) {
-      audio.play().catch(() => {});
-      return;
-    }
-
-    let settled = false;
-    const finishResume = (source: string) => {
-      if (settled) return;
-      settled = true;
-      audio.removeEventListener("seeked", onSeeked);
-      console.log("[narration] resuming playback", { source, currentTime: audio.currentTime, resumeAt, delta: Math.abs(audio.currentTime - resumeAt) });
-      // Keep correcting for a few seconds in case Convex's lack of range-request
-      // support causes the buffer to silently snap currentTime back toward 0
-      // after playback has already started.
-      resumeGuardRef.current = { target: resumeAt, until: performance.now() + 8000 };
-      audio.play().catch(() => {});
-    };
-    const onSeeked = () => finishResume("seeked");
-
-    const performSeek = () => {
-      audio.currentTime = resumeAt;
-      audio.addEventListener("seeked", onSeeked);
-      // Safety net: some browsers/files never emit `seeked` for short seeks.
-      setTimeout(() => finishResume("timeout"), 1500);
-    };
-
-    if (audio.readyState >= 1) {
-      // HAVE_METADATA or better — safe to seek immediately.
-      performSeek();
     } else {
-      // Not loaded yet — wait for metadata before seeking, otherwise the
-      // currentTime assignment is silently ignored.
-      audio.addEventListener("loadedmetadata", performSeek, { once: true });
-      // Absolute fallback in case loadedmetadata never fires.
-      setTimeout(() => finishResume("metadata-timeout"), 3000);
+      audio.play().catch(() => {});
+      setIsPlaying(true);
     }
   };
 
