@@ -453,7 +453,9 @@ export const getLightMetadata = query({
 		return {
 			title: story.title,
 			sceneMetadata: story.sceneMetadata,
-			params: story.params
+			params: story.params,
+			sceneStartSeconds: story.sceneStartSeconds,
+			audioDurationSeconds: story.audioDurationSeconds,
 		};
 	},
 });

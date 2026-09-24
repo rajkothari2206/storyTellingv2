@@ -1,13 +1,13 @@
 "use client";
 
-import { use } from "react";
+import { use, useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useQuery } from "convex/react";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { Sparkles, BookOpen, Loader2, Lock } from "lucide-react";
+import { Sparkles, BookOpen, Loader2, Play, Pause, ChevronLeft, ChevronRight, Trophy, PartyPopper } from "lucide-react";
 
 /* ── Convex client (unauthenticated, public read only) ── */
 const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
@@ -30,7 +30,6 @@ function WhatsAppIcon() {
     </svg>
   );
 }
-
 function FacebookIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -39,38 +38,16 @@ function FacebookIcon() {
   );
 }
 
-function InstagramIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
-    </svg>
-  );
-}
-
 /* ── Main share view (public, no auth needed) ── */
 function ShareView({ storyId }: { storyId: string }) {
   const story = useQuery(api.stories.getLightMetadata, { storyId: storyId as Id<"stories"> });
   const imageUrls = useQuery(api.stories.getSceneImageUrls, story ? { storyId: storyId as Id<"stories"> } : "skip");
-  const contentData = useQuery(api.stories.getContentOnly, story ? { storyId: storyId as Id<"stories"> } : "skip");
 
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
-  // Use a path-only redirect so SignInForm doesn't double-prepend the origin
-  const storyPageUrl = typeof window !== "undefined"
-    ? window.location.pathname.replace("/share/", "/story/")
-    : `/story/${storyId}`;
-
-  const firstImage = imageUrls?.[0]?.url ?? null;
-  const preview = contentData?.content
-    ? contentData.content.split("\n").filter(Boolean).slice(0, 2).join(" ").slice(0, 220) + "…"
-    : null;
-
-  const waText = encodeURIComponent(`✨ Look at this personalised Lalli & Fafa story: "${story?.title ?? "A magical story"}" ${shareUrl}`);
+  const waText = encodeURIComponent(`✨ Look at this personalised Lalli & Fafa story! ${shareUrl}`);
   const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
   const waUrl = `https://wa.me/?text=${waText}`;
-
-  const copyLink = () => {
-    navigator.clipboard.writeText(shareUrl).catch(() => {});
-  };
+  const copyLink = () => { navigator.clipboard.writeText(shareUrl).catch(() => {}); };
 
   if (story === undefined) {
     return (
@@ -80,7 +57,7 @@ function ShareView({ storyId }: { storyId: string }) {
     );
   }
 
-  if (story === null) {
+  if (story === null || story.sceneMetadata?.length === 0) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: "#0e0c1a" }}>
         <BookOpen size={48} style={{ color: "rgba(255,255,255,0.2)" }} />
@@ -93,9 +70,7 @@ function ShareView({ storyId }: { storyId: string }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(160deg,#0e0c1a 0%,#0d2d26 100%)" }}>
-
-      {/* Top bar */}
+    <div className="min-h-dvh flex flex-col" style={{ background: "linear-gradient(160deg,#0e0c1a 0%,#0d2d26 100%)" }}>
       <header className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
         <Link href="/" className="flex items-center gap-2">
           <div className="relative" style={{ width: 36, height: 36 }}>
@@ -114,117 +89,27 @@ function ShareView({ storyId }: { storyId: string }) {
         </Link>
       </header>
 
-      {/* Story preview card */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 py-8 gap-6" style={{ maxWidth: 520, margin: "0 auto", width: "100%" }}>
+      <main className="flex-1 flex flex-col items-center px-4 py-6 gap-5" style={{ maxWidth: 560, margin: "0 auto", width: "100%" }}>
+        <PublicPlayer storyId={storyId} story={story} imageUrls={imageUrls} />
 
-        {/* Scene image */}
-        {firstImage ? (
-          <div className="w-full rounded-3xl overflow-hidden shadow-2xl relative" style={{ aspectRatio: "4/3" }}>
-            <Image src={firstImage} alt={story.title ?? "Story scene"} fill className="object-cover" priority />
-            {/* Gradient + title overlay */}
-            <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 50%)" }} />
-            <div className="absolute bottom-5 left-5 right-5">
-              <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "clamp(1.1rem,4vw,1.5rem)", color: "#fff", textShadow: "0 2px 12px rgba(0,0,0,0.8)", lineHeight: 1.2 }}>
-                {story.title}
-              </p>
-            </div>
-            {/* Lalli Fafa watermark */}
-            <div className="absolute top-4 right-4 opacity-70" style={{ width: 28, height: 28 }}>
-              <Image src="/lf-logo.png" alt="" fill className="object-contain" />
-            </div>
-          </div>
-        ) : (
-          /* Placeholder if image not yet generated */
-          <div className="w-full rounded-3xl flex flex-col items-center justify-center gap-4" style={{ aspectRatio: "4/3", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" }}>
-            <div className="relative" style={{ width: 80, height: 80 }}>
-              <Image src="/lf-hero.png" alt="Lalli and Fafa" fill className="object-contain" />
-            </div>
-            <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1.3rem", color: "#fff", textAlign: "center", padding: "0 1rem" }}>
-              {story.title}
-            </p>
-          </div>
-        )}
-
-        {/* Story preview text */}
-        {preview && (
-          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.95rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.7, textAlign: "center", fontStyle: "italic" }}>
-            "{preview}"
-          </p>
-        )}
-
-        {/* Lock notice */}
-        <div
-          className="w-full flex items-center gap-3 px-5 py-4 rounded-2xl"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
-        >
-          <Lock size={18} style={{ color: "var(--lf-teal)", flexShrink: 0 }} />
-          <div>
-            <p style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.88rem", color: "#fff" }}>
-              Full story · narration · illustrations
-            </p>
-            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.8rem", color: "rgba(255,255,255,0.45)", marginTop: 2 }}>
-              Sign in to Lalli Fafa to read the complete story with audio narration.
-            </p>
-          </div>
-        </div>
-
-        {/* CTA */}
-        <Link
-          href={`/sign-in?redirect=${encodeURIComponent(storyPageUrl)}`}
-          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-base transition-all hover:scale-105"
-          style={{ background: "linear-gradient(135deg,var(--lf-teal),#00a38d)", color: "#fff", fontFamily: "'Baloo 2', sans-serif", boxShadow: "0 4px 24px rgba(0,201,167,0.4)" }}
-        >
-          <BookOpen size={18} /> Read the full story
-        </Link>
-
-        <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.8rem", color: "rgba(255,255,255,0.3)", textAlign: "center" }}>
-          Don't have an account?{" "}
-          <Link href="/sign-up" style={{ color: "var(--lf-teal)", fontWeight: 700, textDecoration: "underline" }}>
-            Create one free
-          </Link>
-          {" "}— your first story is on us ✨
-        </p>
-
-        {/* Social sharing strip */}
-        <div className="w-full flex flex-col gap-3 mt-2">
+        <div className="w-full flex flex-col gap-3">
           <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.75rem", fontWeight: 700, color: "rgba(255,255,255,0.3)", textAlign: "center", textTransform: "uppercase", letterSpacing: "0.08em" }}>
             Share this story
           </p>
-          <div className="flex gap-3 justify-center">
-            {/* WhatsApp */}
-            <a
-              href={waUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all hover:scale-105 hover:brightness-110"
-              style={{ background: "#25D366", color: "#fff", fontFamily: "'Nunito', sans-serif" }}
-            >
+          <div className="flex gap-3 justify-center flex-wrap">
+            <a href={waUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all hover:scale-105 hover:brightness-110" style={{ background: "#25D366", color: "#fff", fontFamily: "'Nunito', sans-serif" }}>
               <WhatsAppIcon /> WhatsApp
             </a>
-            {/* Facebook */}
-            <a
-              href={fbUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all hover:scale-105 hover:brightness-110"
-              style={{ background: "#1877F2", color: "#fff", fontFamily: "'Nunito', sans-serif" }}
-            >
+            <a href={fbUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all hover:scale-105 hover:brightness-110" style={{ background: "#1877F2", color: "#fff", fontFamily: "'Nunito', sans-serif" }}>
               <FacebookIcon /> Facebook
             </a>
-            {/* Copy link */}
-            <button
-              onClick={copyLink}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all hover:scale-105"
-              style={{ background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.15)", fontFamily: "'Nunito', sans-serif" }}
-            >
+            <button onClick={copyLink} className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all hover:scale-105" style={{ background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.15)", fontFamily: "'Nunito', sans-serif" }}>
               🔗 Copy link
             </button>
           </div>
         </div>
-
       </main>
 
-      {/* Footer */}
       <footer className="text-center py-5 px-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.8rem", color: "rgba(255,255,255,0.25)" }}>
           Personalised stories by{" "}
@@ -232,7 +117,235 @@ function ShareView({ storyId }: { storyId: string }) {
           {" "}— where every child is the hero ✨
         </p>
       </footer>
+    </div>
+  );
+}
 
+/* ── Full playback player, purpose-built for the public share page ──
+   Not a reuse of the full authenticated reader (StoryViewer): that component
+   carries subscription checks, sting sound effects, dark/light mode, and
+   auth-gated Challenge routing that don't apply to an anonymous visitor.
+   This is a smaller, self-contained player: real scene-image + narration
+   playback (via the same, now Range-capable, /api/audio/[id] proxy), scenes
+   advancing on the STORY'S REAL measured sceneStartSeconds (not a character-
+   count estimate), ending in a sign-up hook and — if the story has a
+   Challenge — the same real questions, answerable for fun with client-side-
+   only scoring that never touches the real owner's record. */
+function PublicPlayer({
+  storyId,
+  story,
+  imageUrls,
+}: {
+  storyId: string;
+  story: { title?: string; sceneMetadata?: Array<{ sceneNumber: number; description?: string }>; sceneStartSeconds?: Record<string, number> };
+  imageUrls: Array<{ sceneNumber: number; url?: string | null }> | null | undefined;
+}) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [ended, setEnded] = useState(false);
+
+  const scenes = story.sceneMetadata ?? [];
+  const numScenes = scenes.length;
+  const startSecs = story.sceneStartSeconds ?? {};
+
+  // Derive the current scene straight from playback time against the
+  // story's real, measured per-scene start times.
+  const currentScene = useMemo(() => {
+    let idx = 0;
+    for (let i = 0; i < numScenes; i++) {
+      const s = startSecs[String(i + 1)];
+      if (s !== undefined && currentTime >= s) idx = i;
+    }
+    return idx;
+  }, [currentTime, numScenes, startSecs]);
+
+  const sceneUrl = imageUrls?.find((u) => u.sceneNumber === currentScene + 1)?.url ?? imageUrls?.[currentScene]?.url;
+
+  const togglePlay = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (isPlaying) { audio.pause(); setIsPlaying(false); }
+    else { audio.play().catch(() => {}); setIsPlaying(true); }
+  };
+  const skipToScene = (idx: number) => {
+    const clamped = Math.max(0, Math.min(numScenes - 1, idx));
+    const t = startSecs[String(clamped + 1)];
+    if (t !== undefined && audioRef.current) audioRef.current.currentTime = t;
+  };
+
+  return (
+    <div className="w-full flex flex-col gap-4">
+      <div className="w-full rounded-3xl overflow-hidden shadow-2xl relative" style={{ aspectRatio: "4/3", background: "#1a1730" }}>
+        {sceneUrl ? (
+          <Image key={sceneUrl} src={sceneUrl} alt={story.title ?? "Story scene"} fill className="object-cover" priority />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader2 size={28} className="animate-spin" style={{ color: "var(--lf-teal)" }} />
+          </div>
+        )}
+        <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 40%)" }} />
+        <div className="absolute bottom-4 left-4 right-4">
+          <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "clamp(1rem,3.5vw,1.3rem)", color: "#fff", textShadow: "0 2px 12px rgba(0,0,0,0.8)", lineHeight: 1.2 }}>
+            {story.title}
+          </p>
+        </div>
+        <div className="absolute top-4 left-4 px-2.5 py-1 rounded-full text-xs font-bold" style={{ background: "rgba(0,0,0,0.5)", color: "rgba(255,255,255,0.85)" }}>
+          Scene {currentScene + 1} of {numScenes}
+        </div>
+        <div className="absolute top-4 right-4 opacity-70" style={{ width: 26, height: 26 }}>
+          <Image src="/lf-logo.png" alt="" fill className="object-contain" />
+        </div>
+      </div>
+
+      <audio
+        ref={audioRef}
+        src={`/api/audio/${storyId}`}
+        preload="auto"
+        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+        onEnded={() => { setIsPlaying(false); setEnded(true); }}
+      />
+
+      {/* Controls */}
+      <div className="flex items-center gap-3 px-1">
+        <button onClick={() => skipToScene(currentScene - 1)} disabled={currentScene === 0} className="disabled:opacity-25" style={{ color: "rgba(255,255,255,0.7)" }} aria-label="Previous scene">
+          <ChevronLeft size={22} />
+        </button>
+        <button
+          onClick={togglePlay}
+          className="flex items-center justify-center rounded-full transition-all hover:scale-105"
+          style={{ width: 48, height: 48, background: "linear-gradient(135deg,#f9c700,#ffab00)", color: "#1a1a2e", flexShrink: 0 }}
+        >
+          {isPlaying ? <Pause size={20} fill="#1a1a2e" /> : <Play size={20} fill="#1a1a2e" style={{ marginLeft: 2 }} />}
+        </button>
+        <button onClick={() => skipToScene(currentScene + 1)} disabled={currentScene === numScenes - 1} className="disabled:opacity-25" style={{ color: "rgba(255,255,255,0.7)" }} aria-label="Next scene">
+          <ChevronRight size={22} />
+        </button>
+        <div className="flex-1 h-1 rounded-full relative" style={{ background: "rgba(255,255,255,0.15)" }}>
+          <div className="absolute left-0 top-0 h-full rounded-full" style={{ width: duration ? `${Math.min(100, (currentTime / duration) * 100)}%` : "0%", background: "var(--lf-teal)" }} />
+        </div>
+      </div>
+
+      {ended && <ShareEndScreen storyId={storyId} />}
+    </div>
+  );
+}
+
+/* ── End-of-story: sign-up hook, plus the real Challenge (if this story has
+   one) answerable for fun with purely client-side scoring. ── */
+function ShareEndScreen({ storyId }: { storyId: string }) {
+  const challenge = useQuery(api["testserver/challenge"].getChallengeForShare, { storyId: storyId as Id<"stories"> });
+  const [qIdx, setQIdx] = useState(0);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState(false);
+  const [quizDone, setQuizDone] = useState(false);
+
+  const questions = challenge?.questions ?? [];
+  const q = questions[qIdx];
+
+  function answer(optionId: string) {
+    if (revealed || !q) return;
+    setSelected(optionId);
+    setRevealed(true);
+    if (q.correctOptionIds?.includes(optionId)) setCorrectCount((c) => c + 1);
+  }
+  function next() {
+    setSelected(null);
+    setRevealed(false);
+    if (qIdx + 1 >= questions.length) setQuizDone(true);
+    else setQIdx((i) => i + 1);
+  }
+
+  return (
+    <div className="w-full flex flex-col items-center gap-5 py-4 px-1" style={{ animation: "fadeIn 0.4s ease" }}>
+      <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+
+      <div className="flex flex-col items-center gap-2 text-center">
+        <PartyPopper size={32} style={{ color: "var(--lf-sunshine)" }} />
+        <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1.3rem", color: "#fff" }}>
+          The End!
+        </p>
+      </div>
+
+      {/* Mini Challenge — same real questions, just-for-fun scoring only */}
+      {challenge && questions.length > 0 && !quizDone && q && (
+        <div className="w-full rounded-3xl p-5 flex flex-col gap-4" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}>
+          <div className="flex items-center gap-2">
+            <Trophy size={16} style={{ color: "var(--lf-sunshine)" }} />
+            <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 800, fontSize: "0.72rem", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Story Challenge · {qIdx + 1} of {questions.length}
+            </span>
+          </div>
+          <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 700, fontSize: "1.05rem", color: "#fff" }}>
+            {q.promptText ?? q.question}
+          </p>
+          <div className="flex flex-col gap-2">
+            {(q.richOptions ?? []).map((opt: { id: string; text: string }) => {
+              const isCorrect = q.correctOptionIds?.includes(opt.id);
+              const isSelected = selected === opt.id;
+              let bg = "rgba(255,255,255,0.08)";
+              let border = "1px solid rgba(255,255,255,0.15)";
+              if (revealed && isCorrect) { bg = "rgba(0,201,167,0.18)"; border = "1px solid rgba(0,201,167,0.5)"; }
+              else if (revealed && isSelected && !isCorrect) { bg = "rgba(220,38,38,0.15)"; border = "1px solid rgba(220,38,38,0.4)"; }
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => answer(opt.id)}
+                  disabled={revealed}
+                  className="text-left px-4 py-3 rounded-2xl transition-all"
+                  style={{ background: bg, border, color: "#fff", fontFamily: "'Nunito', sans-serif", fontWeight: 600, fontSize: "0.9rem", cursor: revealed ? "default" : "pointer" }}
+                >
+                  {opt.text}
+                </button>
+              );
+            })}
+          </div>
+          {revealed && (
+            <>
+              {q.revealFraming && (
+                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.82rem", color: "rgba(255,255,255,0.55)", fontStyle: "italic", margin: 0 }}>
+                  {q.revealFraming}
+                </p>
+              )}
+              <button onClick={next} className="btn-primary" style={{ justifyContent: "center" }}>
+                {qIdx + 1 >= questions.length ? "See my score" : "Next question"}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {challenge && quizDone && (
+        <div className="w-full rounded-3xl p-6 flex flex-col items-center gap-2 text-center" style={{ background: "rgba(249,199,0,0.12)", border: "1px solid rgba(249,199,0,0.3)" }}>
+          <span style={{ fontSize: "2rem" }}>⭐</span>
+          <p style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 800, fontSize: "1.4rem", color: "#fff" }}>
+            {correctCount} / {questions.length}
+          </p>
+          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.85rem", color: "rgba(255,255,255,0.6)" }}>
+            Nice work! Want a Story Challenge like this made just for your own child?
+          </p>
+        </div>
+      )}
+
+      {/* Sign-up hook */}
+      <div className="w-full flex flex-col items-center gap-3 mt-1">
+        <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.9rem", color: "rgba(255,255,255,0.6)", textAlign: "center" }}>
+          Loved this story? Create one starring your own child in under 2 minutes.
+        </p>
+        <Link
+          href="/sign-up"
+          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-base transition-all hover:scale-105"
+          style={{ background: "linear-gradient(135deg,var(--lf-teal),#00a38d)", color: "#fff", fontFamily: "'Baloo 2', sans-serif", boxShadow: "0 4px 24px rgba(0,201,167,0.4)" }}
+        >
+          <Sparkles size={18} /> Start free — no card needed
+        </Link>
+        <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.78rem", color: "rgba(255,255,255,0.3)" }}>
+          200 free credits · ~2 stories · no card needed
+        </p>
+      </div>
     </div>
   );
 }

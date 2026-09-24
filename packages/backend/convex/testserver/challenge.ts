@@ -1089,6 +1089,33 @@ export const getForStory = query({
   },
 });
 
+// ─── Public: read-only Challenge preview for the /share/[id] page ─────────────
+//
+// Deliberately reuses the SAME question set generated for the story's real
+// owner rather than generating a second, different one for anonymous
+// visitors -- there is exactly one Challenge per story, ever. No auth, no
+// ownership check: this mirrors the same public access level as the shared
+// story's images/audio/text (getSceneImageUrls, /api/audio, getContentOnly
+// all already serve unauthenticated). A shared visitor can read and answer
+// the questions for fun, but nothing here writes to the real row -- scoring
+// happens client-side only, so a stranger playing along on a share link can
+// never overwrite the actual child's real answers or score.
+export const getChallengeForShare = query({
+  args: { storyId: v.id("stories") },
+  handler: async (ctx, { storyId }) => {
+    const row = await ctx.db
+      .query("testserver_challenges")
+      .withIndex("by_story", (q) => q.eq("storyId", storyId))
+      .first();
+    if (!row) return null;
+    const indices = resolveChallengeIndices(row);
+    return {
+      childName: row.childName,
+      questions: indices.map((i) => ({ index: i, ...row.questions[i] })),
+    };
+  },
+});
+
 export const getHistory = query({
   args: {},
   handler: async (ctx) => {
