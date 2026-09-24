@@ -1828,6 +1828,31 @@ function StoryViewer({
               </div>
             </div>
 
+            {/* Static, non-interactive teaser — deliberately NOT clickable and NOT
+                tied to any mid-story quiz. Replaces the earlier plan to answer
+                Challenge questions live during playback: the audio/scene sync
+                needs to be solid before layering an interactive quiz on top of
+                it, and mid-story interruption is still an open question on
+                whether it even belongs in the story experience at all. */}
+            {challengeEnabled && (
+              <div
+                className="flex items-center justify-center gap-2"
+                style={{ cursor: "default" }}
+              >
+                <span
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    padding: "5px 14px", borderRadius: 999,
+                    background: "rgba(249,199,0,0.12)", border: "1px solid rgba(249,199,0,0.3)",
+                    fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.75rem",
+                    color: "#a16a00",
+                  }}
+                >
+                  🏆 Challenge at the end of the story — win rewards!
+                </span>
+              </div>
+            )}
+
             {/* ── Subtitle strip ── */}
             <div
               className="w-full flex flex-col items-center justify-center px-4 py-2 rounded-2xl transition-all"
