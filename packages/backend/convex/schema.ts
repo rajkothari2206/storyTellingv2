@@ -138,6 +138,15 @@ export default defineSchema({
 		// (the client's on-demand fallback) succeeds.
 		challengeGenerationError: v.optional(v.string()),
 
+		// Set once, the first time the reader's merged narration audio fires
+		// its native `ended` event for this story — i.e. real evidence the
+		// story was actually listened to end-to-end, not just generated.
+		// Added because there was previously no way to tell "child abandoned
+		// the story partway through" apart from "child finished it but never
+		// started the Challenge" — both looked identical (an untaken
+		// Challenge) with zero data to distinguish them.
+		readerCompletedAt: v.optional(v.number()),
+
 		createdAt: v.number(),
 		updatedAt: v.number(),
 	})

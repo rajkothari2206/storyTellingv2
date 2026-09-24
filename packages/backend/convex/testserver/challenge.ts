@@ -395,6 +395,25 @@ export const generateChallenge = action({
   handler: async (ctx, { storyId }): Promise<{ challengeId: string }> => {
     const { userId } = await assertChallengeAccessInAction(ctx);
 
+    const story = await ctx.runQuery(api.stories.get, { storyId });
+    if (!story) throw new Error("Story not found");
+
+    // Real incident (story k17a3h29fc4sygp3w5zq62pst18egygr, 2026-09-17):
+    // an admin opened a customer's story via the admin panel's "Open" link,
+    // let it play to the end, and the reader's own "story ended" flow routed
+    // the ADMIN's session into this page. Since `userId` here came from the
+    // viewer's session (not the story's owner) and the dedup below keys on
+    // (storyId, userId), it never found the customer's real, already-ready
+    // Challenge — so it silently attempted a brand-new generation under the
+    // admin's identity, which failed and stamped a misleading
+    // challengeGenerationError on a story whose real Challenge was fine.
+    // Same root cause the admin-panel button hit earlier (see
+    // adminGenerateChallengeForStory above) but through a different call
+    // site — closing it here instead covers every caller at once.
+    if (story.userId !== userId) {
+      throw new Error("This Story Challenge isn't available on this account.");
+    }
+
     // A story gets at most one Challenge, ever — whether it's already been
     // completed OR is just sitting ready-but-untaken. Checking only
     // "completed" here used to leave a real gap: _store always does a plain
@@ -407,8 +426,7 @@ export const generateChallenge = action({
     const existing = await ctx.runQuery(internal.testserver.challenge._getExistingForStory, { userId, storyId });
     if (existing) return { challengeId: existing._id };
 
-    const story = await ctx.runQuery(api.stories.get, { storyId });
-    if (!story || !story.content) throw new Error("Story not ready yet");
+    if (!story.content) throw new Error("Story not ready yet");
 
     const profile: any = await ctx.runQuery(api.userProfiles.getProfile, {});
     const childName = story.params.childName || profile?.childName || "the child";

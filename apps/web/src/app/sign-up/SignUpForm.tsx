@@ -15,6 +15,7 @@ declare global {
     turnstile?: {
       render: (container: HTMLElement, opts: {
         sitekey: string;
+        size?: "normal" | "flexible" | "compact";
         callback: (token: string) => void;
         "expired-callback": () => void;
         "error-callback": () => void;
@@ -70,6 +71,11 @@ export function SignUpForm() {
       if (!turnstileRef.current || !window.turnstile) return;
       widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
         sitekey: siteKey!,
+        // Default widget size is a fixed 300px, which overflows its
+        // container on narrow phones (confirmed live: right edge clipped
+        // on a 375px viewport). "flexible" fills the parent's actual width
+        // instead of a fixed px value.
+        size: "flexible",
         callback: (token) => setTurnstileToken(token),
         "expired-callback": () => setTurnstileToken(null),
         "error-callback": () => setTurnstileToken(null),
@@ -243,8 +249,8 @@ export function SignUpForm() {
 
             {/* Cloudflare Turnstile */}
             {siteKey && (
-              <div className="flex justify-center">
-                <div ref={turnstileRef} />
+              <div style={{ width: "100%" }}>
+                <div ref={turnstileRef} style={{ width: "100%" }} />
               </div>
             )}
 

@@ -96,7 +96,7 @@ function StatusBadge({ status }: { status?: string }) {
   );
 }
 
-function ChallengeBadge({ challenge }: { challenge?: { status: string; score?: { gradableCorrect: number; gradableTotal: number } | null } | null }) {
+function ChallengeBadge({ challenge, readerCompletedAt }: { challenge?: { status: string; score?: { gradableCorrect: number; gradableTotal: number } | null } | null; readerCompletedAt?: number | null }) {
   if (!challenge) {
     return <span style={{ color: "rgba(45,45,45,0.3)", fontSize: "0.78rem" }}>—</span>;
   }
@@ -113,6 +113,24 @@ function ChallengeBadge({ challenge }: { challenge?: { status: string; score?: {
       </span>
     );
   }
+  // Untaken splits into two very different stories: did they finish the
+  // story and skip the Challenge, or never reach the end at all? Previously
+  // indistinguishable — readerCompletedAt (set when the narration audio's
+  // own `ended` event fires) is the real signal for which one happened.
+  if (!readerCompletedAt) {
+    return (
+      <span
+        style={{
+          display: "inline-block", padding: "2px 10px", borderRadius: "999px",
+          background: "rgba(220,38,38,0.08)", color: "#b91c1c",
+          fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.75rem", whiteSpace: "nowrap",
+        }}
+        title="Narration never reached its end — likely closed mid-story"
+      >
+        ▶ Not finished
+      </span>
+    );
+  }
   return (
     <span
       style={{
@@ -120,6 +138,7 @@ function ChallengeBadge({ challenge }: { challenge?: { status: string; score?: {
         background: "rgba(249,199,0,0.15)", color: "#8a6900",
         fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: "0.75rem", whiteSpace: "nowrap",
       }}
+      title="Story finished playing but the Challenge wasn't started"
     >
       📝 Untaken
     </span>
@@ -385,7 +404,7 @@ function StoryModal({ story, users, onClose, onDeleted }: { story: any; users: a
             ) : (
               <div style={{ background: "#fff", border: "1.5px solid rgba(0,0,0,0.06)", borderRadius: "0.75rem", padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                  <ChallengeBadge challenge={story.challenge} />
+                  <ChallengeBadge challenge={story.challenge} readerCompletedAt={story.readerCompletedAt} />
                   <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: "0.78rem", color: "rgba(45,45,45,0.45)" }}>
                     Generated {formatDate(story.challenge.createdAt)}
                     {story.challenge.completedAt ? ` · Completed ${formatDate(story.challenge.completedAt)}` : ""}
@@ -739,7 +758,7 @@ function StoriesTab({ isAdmin, users }: { isAdmin: boolean; users: any[] | undef
                           </div>
                         </td>
                         <td style={TD_STYLE}><StatusBadge status={s.status} /></td>
-                        <td style={TD_STYLE}><ChallengeBadge challenge={s.challenge} /></td>
+                        <td style={TD_STYLE}><ChallengeBadge challenge={s.challenge} readerCompletedAt={s.readerCompletedAt} /></td>
                         <td style={{ ...TD_STYLE, whiteSpace: "nowrap", fontSize: "0.82rem" }}>{formatDate(s.createdAt)}</td>
                         <td style={{ ...TD_STYLE, textAlign: "right" }}>
                           <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", alignItems: "center" }}>

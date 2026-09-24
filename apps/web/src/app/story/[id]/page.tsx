@@ -9,6 +9,7 @@ import Lottie from "lottie-react";
 import {
   useQuery,
   useAction,
+  useMutation,
   useConvexAuth,
   Authenticated,
   AuthLoading,
@@ -443,6 +444,7 @@ interface StingPlacement {
 }
 
 interface StoryShape {
+  _id?: Id<"stories">;
   title?: string;
   status?: string;
   content?: string;            // full narrative text (all scenes combined)
@@ -566,6 +568,7 @@ function StoryViewer({
   // Set by the Challenge screen's own "Do it later" opt-out (Task 4) — lands
   // back here instead of being redirected straight back into Challenge.
   const skipChallenge = searchParams.get("skipChallenge") === "1";
+  const markReaderCompleted = useMutation(api.stories._markReaderCompleted);
 
   /* Scene state */
   const scenes: SceneMeta[] = story?.sceneMetadata ?? [];
@@ -1072,7 +1075,14 @@ function StoryViewer({
     const d = audioRef.current.duration;
     if (isFinite(d) && d > 0) settleDuration(d);
   };
-  const onEnded = () => { setIsPlaying(false); setStoryEnded(true); };
+  const onEnded = () => {
+    setIsPlaying(false);
+    setStoryEnded(true);
+    // Real "reached the end" signal — previously nothing recorded this, so
+    // an untaken Story Challenge was indistinguishable from a story the
+    // child never finished watching.
+    if (story?._id) markReaderCompleted({ storyId: story._id }).catch(() => {});
+  };
 
   // Fires when the browser has buffered enough to play from the sought position.
   const onNarrationSeeked = () => {

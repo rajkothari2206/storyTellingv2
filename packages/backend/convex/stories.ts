@@ -376,6 +376,20 @@ export const _setSceneStartSeconds = mutation({
 	},
 });
 
+// Called once from the reader when the merged narration audio's native
+// `ended` event fires — real evidence the story played to completion, as
+// opposed to an untaken Challenge (which looks identical whether the child
+// finished the story and skipped the Challenge, or never got that far).
+// Idempotent: only the first call for a story sets the timestamp.
+export const _markReaderCompleted = mutation({
+	args: { storyId: v.id("stories") },
+	handler: async (ctx, { storyId }) => {
+		const story = await ctx.db.get(storyId);
+		if (!story || story.readerCompletedAt) return;
+		await ctx.db.patch(storyId, { readerCompletedAt: Date.now() });
+	},
+});
+
 export const _setNarrationDuration = mutation({
 	args: { storyId: v.id("stories"), durationSeconds: v.number() },
 	handler: async (ctx, { storyId, durationSeconds }) => {
