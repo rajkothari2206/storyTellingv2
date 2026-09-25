@@ -79,7 +79,7 @@ AGE ADAPTATION MATRIX
   -----------------------|-----------------------------------------|--------------------------------------------|-------------------------------------------
   Sentence length        | ≤ 8 words                               | ≤ 14 words                                 | Up to ~18–20 words, varied
   Vocabulary             | Concrete nouns and verbs only           | Everyday + 1–2 stretch words per story     | Richer, 2–3 new words with scaffolding
-  Scene / beat count     | 3–4                                     | 4–5                                        | 5–6
+  Scene / beat count     | 5 (exactly)                             | 5 (exactly)                                | 5 (exactly)
   Problem complexity     | One simple obstacle                     | One main problem + one small complication  | Multi-step problem, can include a twist
   Reasoning required     | Minimal — recognition, not deduction    | Simple cause-and-effect, compare/contrast  | Multi-step reasoning, prediction, light irony
   Emotional complexity   | One named emotion at a time             | Two emotions, or a feeling that changes    | Mixed/conflicting feelings, perspective-taking
@@ -164,9 +164,14 @@ HINGLISH (first-class generation mode — generate natively, never translate fro
     Age A Hinglish retains more English for concrete objects (simpler for young children).
     Age C can carry more pure-Hindi vocabulary and idiom.
 
-  GOOD:   Fafa ne apna blue ball dhoondha, lekin woh kahin nahi mila.
+  GOOD:   Fafa ने अपना blue ball ढूँढा, लेकिन वह कहीं नहीं मिला।
+  BAD — romanized Hindi (Latin letters for Hindi words). NEVER write this. It is read aloud by a
+          text-to-speech engine and comes out in an English accent:
+          Fafa ne apna blue ball dhoondha, lekin woh kahin nahi mila.
+  Every Hindi word (verbs, postpositions, pronouns, Hindi nouns) MUST be in Devanagari. Only the
+  English loanwords and the character names are Latin. End Hindi sentences with the danda (।).
   BAD — too formal, reads as translated textbook Hindi:
-          ففا ने अपनी नीली गेंद खोजी, परंतु वह कहीं नहीं मिली।
+          Fafa ने अपनी नीली गेंद खोजी, परंतु वह कहीं नहीं मिली।
   BAD — random mid-sentence code-switch a real speaker would not use:
           Fafa searched for his ball जो नीला था।
 
@@ -200,7 +205,7 @@ Part 3 — Scene metadata
   Rules:
     Every scene description must name Lalli (6yo girl), Fafa (3yo boy), and {ChildName}.
     Scene metadata must be in English only — it is used for image generation.
-    Scene count: 3–4 for Age A, 4–5 for Age B, 5–6 for Age C (matches the structureShape).
+    Scene count: EXACTLY 5 scenes for every age group and story length -- never 4, never 6. Group the story's beats into 5 illustrated scenes (Scene 1 through Scene 5), regardless of structureShape.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 BEGIN

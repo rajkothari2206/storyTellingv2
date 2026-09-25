@@ -80,6 +80,15 @@ function hasDevanagari(text: string): boolean {
   return DEVANAGARI_RE.test(text);
 }
 
+/** Share of letters that are Devanagari (dialogue speaker labels and names excluded). Real
+ *  Hinglish with Latin loanwords sits well above 0.35; romanized Hindi sits near 0. */
+function devanagariRatio(storyBody: string): number {
+  const stripped = storyBody.replace(/^(Lalli|Fafa|[A-Za-z]+):/gm, "");
+  const dev = (stripped.match(/[ऀ-ॿ]/g) || []).length;
+  const lat = (stripped.match(/[A-Za-z]/g) || []).length;
+  return dev + lat === 0 ? 0 : dev / (dev + lat);
+}
+
 /**
  * True when the story body looks like an English fallback.
  * We strip structural labels and dialogue prefixes (always Latin) before counting,
@@ -100,7 +109,7 @@ function looksLikeEnglishFallback(storyBody: string): boolean {
 
 type ValidationSeverity = "critical" | "warning";
 
-interface ValidationIssue {
+export interface ValidationIssue {
   code:        string;
   severity:    ValidationSeverity;
   description: string;
@@ -142,7 +151,7 @@ export function computeSpeakerWordShares(
   return { ...counts, total };
 }
 
-function runDeterministicValidation(
+export function runDeterministicValidation(
   content:  string,
   childName: string,
   ageGroup:  AgeGroup
@@ -176,13 +185,13 @@ function runDeterministicValidation(
   } else {
     // 3. Scene count in expected range for age group
     const sceneLines = meta.split("\n").filter((l) => /^Scene\s*\d+:/i.test(l.trim()));
-    const [minS, maxS] = ageGroup === "A" ? [3, 4] : ageGroup === "B" ? [4, 5] : [5, 6];
+    const [minS, maxS] = [5, 5];
     if (sceneLines.length < minS || sceneLines.length > maxS) {
       issues.push({
         code: "SCENE_COUNT_OUT_OF_RANGE",
-        severity: "warning",
-        description: `Scene metadata has ${sceneLines.length} scene(s); expected ${minS}–${maxS} for age group ${ageGroup}.`,
-        repairHint:  `Adjust to ${minS}–${maxS} scenes in the SCENE METADATA section.`,
+        severity: "critical",
+        description: `Scene metadata has ${sceneLines.length} scene(s); expected exactly 5.`,
+        repairHint:  `Adjust to exactly 5 scenes (Scene 1 to Scene 5) in the SCENE METADATA section.`,
       });
     }
     // 4. Each scene metadata line must name the child
@@ -468,7 +477,7 @@ async function runTargetedRepair(
 
 // ─── Resolution helpers ───────────────────────────────────────────────────────
 
-function resolveAgeGroup(age: number): AgeGroup {
+export function resolveAgeGroup(age: number): AgeGroup {
   if (age <= 5) return "A";
   if (age <= 8) return "B";
   return "C";
@@ -786,14 +795,16 @@ function buildPayload(args: {
       scriptRules: [
         "Devanagari is the base script for all narration and dialogue.",
         "English loanwords (colours, animal names, and common nouns: bag, ball, phone, school, park, birthday) stay in LATIN script inline — e.g. 'उसने red kite देखी', never 'उसने लाल पतंग देखी'.",
+        "Every Hindi word (verbs, pronouns, postpositions, Hindi nouns) MUST be written in Devanagari. NEVER romanize Hindi (no 'ne', 'apna', 'lekin', 'nahi', 'hai' in Latin letters).",
         "Character names (Lalli, Fafa, child's name) always in Latin script.",
         "Structural labels (SCENE METADATA, Scene 1:, Lalli:, Fafa:, child's name as speaker) always in Latin script.",
         "Grammar and sentence structure stay Hindi: verb-final, postpositions, gendered verb agreement.",
       ],
       examples: {
-        GOOD: "Fafa ne apna blue ball dhoondha, lekin woh kahin nahi mila.",
+        GOOD: "Fafa ने अपना blue ball ढूँढा, लेकिन वह कहीं नहीं मिला।",
+        BAD_romanizedHindi: "Fafa ne apna blue ball dhoondha, lekin woh kahin nahi mila. (Hindi words in Latin letters are forbidden: the story is read aloud by a speech engine that needs Devanagari.)",
         BAD_englishFallback: "Fafa searched for his blue ball but could not find it.",
-        BAD_formalHindi: "ففا ने अपनी नीली गेंद खोजी, परंतु वह कहीं नहीं मिली।",
+        BAD_formalHindi: "Fafa ने अपनी नीली गेंद खोजी, परंतु वह कहीं नहीं मिली।",
         BAD_randomSwitch: "Fafa searched for his ball जो नीला था।",
       },
     };
@@ -1039,7 +1050,7 @@ export const _generateContentV2 = internalAction({
 
     if (isHinglish && content.length > 200) {
       const storyBodyForScript = content.split(/^SCENE METADATA$/m)[0].trim();
-      const devanagariMissing  = !hasDevanagari(storyBodyForScript);
+      const devanagariMissing  = !hasDevanagari(storyBodyForScript) || devanagariRatio(storyBodyForScript) < 0.35;
       const englishDominant    = looksLikeEnglishFallback(storyBodyForScript);
       hinglishIssue = devanagariMissing || englishDominant;
       if (hinglishIssue) {
@@ -1060,7 +1071,8 @@ export const _generateContentV2 = internalAction({
           "or formal Hindi, not Hinglish. You MUST generate natively in Hinglish:\n" +
           "• Devanagari is the base script for all narration and dialogue.\n" +
           "• English loanwords (colours, animal names, bag, ball, school, park) stay in Latin " +
-          "script inline — e.g. 'Fafa ne apna blue ball dhoondha, lekin woh kahin nahi mila.'\n" +
+          "script inline — e.g. 'Fafa ने अपना blue ball ढूँढा, लेकिन वह कहीं नहीं मिला।' " +
+          "NEVER write Hindi words in Latin letters (no 'ne', 'apna', 'lekin', 'nahi').\n" +
           "• Do NOT write in English then translate — generate directly in Hinglish.\n" +
           "• Do NOT use formal/textbook Hindi with Sanskrit-origin words."
         );
@@ -1083,6 +1095,10 @@ export const _generateContentV2 = internalAction({
       content = resp.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || content;
       const retryCount = content.split(/^SCENE METADATA$/m)[0].trim().split(/\s+/).filter(Boolean).length;
       console.log(`[v2] Retry word count: ${retryCount}`);
+      if (hinglishIssue) {
+        const retryBody = content.split(/^SCENE METADATA$/m)[0].trim();
+        console.log(`[v2] Post-retry Devanagari ratio: ${devanagariRatio(retryBody).toFixed(2)}`);
+      }
     } else {
       console.log(`[v2] Story word count: ${wordCountActual}`);
     }

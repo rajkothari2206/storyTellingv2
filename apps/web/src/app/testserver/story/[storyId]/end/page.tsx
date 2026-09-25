@@ -95,7 +95,7 @@ export default function EndOfStoryScreen() {
           {busy === "sequel" ? "Starting…" : "Continue the adventure"}
         </button>
         <button
-          onClick={() => router.push("/testserver")}
+          onClick={() => router.push("/generate")}
           className="btn-ghost"
           style={{ justifyContent: "center", fontSize: 14.5, padding: "0.75rem" }}
         >

@@ -9,13 +9,12 @@
 // questions are still never graded right/wrong (§5.5) — only the 7 gradable
 // questions get green/red treatment in the review.
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useAction, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 import { Check, ChevronDown, Loader2, Star, Trophy, X } from "lucide-react";
-import { toast } from "sonner";
 import Image from "next/image";
 import Lottie from "lottie-react";
 import { useLottieJson } from "../../_lib/useLottie";
@@ -79,9 +78,6 @@ export default function ResultsScreen() {
 
   const challenge = useQuery(api["testserver/challenge"].getForStory, { storyId: sid });
   const history = useQuery(api["testserver/challenge"].getHistory, {});
-  const themes = useQuery(api["migration/theme"].list, {});
-  const generateStory = useAction(api.generateStoryV2.enqueueStoryV2);
-  const [starting, setStarting] = useState(false);
   const [showReview, setShowReview] = useState(false);
   const stars = useLottieJson("/lottie/stars.json");
   // Real (allowlisted, non-admin) users land here from the production end-of-
@@ -91,17 +87,6 @@ export default function ResultsScreen() {
   const role = useQuery(api.auth.getUserRole, {});
   const isAdmin = role === "admin";
   const homeHref = isAdmin ? "/testserver" : "/dashboard";
-
-  // Chosen once per themes-list load, not re-rolled on every render or at
-  // click time, so the CTA's displayed name and the theme startGrowthStory
-  // actually generates always match. Previously the button showed a fixed,
-  // hardcoded title ("The whispering woods") tied to the growingIn pillar,
-  // completely disconnected from the random theme generation actually used.
-  const nextTheme = useMemo(() => {
-    return themes && themes.length > 0
-      ? themes[Math.floor(Math.random() * themes.length)].name
-      : "Magical Forest";
-  }, [themes]);
 
   if (!challenge || challenge.status !== "completed" || !challenge.score || !history) {
     return (
@@ -123,26 +108,6 @@ export default function ResultsScreen() {
   const mood = moodFor(ratio);
   const theme = MOOD_THEME[mood];
   const childName = challenge.childName;
-
-  async function startGrowthStory() {
-    setStarting(true);
-    try {
-      const result = await generateStory({
-        params: {
-          theme: nextTheme,
-          lesson: suggestion.lesson,
-          storyType: "adventure",
-          length: challenge.length,
-          language: "English",
-          childId: "1",
-        },
-      });
-      router.push(isAdmin ? `/testserver/generating/${result.storyId}` : `/story/${result.storyId}`);
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Couldn't start the next story");
-      setStarting(false);
-    }
-  }
 
   return (
     <div style={{ flex: 1, position: "relative", display: "flex", flexDirection: "column", maxWidth: 460, margin: "0 auto", width: "100%", overflow: "hidden" }}>
@@ -273,16 +238,11 @@ export default function ResultsScreen() {
 
         <div style={{ flex: 1 }} />
 
-        <button onClick={startGrowthStory} disabled={starting} className="btn-primary" style={{ justifyContent: "center", width: "100%", marginTop: 16, fontSize: 15.5, padding: "0.85rem" }}>
-          {starting ? "Starting…" : `Next: "${nextTheme}"`}
+        <button onClick={() => router.push("/generate")} className="btn-primary" style={{ justifyContent: "center", width: "100%", marginTop: 16, fontSize: 15.5, padding: "0.85rem" }}>
+          Create New Story
         </button>
-        {/* Names the actual connection driving this suggestion — the button
-            alone just shows a theme name, indistinguishable from a random
-            pick. suggestion.emoji lives here (next to the pillar it
-            represents) instead of next to the theme, since it's tied to
-            growingIn, not to nextTheme. */}
         <p style={{ textAlign: "center", margin: "6px 0 8px", fontFamily: "'Nunito', sans-serif", fontSize: 12, fontWeight: 700, color: "rgba(14,10,31,0.5)" }}>
-          {suggestion.emoji} A {suggestion.lesson} story to help build {PILLAR_LABELS[growingIn]}
+          {suggestion.emoji} Tip: try a {suggestion.lesson} story to help build {PILLAR_LABELS[growingIn]}
         </p>
         <button
           onClick={() => router.push(homeHref)}
