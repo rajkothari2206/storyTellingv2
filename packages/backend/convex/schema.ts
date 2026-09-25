@@ -476,6 +476,24 @@ flavor_openings: defineTable({
 		createdAt: v.number(),
 	}).index("by_user", ["userId"]),
 
+	// Records every lifecycle/re-engagement email actually sent, so the daily
+	// cron can enforce each cadence (15d / 30d / one-time-per-story) without
+	// re-sending on every run. "lapsed_active" and "never_generated" are keyed
+	// by userId only (one email per user per cadence window); "challenge_waiting"
+	// is keyed by storyId (one nudge ever per story, regardless of user).
+	lifecycle_emails: defineTable({
+		userId: v.string(),
+		emailType: v.union(
+			v.literal("lapsed_active"),
+			v.literal("never_generated"),
+			v.literal("challenge_waiting"),
+		),
+		storyId: v.optional(v.id("stories")),
+		sentAt: v.number(),
+	})
+		.index("by_user_type", ["userId", "emailType"])
+		.index("by_story_type", ["storyId", "emailType"]),
+
 	// ─── STORY ENGINE v2 ──────────────────────────────────────────────────────
 	// Additive-only block. Nothing outside generateStoryV2.ts and this schema
 	// references these tables during Phase 1–6 development.

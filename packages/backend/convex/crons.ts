@@ -11,6 +11,21 @@ crons.daily(
 	internal.crons.cleanupOldStories
 );
 
+// Lifecycle/re-engagement email sweep. Content reviewed and approved
+// 2026-09-25 (previews sent to rajkothari2206@gmail.com) after the initial
+// unreviewed burst on 2026-09-24 -- see git history for that incident.
+// Runs every 6 hours so the 12-hour "Challenge waiting" nudge goes out
+// reasonably promptly; the 15-day and 30-day cadences are self-gating (see
+// lifecycle_emails) and unaffected by tick frequency. Note: like any Convex
+// interval cron, re-deploying this registration fires one sweep immediately,
+// not only after the first 6h interval -- expected here, already accounted
+// for by the by_user_type/by_story_type gates in lifecycleEmails.ts.
+crons.interval(
+	"lifecycle email sweep",
+	{ hours: 6 },
+	internal.lifecycleEmails.runLifecycleEmailSweep
+);
+
 export default crons;
 
 /**

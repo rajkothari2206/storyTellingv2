@@ -2,7 +2,7 @@ import { internalAction, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 
-async function sendEmail(resendKey: string, payload: {
+export async function sendEmail(resendKey: string, payload: {
   to: string[];
   subject: string;
   html: string;
@@ -21,7 +21,7 @@ async function sendEmail(resendKey: string, payload: {
   });
 }
 
-const HEADER = `
+export const HEADER = `
   <div style="background:#1a1a2e;padding:32px;text-align:center">
     <h1 style="color:#fff;font-size:26px;margin:0;font-weight:800;font-family:'Nunito',Arial,sans-serif">
       Lalli <span style="color:#4ecdc4">Fafa</span>
@@ -31,13 +31,47 @@ const HEADER = `
     </p>
   </div>`;
 
-const FOOTER = `
+export const FOOTER = `
   <div style="padding:24px 32px;background:#f9f6ef;text-align:center">
     <p style="color:#aaa;font-size:11px;margin:0;font-family:'Nunito',Arial,sans-serif">
       © ${new Date().getFullYear()} Lalli Fafa ·
       <a href="https://www.lallifafa.com" style="color:#4ecdc4;text-decoration:none">lallifafa.com</a>
     </p>
   </div>`;
+
+// The 4-pillar benefit grid, factored out of sendWelcomeEmail so every
+// lifecycle email uses the exact same brand block instead of a copy that
+// can drift out of sync.
+export const PILLAR_GRID = `
+  <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px">
+    <tr>
+      <td width="48%" style="vertical-align:top;padding:16px;background:#f5fffe;border-radius:14px;border:1px solid rgba(0,201,167,0.15)">
+        <div style="font-size:28px;margin-bottom:8px">👂</div>
+        <div style="font-size:13px;font-weight:800;color:#1a1a2e;margin-bottom:4px">Listening Skills</div>
+        <div style="font-size:12px;color:#666;line-height:1.5">Listen. Understand. Remember.</div>
+      </td>
+      <td width="4%"></td>
+      <td width="48%" style="vertical-align:top;padding:16px;background:#fffdf0;border-radius:14px;border:1px solid rgba(249,199,0,0.2)">
+        <div style="font-size:28px;margin-bottom:8px">🎯</div>
+        <div style="font-size:13px;font-weight:800;color:#1a1a2e;margin-bottom:4px">Attention & Focus</div>
+        <div style="font-size:12px;color:#666;line-height:1.5">Stay engaged. Follow the story.</div>
+      </td>
+    </tr>
+    <tr><td colspan="3" style="height:12px"></td></tr>
+    <tr>
+      <td width="48%" style="vertical-align:top;padding:16px;background:#fff5f6;border-radius:14px;border:1px solid rgba(230,70,100,0.14)">
+        <div style="font-size:28px;margin-bottom:8px">❤️</div>
+        <div style="font-size:13px;font-weight:800;color:#1a1a2e;margin-bottom:4px">Emotional Intelligence</div>
+        <div style="font-size:12px;color:#666;line-height:1.5">Understand feelings. Build empathy.</div>
+      </td>
+      <td width="4%"></td>
+      <td width="48%" style="vertical-align:top;padding:16px;background:#f0faff;border-radius:14px;border:1px solid rgba(0,150,220,0.12)">
+        <div style="font-size:28px;margin-bottom:8px">🧠</div>
+        <div style="font-size:13px;font-weight:800;color:#1a1a2e;margin-bottom:4px">Cognitive Growth</div>
+        <div style="font-size:12px;color:#666;line-height:1.5">Remember. Reason. Solve.</div>
+      </td>
+    </tr>
+  </table>`;
 
 export const sendWelcomeEmail = internalAction({
   args: {
@@ -65,35 +99,7 @@ export const sendWelcomeEmail = internalAction({
           </p>
 
           <!-- Benefit grid -->
-          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px">
-            <tr>
-              <td width="48%" style="vertical-align:top;padding:16px;background:#f5fffe;border-radius:14px;border:1px solid rgba(0,201,167,0.15)">
-                <div style="font-size:28px;margin-bottom:8px">👂</div>
-                <div style="font-size:13px;font-weight:800;color:#1a1a2e;margin-bottom:4px">Listening Skills</div>
-                <div style="font-size:12px;color:#666;line-height:1.5">Listen. Understand. Remember.</div>
-              </td>
-              <td width="4%"></td>
-              <td width="48%" style="vertical-align:top;padding:16px;background:#fffdf0;border-radius:14px;border:1px solid rgba(249,199,0,0.2)">
-                <div style="font-size:28px;margin-bottom:8px">🎯</div>
-                <div style="font-size:13px;font-weight:800;color:#1a1a2e;margin-bottom:4px">Attention & Focus</div>
-                <div style="font-size:12px;color:#666;line-height:1.5">Stay engaged. Follow the story.</div>
-              </td>
-            </tr>
-            <tr><td colspan="3" style="height:12px"></td></tr>
-            <tr>
-              <td width="48%" style="vertical-align:top;padding:16px;background:#fff5f6;border-radius:14px;border:1px solid rgba(230,70,100,0.14)">
-                <div style="font-size:28px;margin-bottom:8px">❤️</div>
-                <div style="font-size:13px;font-weight:800;color:#1a1a2e;margin-bottom:4px">Emotional Intelligence</div>
-                <div style="font-size:12px;color:#666;line-height:1.5">Understand feelings. Build empathy.</div>
-              </td>
-              <td width="4%"></td>
-              <td width="48%" style="vertical-align:top;padding:16px;background:#f0faff;border-radius:14px;border:1px solid rgba(0,150,220,0.12)">
-                <div style="font-size:28px;margin-bottom:8px">🧠</div>
-                <div style="font-size:13px;font-weight:800;color:#1a1a2e;margin-bottom:4px">Cognitive Growth</div>
-                <div style="font-size:12px;color:#666;line-height:1.5">Remember. Reason. Solve.</div>
-              </td>
-            </tr>
-          </table>
+          ${PILLAR_GRID}
 
           <p style="color:#555;font-size:14px;line-height:1.7;margin:0 0 28px">
             Research shows children who have regular story time develop <strong>vocabulary 2–3× faster</strong> and show stronger empathy and social skills. With Lalli Fafa, every story is a little investment in your child's future. 💛
